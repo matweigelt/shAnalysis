@@ -19,11 +19,11 @@ function [k, info] = basinScaling(op, b, tsModel, opts)
 %     op       operator, one of
 %                struct  from shLowLevel.tvANSFilter (applied via shLowLevel.opApply)
 %                (P,P) double  static matrix operator (Gaussian, DDK,
-%                        fan as a matrix in idx ordering)
+%                        fan as a matrix in idx (struct()) ordering)
 %                handle  @(x, t) -> filtered x
 %     b        (P,1)      basin kernel (shLowLevel.basinKernel, idx order)
 %     tsModel  shSeries   model series matched by nearest epoch within
-%                         0.05 yr against opts.tYears / op.tYears
+%                         0.05 yr against opts.tYears ([]) / op.tYears
 %   Options
 %     idx                 required for matrix/handle operators
 %                         (shLowLevel.shIndex); structs carry their own

@@ -1,9 +1,9 @@
 function writeGrid(filename, grid, latDeg, lonDeg, opts)
 %WRITEGRID Export gridded fields to CF-style netCDF (base MATLAB).
 %
-%   shLowLevel.writeGrid('ewh.nc', GRID, LAT, LON, Name="lwe_thickness",
-%       Units="m", Epoch=2010.29) writes a 2-D field or a 3-D stack
-%   (nlat x nlon x T with Epochs=) using nccreate/ncwrite - directly
+%   shLowLevel.writeGrid('ewh.nc', GRID, LAT, LON, Name ("field")="lwe_thickness",
+%       Units ("")="m", Epoch=2010.29) writes a 2-D field or a 3-D stack
+%   (nlat x nlon x T with Epochs ([])=) using nccreate/ncwrite - directly
 %   readable back by shLowLevel.readMascon (roundtrip-tested), by GMT, panoply,
 %   xarray, etc. Time is stored as "days since 2002-01-01" like the
 %   mascon products.
@@ -18,6 +18,7 @@ function writeGrid(filename, grid, latDeg, lonDeg, opts)
 %   Options
 %     Name ("field"), Units (""), Epoch/Epochs (decimal years, for 3-D),
 %     LatType ("geocentric"), Description ("")
+%     Sidecar (true)  write <file>.provenance.json alongside the output
 %
 %   Claude (Fable 5), 2026-08-07 (v2.4).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

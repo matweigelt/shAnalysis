@@ -30,8 +30,8 @@ function [Ct, St] = shEvalGFCT(model, epoch)
 %   Claude (Sonnet 4.6), 2026-07-11; ICGEM 2.0 support:
 %   Claude (Fable 5), 2026-08-07.
 %   Outputs
-%     C          (nmax+1 x nmax+1) double   coefficients evaluated at the epoch
-%     S          (nmax+1 x nmax+1) double   sine coefficients at the epoch
+%     Ct  (nmax+1 x nmax+1) double  cosine coefficients at the epoch
+%     St  (nmax+1 x nmax+1) double  sine coefficients at the epoch
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

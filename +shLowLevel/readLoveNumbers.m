@@ -13,14 +13,17 @@ function [LN, info] = readLoveNumbers(filename, opts)
 %     3+ columns w/ header: mapped by the header tokens n, k(n)('), 
 %                           h(n)('), l(n)(')
 %     3+ columns w/o header: AMBIGUOUS (classic Farrell tables order
-%                           h l k, others k h l) - pass Columns=
+%                           h l k, others k h l) - pass Columns ("auto")=
 %                           explicitly, e.g. Columns="n h l k".
 %
+%
+%   Inputs
+%     filename  char/string  path of the file to read/write (gzipped .gz accepted where documented)
 %   Options
 %     Columns ("auto")   explicit column meaning, tokens from {n,k,h,l},
 %                        e.g. "n k h l" (overrides header detection)
 %     MaxDegree ([])     verify coverage of degrees 0..MaxDegree and
-%                        truncate; with sparse tables combine with Interp
+%                        truncate; with sparse tables combine with Interp ("none")
 %     Interp ("none")    "none" | "pchip": fill degree gaps by shape-
 %                        preserving pchip in log(1+n) - Farrell-style
 %                        sparse tables (n = ...,32,56,100,...) become

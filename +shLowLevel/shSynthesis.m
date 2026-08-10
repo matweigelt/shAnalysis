@@ -41,7 +41,11 @@ function [grid, lat, lon, P] = shSynthesis(C, S, GM, R, latVec, lonVec, varargin
 %   table to avoid silently using unvalidated constants -- pass 'kn'
 %   explicitly. Without it, EWH synthesis will error.
 %
-%   Output GRID is numel(LATVEC) x numel(LONVEC).
+%   Outputs
+%     grid  (nlat x nlon) double  synthesized quantity
+%     lat   (1, nlat) double  latitude grid [deg]
+%     lon   (1, nlon) double  longitude grid [deg]
+%     P     (1,1) struct  cached Legendre functions (pass back in for reuse)
 %
 %   'method'  'auto' (default) / 'direct' / 'fft': FFT-along-longitude
 %             synthesis for uniform full-circle longitude grids (5-20x

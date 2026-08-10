@@ -9,7 +9,7 @@ function [files, info] = fetchTN(opts)
 %   the CSR/JPL/GFZ RL06.3 files and the GSFC TN-14 also ship as test
 %   fixtures, so the toolbox works offline out of the box).
 %
-%   The technical notes GROW MONTHLY upstream. With Update=true,
+%   The technical notes GROW MONTHLY upstream. With Update (false)=true,
 %   already-present files are re-downloaded and replaced - but only
 %   after the fresh copy has been VERIFIED BY PARSE, so a failed or
 %   corrupt download never clobbers a working local file (the existing

@@ -4,16 +4,16 @@ function [files, info] = fetchITSG(months, opts)
 %   FILES = shLowLevel.fetchITSG(2019:2020) downloads all available monthly
 %   GSM solutions for the given years into dataFolder/itsg_series
 %   (websave, base MATLAB). Already-present files are skipped unless
-%   Update=true, which re-downloads them with a safe swap (the fresh
+%   Update (false)=true, which re-downloads them with a safe swap (the fresh
 %   file is parse-verified before it replaces the old one); months
 %   that do not exist on the server (mission gap 2017-07..2018-05,
 %   intra-mission dropouts) are reported in INFO.missing, not errors.
 %
 %   FILES = shLowLevel.fetchITSG(["2008-04", "2010-11"]) fetches single months.
 %
-%   FILES = shLowLevel.fetchITSG("2008-04", Product="daily") fetches the DAILY
+%   FILES = shLowLevel.fetchITSG("2008-04", Product ("monthly")="daily") fetches the DAILY
 %   Kalman-smoother solutions (v2.4.1): one .gfc per day (~83 kB,
-%   ICGEM format with formal errors, zero_tide), n40 ONLY - Nmax
+%   ICGEM format with formal errors, zero_tide), n40 ONLY - Nmax (NaN)
 %   resolves to 40 automatically; requesting another Nmax errors. The
 %   months/years spec expands to all days (a full year is ~365 files);
 %   target dataFolder/itsg_daily (kept separate from the monthly
@@ -31,6 +31,9 @@ function [files, info] = fetchITSG(months, opts)
 %     Nmax (96)      60 | 96 (server folder monthly_nXX)
 %     Timeout (60)   [s] per file
 %     Quiet (false)  suppress per-file progress
+%     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
+%     BaseURL ("https://ftp.tugraz.at/pub/ITSG/GRACE")  server base URL, or a local mirror folder for offline use
+%     Catalog ([])  row numbers of the shLowLevel.listITSG catalogue to fetch completely
 %   Outputs
 %     files  (1,:) string   paths of all present files (new + existing)
 %     info   struct: fetched, updated, skipped, missing (string arrays), url

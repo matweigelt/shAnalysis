@@ -24,6 +24,7 @@ function [G, lam, info] = slepianBasis(idx, region, opts)
 %   Options
 %     NKeep (round(Shannon))  columns of G to return; [] = all P
 %     BufferKm (0), R (6378136.3)  passed to shLowLevel.evalMask
+%     OverSample (2)  see arguments block
 %   Outputs
 %     G     (P,NKeep) double  taper coefficient vectors, G'G = I
 %     lam   (NKeep,1) double  concentrations, descending in [0,1]

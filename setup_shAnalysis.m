@@ -3,11 +3,11 @@ function summary = setup_shAnalysis(opts)
 %
 %   setup_shAnalysis                        adds the toolbox to the path
 %                                           for THIS session only
-%   setup_shAnalysis(Permanent = true)      also persists it (savepath)
-%   setup_shAnalysis(Download = "core")     + TN-14 and TN-13 files
-%   setup_shAnalysis(Download = "filters")  + DDK filter matrices
+%   setup_shAnalysis(Permanent (false) = true)      also persists it (savepath)
+%   setup_shAnalysis(Download ("none") = "core")     + TN-14 and TN-13 files
+%   setup_shAnalysis(Download = "filters")  + DDK (3) filter matrices
 %   setup_shAnalysis(Download = "starter")  + ITSG starter months
-%   setup_shAnalysis(DryRun = true, ...)    print/return the plan, do
+%   setup_shAnalysis(DryRun (false) = true, ...)    print/return the plan, do
 %                                           NOTHING (no path change, no
 %                                           folders, no network)
 %
@@ -18,7 +18,7 @@ function summary = setup_shAnalysis(opts)
 %                completion chain. Every file is verified by parse.
 %     "filters"  core + shLowLevel.fetchDDK(DDK): anisotropic DDK
 %                decorrelation matrices (~10 MB each).
-%     "starter"  filters + shLowLevel.fetchITSG(Months, Nmax=Nmax): a small
+%     "starter"  filters + shLowLevel.fetchITSG(Months (["2008-04", "2025-12"]), Nmax (96)=Nmax): a small
 %                monthly-solution starter set - by default the n96
 %                companions of the two shipped n60 fixture months
 %                (2008-04 GRACE, 2025-12 GRACE-FO).
@@ -44,6 +44,9 @@ function summary = setup_shAnalysis(opts)
 %                       with a safe, parse-verified swap (temporal files
 %                       like TN-13/TN-14 grow monthly)
 %     Quiet (false)       suppress progress output
+%     DataFolder ("")  persistent data folder, applied BEFORE any fetcher runs
+%     FetchITSG ("none")  "all" additionally downloads every monthly ITSG solution
+%     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
 %
 %   Output
 %     summary struct:

@@ -15,6 +15,9 @@ function folder = dataFolder(newFolder)
 %   location to reuse downloads across machines.
 %
 %   Claude (Fable 5), 2026-08-07 (v2.4.1).
+%
+%   Inputs
+%     newFolder  char/string  new persistent data folder (omit to query the current one)
 %   Outputs
 %     folder     (1 x 1) string   current data folder (created on demand)
 %

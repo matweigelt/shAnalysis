@@ -10,22 +10,23 @@ function snx = readSINEX(filename, opts)
 %     +SOLUTION/NORMAL_EQUATION_MATRIX L|U  normal-equation matrix
 %   .gz files are gunzipped transparently.
 %
-%   opts.Only = "estimate" (v2.2) streams the SOLUTION/ESTIMATE block
+%   opts.Only ("all") = "estimate" (v2.2) streams the SOLUTION/ESTIMATE block
 %   line-by-line (gz via Java GZIPInputStream) and skips all matrix
 %   blocks - reads the estimates of a 460-MB n96 NEQ SINEX in seconds
 %   with negligible memory. Returns kind='estimate', M=[].
 %
-%   SNX = shLowLevel.readSINEX(..., Index=IDX) additionally reorders the result
+%   SNX = shLowLevel.readSINEX(..., Index (struct([]))=IDX) additionally reorders the result
 %   into the shLowLevel.shIndex ordering IDX: SNX.M and SNX.x then match IDX row
 %   for row, ready for tvANSFilter's opts.NoiseCov (after inverting an
-%   NEQ; see Output='covariance'). Coefficients present in IDX but absent
+%   NEQ; see Output ("raw")='covariance'). Coefficients present in IDX but absent
 %   from the file raise shLowLevel:readSINEX:missingParam.
 %
 %   Options
 %     Index   ([]) shLowLevel.shIndex struct for reordering
-%     Output  "raw" (default) | "covariance": with "covariance", an NEQ
-%             matrix is inverted (Cholesky) so SNX.M is always a
-%             covariance; COVA matrices are returned as-is either way.
+%   Outputs
+%     snx  (1,1) struct  fields: x (P x 1 double), idx (struct),
+%          Cxx (P x P double, [] unless Only="full"), epoch (1,1 double),
+%          N/b (normal equations when present)
 %
 %   Outputs (struct)
 %     n, m, cs (Q,1)  parameter list (cs: 0=C, 1=S), file order or IDX order

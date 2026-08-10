@@ -11,8 +11,10 @@ function [file, info] = fetchICGEM(model, opts)
 %
 %   Options
 %     Dest (fullfile(shLowLevel.dataFolder(), "icgem")), Timeout (300),
-%     List ([])   pass a pre-fetched listICGEM table (avoids re-listing
+%     List (table()) ([])   pass a pre-fetched listICGEM table (avoids re-listing
 %                 in loops / enables the offline fixture in tests)
+%     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
+%     Update (false)  refresh existing files (safe swap: verified before replacing)
 %   Outputs
 %     file  string   local path
 %     info  struct: url, skipped (true if already present)

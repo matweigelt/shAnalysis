@@ -1,5 +1,5 @@
-% shAnalysis v3.0.0 - Spherical harmonic (Stokes coefficient) analysis for
-% Version 3.0.0 (R2026a-compatible) 10-Aug-2026
+% shAnalysis v3.0.1 - Spherical harmonic (Stokes coefficient) analysis for
+% Version 3.0.1 (R2026a-compatible) 10-Aug-2026
 % GRACE/GRACE-FO, GOCE, and static gravity field models: class-based,
 % with time-series support, GAX background handling, climatology, and
 % the tvANS time-variable anisotropic Wiener filter.

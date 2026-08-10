@@ -6,7 +6,7 @@ function [T, info] = listICGEM(opts)
 %   data sources, direct .gfc download URL) - feed a row's name into
 %   shLowLevel.fetchICGEM to download.
 %
-%   [T, INFO] = shLowLevel.listICGEM(Type="temporal") returns the FULL temporal
+%   [T, INFO] = shLowLevel.listICGEM(Type ("static")="temporal") returns the FULL temporal
 %   catalogue parsed from the series-page links of /sl/temporal: every
 %   GRACE/GRACE-FO/SLR/Swarm series of every center (~70+ series across
 %   the groups 01_GRACE, 02_COST-G, 03_other, 04_SLR). Columns:
@@ -14,7 +14,7 @@ function [T, info] = listICGEM(opts)
 %     center   processing center (CSR, GFZ, JPL, COST-G, ITSG, ...)
 %     series   series name incl. sub-listing (e.g. "ITSG-Grace2018/monthly")
 %     path     the catalogue path "group/center/series" - feed this into
-%              the Series option to list the individual files
+%              the Series ("") option to list the individual files
 %     url      the series page (human-readable listing)
 %     zip      whole-series ZIP download (can be hundreds of MB!)
 %

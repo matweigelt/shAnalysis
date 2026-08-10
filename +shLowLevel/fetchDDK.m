@@ -5,7 +5,7 @@ function [files, info] = fetchDDK(which, opts)
 %   decorrelation filters DDK1..DDK8 (Kusche 2007; Kusche et al. 2009;
 %   ~9.8 MB each) from the MIT-licensed strawpants/GRACE-filter
 %   repository into <dataFolder>/DDK. Existing files are skipped unless
-%   Update=true, which re-downloads them with a safe swap (the fresh
+%   Update (false)=true, which re-downloads them with a safe swap (the fresh
 %   file is parse-verified by shLowLevel.readDDK before replacing the old one).
 %   DDK3 additionally ships inside the toolbox (tests/test_data) and
 %   never needs fetching.
@@ -17,7 +17,8 @@ function [files, info] = fetchDDK(which, opts)
 %   Inputs
 %     which  (1,:) double  subset of 1..8
 %   Options
-%     Dest (fullfile(shLowLevel.dataFolder(), "DDK")), Timeout (120), Quiet
+%     Dest (fullfile(shLowLevel.dataFolder(), "DDK")), Timeout (120), Quiet (false)
+%     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
 %   Outputs
 %     files  (1,:) string  present file paths (new + existing)
 %     info   struct: fetched, updated, skipped, names, url

@@ -6,8 +6,11 @@ function Yout = opApply(op, Z, t, mode)
 %   W_t = W0_t + S*Ac*(Ac'*S*Ac)^-1 * Ac' * (I - W0_t)  (if constrained)
 %   with W0_t = V * diag(g) * Ut, g = lam./(lam + s(t)).
 %   O(P^2) per column; no P x P matrix is formed.
+%
+%   Inputs
+%     mode  (1,1) string  'apply' | 'applyT' - forward or transposed operator action
 %   Outputs
-%     xf         (P x cols(x)) double   W_t * x (or W_t' * x in 'transp' mode) without forming the P x P matrix
+%     Yout  (P x T) double  operator applied to every column of Y
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

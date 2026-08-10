@@ -66,9 +66,25 @@ methods
     function obj = shSeries(in, opts)
         %SHSERIES Construct from an shCoefficients array or raw stacks.
         %   ts = shSeries(objArray)
-        %   ts = shSeries(Cs, Epochs=..., Ss=...)  (raw-stack form via opts)
+        %   ts = shSeries(Cs, Epochs ([])=..., Ss ([])=...)  (raw-stack form via opts)
+        %
+        %   Inputs
+        %     in  (nmax+1 x nmax+1 x T) double or (1,T) shCoefficients  coefficient stacks or object array
         %   Outputs
         %     obj        (1 x 1) shSeries   epoch-sorted monthly stack with sigmas and history
+        %
+        %   Options
+        %     GM (3.986004415e14)  see arguments block
+        %     R (6378136.3)  see arguments block
+        %     ProductType ("unknown")  see arguments block
+        %     Names (string.empty(0,1))  display labels, one per solution/series
+        %     SigmaCs ([])  see arguments block
+        %     SigmaSs ([])  see arguments block
+        %     History (string.empty(0,1))  see arguments block
+        %
+        %   Outputs
+        %     obj  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             in
             opts.Ss double = []
@@ -162,6 +178,9 @@ methods
         %AT Extract epoch k as an shCoefficients.
         %   Outputs
         %     g          (1 x 1) shCoefficients   month k with epoch and sigmas
+        %
+        %   Outputs
+        %     g  (1,1) shCoefficients  the k-th epoch as a standalone field
         arguments
             obj
             k (1,1) double {mustBeInteger, mustBePositive}
@@ -186,6 +205,9 @@ methods
         %   its sigmas, when present, are the standard error of the mean.
         %   Outputs
         %     g          (1 x 1) shCoefficients   temporal mean field (omits NaN months)
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  epoch-mean field (sigmas RSS/T when present)
         arguments
             obj
             opts.Omitnan (1,1) logical = true
@@ -204,8 +226,8 @@ methods
 
     function [clim, resid] = climatology(obj, opts)
         %CLIMATOLOGY Bias/trend/annual/semi-annual (+extra periods) fit.
-        %   [CLIM, RESID] = ts.climatology(Robust=false, T0=mean(epochs),
-        %       Periods=[], Weights=[])
+        %   [CLIM, RESID] = ts.climatology(Robust=false, T0 (NaN)=mean(epochs),
+        %       Periods (double.empty(1,0))=[], Weights ([])=[])
         %   CLIM is an shClimatology; RESID the residual shSeries.
         %   Periods: extra periodic terms [years] - e.g. the GRACE tidal
         %   alias periods [161/365.25, 3.66, 7.48] (S2, K2, K1); without
@@ -219,6 +241,9 @@ methods
         %   Outputs
         %     clim       (1 x 1) shClimatology   fitted bias/trend/annual/semiannual (+Periods=) with coefficient sigmas
         %     resid      (1 x 1) shSeries   residual series about the fit
+        %
+        %   Options
+        %     ARCorrect (false)  see arguments block
         arguments
             obj
             opts.Robust (1,1) logical = false
@@ -263,8 +288,8 @@ methods
 
     function out = trendBreaks(obj, opts)
         %TRENDBREAKS Piecewise-linear trends with break significance.
-        %   OUT = ts.trendBreaks(Breaks=[2016.0], Periods=[], T0=,
-        %       ARCorrect=false) fits the standard climatology design
+        %   OUT = ts.trendBreaks(Breaks=[2016.0], Periods (double.empty(1,0))=[], T0 (NaN)=,
+        %       ARCorrect (false)=false) fits the standard climatology design
         %   PLUS hinge terms max(0, t - tb) per break epoch (continuous
         %   piecewise-linear trend) to every coefficient, and tests the
         %   break's significance with an F-test against the no-break
@@ -279,6 +304,10 @@ methods
         %   pValue, breaks, t0.
         %   Outputs
         %     out        struct: trends per segment (shCoefficients), F/p per break, segment epochs
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             opts.Breaks (1,:) double
@@ -330,8 +359,16 @@ methods
     function out = fan(obj, rDegKm, rOrdKm)
         %FAN Han fan filter on every epoch (degree x order Gaussian).
         %   OUT = ts.fan(RDEG, RORD)  - see shLowLevel.shFanFilter.
+        %
+        %   Inputs
+        %     rOrdKm  (1,1) double  fan filter order-direction radius [km]
+        %     rDegKm  (1,1) double  fan filter degree-direction radius [km]
         %   Outputs
         %     out        (1 x 1) shSeries   fan-filtered per month
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             rDegKm (1,1) double {mustBePositive}
@@ -362,6 +399,14 @@ methods
         %   selects the TN entry). All options pass through.
         %   Outputs
         %     out        (1 x 1) shSeries   C20/C30 replaced epoch-matched
+        %
+        %   Options
+        %     Tolerance (0.05)  see arguments block
+        %     ReplaceC30 ("auto")  see arguments block
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             tn
@@ -383,6 +428,13 @@ methods
         %   around shCoefficients.addDegree1 (v2.4.1).
         %   Outputs
         %     out        (1 x 1) shSeries   degree 1 completed epoch-matched
+        %
+        %   Options
+        %     Tolerance (0.05)  see arguments block
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             tn
@@ -398,7 +450,7 @@ methods
 
     function out = removeGIA(obj, gia, opts)
         %REMOVEGIA Subtract a glacial isostatic adjustment model.
-        %   OUT = ts.removeGIA(GIA, T0=mean(epochs)) subtracts the linear
+        %   OUT = ts.removeGIA(GIA, T0 (NaN)=mean(epochs)) subtracts the linear
         %   GIA signal  giaRate * (t - T0)  from every epoch. GIA is an
         %   shCoefficients object holding RATE coefficients [1/yr] - read
         %   your model (ICE-6G_D, Caron et al., ...) from its gfc file
@@ -411,6 +463,10 @@ methods
         %   smaller nmax is zero-padded with a note in history.
         %   Outputs
         %     out        (1 x 1) shSeries   GIA trend removed about the series mean epoch
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             gia (1,1) shCoefficients
@@ -444,6 +500,10 @@ methods
         %   invalidated (NaN) - the filter correlates coefficients.
         %   Outputs
         %     out        (1 x 1) shSeries   DDK-decorrelated per month
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             W
@@ -464,9 +524,16 @@ methods
         %   REP = ts.compare(TS2) or ts.compare({TS2, TS3, ...})
         %   delegates to shLowLevel.compareSeries with OBJ as the reference;
         %   all options pass through (Basin=, Names=, Plot=, ...).
+        %
+        %   Inputs
+        %     others  shSeries or cell of shSeries  series to compare; OBJ is the reference
         %   Outputs
         %     rep        (1 x 1) struct   shLowLevel.compareSeries report
         %     h          (1 x 1) graphics handle   figure (Plot = true)
+        %
+        %   Outputs
+        %     rep  (1,1) struct  shLowLevel.compareSeries report
+        %     h    (1,1) graphics handle  figure (Plot = true only)
         if ~iscell(others), others = {others}; end
         [rep, h] = shLowLevel.compareSeries([{obj}, others], varargin{:});
     end
@@ -479,6 +546,10 @@ methods
         %   AllowMissing=true, leave those epochs unchanged with a note).
         %   Outputs
         %     out        (1 x 1) shSeries   background model added back epoch-matched (e.g. GSM + GAD)
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             gax (1,1) shSeries
@@ -512,8 +583,15 @@ methods
     % ----------------------------------------------------------- arithmetic
     function out = minus(a, b)
         %MINUS Subtract a field (shCoefficients) or an epoch-matched series.
+        %
+        %   Inputs
+        %     b  (1,1) shSeries or shCoefficients  subtrahend (epoch-wise for series)
         %   Outputs
         %     out        (1 x 1) shSeries   per-month difference (series or single field)
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         if isa(b, 'shCoefficients')
             if a.nmax ~= b.nmax
                 error('shSeries:sizeMismatch', ...
@@ -545,6 +623,15 @@ methods
         %DESTRIPE Swenson & Wahr / P3M6, applied per epoch.
         %   Outputs
         %     out        (1 x 1) shSeries   destriped per month
+        %
+        %   Options
+        %     minOrder (6)  see arguments block
+        %     polyOrder (3)  see arguments block
+        %     windowLength ([])  see arguments block
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             opts.minOrder (1,1) double = 6
@@ -564,8 +651,15 @@ methods
 
     function out = gaussian(obj, radiusKm)
         %GAUSSIAN Jekeli smoothing per epoch (vectorized over the stack).
+        %
+        %   Inputs
+        %     radiusKm  (1,1) double  Gaussian filter half-response radius [km]
         %   Outputs
         %     out        (1 x 1) shSeries   Gaussian-smoothed per month
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             radiusKm (1,1) double {mustBePositive}
@@ -584,8 +678,15 @@ methods
 
     function out = truncate(obj, nmaxNew)
         %TRUNCATE Reduce the maximum degree of the whole series.
+        %
+        %   Inputs
+        %     nmaxNew  (1,1) double  new maximum degree (must not exceed the current nmax)
         %   Outputs
         %     out        (1 x 1) shSeries   truncated per month
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             nmaxNew (1,1) double {mustBeInteger, mustBeNonnegative}
@@ -616,6 +717,10 @@ methods
         %   Outputs  out  shSeries (subset; unchanged if nothing to drop)
         %   Outputs
         %     out        (1 x 1) shSeries   gap months removed
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         bad = false(1, obj.nEpochs);
         for k = 1:obj.nEpochs
             bad(k) = any(~isfinite(obj.Cs(:,:,k)), 'all') ...
@@ -639,6 +744,10 @@ methods
         %   Outputs  out    shSeries subset
         %   Outputs
         %     out        (1 x 1) shSeries   months selected by logical/index mask
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             which {mustBeVector}
@@ -671,24 +780,30 @@ methods
     % ---------------------------------------------------------- tvANS chain
     function [out, op, info] = filter(obj, method, opts)
         %FILTER Optimal time-variable filtering of the series.
-        %   [TSF, OP, INFO] = ts.filter("tvANS", Constraints=..., NoiseCov=...,
-        %   SignalMode="isotropic"|"inhomogeneous", NIterSignal=3,
-        %   Robust=false, MinDegree=2)
+        %   [TSF, OP, INFO] = ts.filter("tvANS", Constraints ([])=..., NoiseCov ([])=...,
+        %   SignalMode ("isotropic")="isotropic"|"inhomogeneous", NIterSignal (3)=3,
+        %   Robust (false)=false, MinDegree (2)=2)
         %   runs the tvANS chain (see shLowLevel.tvANSFilter): deterministic-model
         %   separation, empirical or supplied noise covariance, monthly VCE
         %   scaling, data-driven signal covariance, per-month anisotropic
         %   Wiener filter, optional hard constraints. OP is the stored
         %   linear operator - required for basinAverage(...,
         %   Deconvolve=true) and shLowLevel.resolutionMap.
-        %   v2.1: Blocks="auto"|"on"|"off" engages the block-diagonal
+        %   v2.1: Blocks ("auto")="auto"|"on"|"off" engages the block-diagonal
         %   fast path (isotropic + empirical N + no constraints; identical
         %   results, tractable to Lmax ~ 120). The filtered series carries
         %   per-coefficient posterior 1-sigma stacks in OUT.sigmaCs/Ss
         %   (from info.sigmaXfres; degrees below MinDegree are NaN).
+        %
+        %   Inputs
+        %     method  (1,1) string  "gaussian" | "fan" | "destripe" | "ddk" - dispatches to the matching filter
         %   Outputs
         %     out        (1 x 1) shSeries   tvANS-filtered series with sigmaCs/Ss posterior stacks (exact incl. constraints, v2.5)
         %     op         struct   stored linear operator (V/Ut/lam/s or blocks, model, detLeverage/detResVar) for deconvolution and resolution maps
         %     info       struct: sigmaXfres (P x T), sigmaNote, VCE diagnostics
+        %
+        %   Outputs
+        %     out  (1,1) shSeries  filtered series; history appended (immutable pattern)
         arguments
             obj
             method (1,1) string {mustBeMember(method, "tvANS")} %#ok<INUSA>
@@ -742,7 +857,7 @@ methods
         %   K x T, with B (P x K) basin kernels in shLowLevel.shIndex ordering
         %   (build from a grid mask via shLowLevel.synthesisMatrix:
         %   b = Y' * (w .* mask)).
-        %   [AVG, OUT] = ts.basinAverage(B, Deconvolve=true, Op=op) removes
+        %   [AVG, OUT] = ts.basinAverage(B, Deconvolve (false)=true, Op (struct())=op) removes
         %   filter attenuation and inter-basin leakage exactly using the
         %   stored operator from ts.filter (see shLowLevel.basinDeconvolve).
         %   OUT.sigma (K x T) is the 1-sigma noise uncertainty of AVG
@@ -750,6 +865,9 @@ methods
         %   Outputs
         %     avg        (K x T) double   basin averages (deconvolved when Deconvolve=true)
         %     out        struct: sigma (K x T), c, attn, condA (deconvolution path)
+        %
+        %   Options
+        %     Ridge (0)  see arguments block
         arguments
             obj
             B double
@@ -794,6 +912,13 @@ methods (Static)
         %   TS = shSeries.read("GSM-2_*.gfc") or shSeries.read(fileList).
         %   Outputs
         %     obj        (1 x 1) shSeries   wildcard-read, epoch-sorted stack
+        %
+        %   Options
+        %     Truncate (NaN)  see arguments block
+        %
+        %   Outputs
+        %     obj  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             files
             opts.Truncate (1,1) double = NaN
@@ -821,12 +946,16 @@ methods (Static)
     function obj = fromFolder(folder, opts)
         %FROMFOLDER Read every matching gfc file in a folder as a series.
         %   TS = shSeries.fromFolder("itsg_series")
-        %   TS = shSeries.fromFolder(dest, Pattern="*n96*.gfc*", Truncate=60)
+        %   TS = shSeries.fromFolder(dest, Pattern="*n96*.gfc*", Truncate (NaN)=60)
         %   Convenience wrapper around shSeries.read (sorted by epoch);
         %   pairs with shLowLevel.fetchITSG, which downloads ITSG monthly
         %   solutions into tests/test_data/itsg_series on demand.
         %   Outputs
         %     obj        (1 x 1) shSeries   all gfc(.gz) files of a folder, epoch-sorted
+        %
+        %   Outputs
+        %     obj  (1,1) shSeries  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             folder (1,1) string
             opts.Pattern (1,1) string = "*.gfc*"

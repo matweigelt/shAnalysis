@@ -9,7 +9,7 @@ function results = runAllTests(opts)
 %                               exact-zero symmetry points, see comment there)
 %     tests/testPerformance.m   benchmarks incl. Legendre-cache assertion
 %
-%   RESULTS = RUNALLTESTS(SkipPerformance=true) omits the (slow)
+%   RESULTS = RUNALLTESTS(SkipPerformance (false)=true) omits the (slow)
 %   performance suite. For statistical benchmark timing use
 %   runperf('testPerformance') directly.
 %
@@ -21,7 +21,8 @@ function results = runAllTests(opts)
 %     opts.SkipPerformance (1,1) logical, default false
 %     opts.LogFile         text, default fullfile(tests,'runAllTests_results.txt')
 %   Outputs
-%     results  matlab.unittest.TestResult row vector, all suites combined
+%     results  (1,N) matlab.unittest.TestResult  full result array
+%              (pass/fail/duration per test; log written to LogFile)
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

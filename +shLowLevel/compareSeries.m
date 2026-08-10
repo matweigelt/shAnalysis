@@ -3,14 +3,14 @@ function [rep, h] = compareSeries(tsList, opts)
 %
 %   REP = shLowLevel.compareSeries({TS1, TS2, ...}) compares N >= 2 shSeries
 %   against the FIRST (the reference) on a COMMON BASIS: epochs are
-%   matched to the reference within MatchTolerance (unmatched epochs
+%   matched to the reference within MatchTolerance (0.02) (unmatched epochs
 %   are dropped and reported - never interpolated across gaps), all
 %   series are truncated to the smallest nmax, and GM/R are unified.
 %   Per solution k >= 2 the standard temporal metric set is computed on
-%   a scalar comparison series y_k(t) - a basin average when Basin= is
+%   a scalar comparison series y_k(t) - a basin average when Basin ([])= is
 %   given (recommended for hydrology; below the filter resolution,
 %   pointwise differences are leakage artefacts), otherwise the
-%   area-weighted mean of the synthesized quantity over Mask:
+%   area-weighted mean of the synthesized quantity over Mask ([]):
 %     - Nash-Sutcliffe efficiency (skill; punishes bias and amplitude)
 %     - correlation with AR(1)-corrected significance (shLowLevel.effectiveCorr)
 %     - trend difference +- combined sigma and significance z (Kendall
@@ -23,12 +23,15 @@ function [rep, h] = compareSeries(tsList, opts)
 %   spectrum. With N >= 3, the generalized three-cornered hat assigns
 %   an individual noise level to every solution - the question pairwise
 %   metrics cannot answer.
-%   [REP, H] = shLowLevel.compareSeries(..., Plot = true) adds a 4-panel
+%   [REP, H] = shLowLevel.compareSeries(..., Plot (false) = true) adds a 4-panel
 %   figure: comparison series, Taylor diagram vs the reference,
 %   trend-difference spectra, and |y_k - y_ref| over time.
 %
+%
+%   Inputs
+%     tsList  (1,N) cell of shSeries  the series to compare; the FIRST is the reference
 %   Options
-%     Names ([])            string array, one per series
+%     Names (strings(1, 0)) ([])            string array, one per series
 %     MatchTolerance (0.02) epoch matching tolerance [yr]
 %     Basin ([]), Idx ([])  P x 1 basin vector + shLowLevel.shIndex struct:
 %                           y = Basin' * coefficient vector per epoch

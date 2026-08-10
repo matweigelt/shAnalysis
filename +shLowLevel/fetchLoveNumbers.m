@@ -21,7 +21,7 @@ function [files, info] = fetchLoveNumbers(names, opts)
 %
 %   Options
 %     Dest ("")            target folder; default <dataFolder>/loveNumbers
-%     BaseURL (GROOPS/TU Graz loading folder)  or a local mirror folder
+%     BaseURL ("https://ftp.tugraz.at/pub/ITSG/groops/data/loading") (GROOPS/TU Graz loading folder)  or a local mirror folder
 %     Timeout (30), Proxy (""), Update (false), Quiet (false)
 %
 %   Outputs

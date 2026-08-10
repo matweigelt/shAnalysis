@@ -16,13 +16,9 @@ function tn = readTN14(filename)
 %
 %   Inputs
 %     filename  char/string
-%   Outputs (struct TN), K = number of data lines
-%     epoch      (K,1) double   mid-epoch, decimal years
-%     C20        (K,1) double
-%     sigmaC20   (K,1) double
-%     C30        (K,1) double   NaN where not provided
-%     sigmaC30   (K,1) double   NaN where not provided
-%     epochStart, epochStop (K,1) double
+%   Outputs
+%     tn  (1,1) struct  fields: t (T x 1 double, decimal years),
+%         C20/C30 (T x 1 double), sigmaC20/sigmaC30 (T x 1 double)
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Outputs

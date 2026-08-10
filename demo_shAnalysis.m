@@ -5,9 +5,9 @@ function reg = demo_shAnalysis(cases, opts)
 %   demo_shAnalysis("all")          runs every case
 %   demo_shAnalysis("list")        prints the case table, returns registry
 %   demo_shAnalysis(["D04","D15"]) runs selected cases
-%   demo_shAnalysis(..., Visible=false)  hidden figures (CI/smoke tests)
-%   demo_shAnalysis(..., OutDir=tempdir) target for D16 file exports
-%   demo_shAnalysis(..., StopOnError=true)  rethrow instead of the
+%   demo_shAnalysis(..., Visible (true)=false)  hidden figures (CI/smoke tests)
+%   demo_shAnalysis(..., OutDir (string(tempdir))=tempdir) target for D16 file exports
+%   demo_shAnalysis(..., StopOnError (false)=true)  rethrow instead of the
 %       default fail-and-continue (each case runs in try/catch; a
 %       summary lists ok/failed cases at the end)
 %

@@ -30,6 +30,9 @@ function h = plotSHSpectrum(specs, varargin)
 %
 %   Claude (Sonnet 4.6), 2026-07-11; merged into +shLowLevel: Claude (Fable 5),
 %   2026-08-07 (Kaula + crossover overlays v2.4).
+%
+%   Inputs
+%     specs  struct or struct array  spectrum struct(s) from shLowLevel.shDegreeRMS (overlaid when several)
 %   Outputs
 %     h          (1 x 1) graphics handle   log-log spectrum axes
 %

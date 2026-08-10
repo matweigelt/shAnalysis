@@ -1,14 +1,13 @@
 function [sig, latDeg, lonDeg] = errorMap(M, idx, latDeg, lonDeg, opts)
 %ERRORMAP Analytic formal-error maps from a full coefficient covariance.
 %
-%   [SIG, LAT, LON] = shLowLevel.errorMap(M, IDX, LAT, LON, quantity="ewh",
-%       kn=kn) computes the pointwise 1-sigma of a synthesized field
+%   [SIG, LAT, LON] = shLowLevel.errorMap(M, IDX, LAT, LON, quantity ("geoid")="ewh",
+%       kn ([])=kn) computes the pointwise 1-sigma of a synthesized field
 %   from a full P x P covariance (e.g. shLowLevel.readSINEX(...,
-%   Output="covariance", Index=IDX)):
-%       sigma^2(lat,lon) = a' M a,   a = kernel- and Y-weighted row.
-%   Exact and fast via Cholesky: sigma^2 = ||L' a||^2 with M = L L',
-%   assembled per latitude for all longitudes at once - the analytic
-%   counterpart (and cross-check) of shLowLevel.mcPropagate for maps.
+%   Outputs
+%     sig     (nlat x nlon) double  1-sigma of the synthesized quantity
+%     latDeg  (1, nlat) double  latitude grid used [deg]
+%     lonDeg  (1, nlon) double  longitude grid used [deg]
 %
 %   Inputs
 %     M       (P,P) double   covariance in IDX ordering (symmetric PSD)
@@ -16,7 +15,7 @@ function [sig, latDeg, lonDeg] = errorMap(M, idx, latDeg, lonDeg, opts)
 %                            matching M)
 %     latDeg  (1,nlat), lonDeg (1,nlon) double [deg] geocentric
 %   Options
-%     quantity ("geoid"), kn, hn, GM (3.986004415e14), R (6378136.3),
+%     quantity ("geoid"), kn, hn ([]), GM (3.986004415e14), R (6378136.3),
 %     Height (0)  - as in shLowLevel.kernelFactors
 %   Outputs
 %     sig  (nlat,nlon) double  1-sigma of the field [unit of quantity]
