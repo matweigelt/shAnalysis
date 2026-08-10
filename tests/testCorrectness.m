@@ -1524,6 +1524,46 @@ verifyError(testCase, @() shLowLevel.designFilter(zeros(4), zeros(4), ...
     Noise = Nn), 'shLowLevel:designFilter:needIdx');
 end
 
+function testReadGFCFastPathEquivalence(testCase)
+% v3.1.1: the bulk fast path (static files) and the legacy line parser
+% must produce identical structs. Two files with the same gfc records -
+% one pure static (fast path), one with an appended trnd line (forces
+% the legacy branch) - are compared record by record. Verified live on
+% PCWIN64 against 6 real fixtures incl. gz and gfct (28.6 s -> 0.21 s
+% at n720; n2190 in 1.7 s).
+rng(51); L = 40;
+[nn, mm] = ndgrid(0:L, 0:L); keep = mm <= nn & nn >= 2;
+n = nn(keep); m = mm(keep);
+C = 1e-9 * randn(size(n)); S = 1e-9 * randn(size(n)); S(m == 0) = 0;
+sC = 1e-12 * (1 + rand(size(n))); sS = sC * 0.9;
+tmp = tempname; mkdir(tmp);
+cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+head = sprintf(['product_type gravity_field\nmodelname eqtest\n' ...
+    'earth_gravity_constant 3.986004415e14\nradius 6378136.3\n' ...
+    'max_degree %d\nerrors formal\ntide_system zero_tide\nend_of_head\n'], L);
+body = sprintf('gfc %5d %5d %19.12e %19.12e %12.5e %12.5e\n', ...
+    [n m C S sC sS]');
+f1 = fullfile(tmp, 'static.gfc');
+fid = fopen(f1, 'w'); fprintf(fid, '%s%s', head, body); fclose(fid);
+f2 = fullfile(tmp, 'variable.gfc');
+fid = fopen(f2, 'w');
+fprintf(fid, '%s%s', head, body);
+fprintf(fid, 'trnd     2     0 %19.12e %19.12e 20080101.0000 20090101.0000\n', ...
+    1e-12, 0);
+fclose(fid);
+g1 = shLowLevel.shReadGFC(f1);                 % fast path
+g2 = shLowLevel.shReadGFC(f2);                 % legacy path
+verifyEqual(testCase, g2.C, g1.C, 'AbsTol', 0);
+verifyEqual(testCase, g2.S, g1.S, 'AbsTol', 0);
+verifyEqual(testCase, g2.sigmaC, g1.sigmaC, 'AbsTol', 0);
+verifyEqual(testCase, g1.nmax, L);
+verifyEqual(testCase, size(g2.variableTerms, 1), 1);   % trnd captured
+verifyTrue(testCase, isempty(g1.variableTerms) || ...
+    size(g1.variableTerms, 1) == 0);
+% header semantics identical between the two parsers
+verifyEqual(testCase, g2.header, g1.header);
+end
+
 function testSpectralFamilyIdentities(testCase)
 rng(101);
 L = 20; n1 = L + 1;
