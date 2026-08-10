@@ -148,7 +148,29 @@ methods (Test)
         end
     end
 
-    function benchAnalysisRings(tc)
+    function benchReadGFC(tc)
+% v3.1.1 fast path: n300 static file (~45k lines) must read in seconds,
+% not tens of seconds (pre-fix: ~5 s at this size, ~30 s at n720)
+L = 300;
+[nn, mm] = ndgrid(0:L, 0:L); keep = mm <= nn;
+n = nn(keep); m = mm(keep);
+tmp = tempname; mkdir(tmp);
+cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+f = fullfile(tmp, 'bench.gfc');
+fid = fopen(f, 'w');
+fprintf(fid, ['product_type gravity_field\nmodelname bench\n' ...
+    'earth_gravity_constant 3.986004415e14\nradius 6378136.3\n' ...
+    'max_degree %d\nerrors no\ntide_system zero_tide\nend_of_head\n'], L);
+fprintf(fid, 'gfc %5d %5d %19.12e %19.12e\n', ...
+    [n m 1e-9*randn(size(n)) 1e-9*randn(size(n))]');
+fclose(fid);
+t = tic; g = shLowLevel.shReadGFC(f); dt = toc(t);
+fprintf('  benchReadGFC: n%d (%d records) in %.3f s\n', L, numel(n), dt);
+verifyEqual(tc, g.nmax, L);
+verifyLessThan(tc, dt, 5);                     % generous CI headroom
+end
+
+function benchAnalysisRings(tc)
         rng(9);
         L = 60;
         C = tril(randn(L+1)) * 1e-9; S = tril(randn(L+1), -1) * 1e-9;

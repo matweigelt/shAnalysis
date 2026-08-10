@@ -5,6 +5,14 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 
 ## [3.1.0] - Unreleased
 
+### Changed
+- `shReadGFC` is ~100x faster on large static files: bulk parsing
+  replaces the per-line fgetl/str2double loop (28.6 s -> 0.21 s at
+  n720 measured on PCWIN64; EGM2008-class n2190 in 1.7 s instead of
+  minutes). Variable-term files (gfct/trnd/dot/acos/asin) keep the
+  proven line parser; both paths verified struct-identical on all
+  fixtures and guarded by an equivalence test.
+
 ### Added
 - `shLowLevel.standardChain`: the canonical GRACE post-processing chain
   (read folder -> TN-14 C20/C30 -> degree-1 -> optional GIA trend ->
