@@ -158,10 +158,13 @@ if fastPath                                     %#ok<ALIGN>
                     t0 = shLowLevel.icgemDate2Year(V(:, 7));
                     t1 = shLowLevel.icgemDate2Year(V(:, 8));
                 else
+                    % 2.0 real-world layout: ... t0 t1 period (verified
+                    % against CNES_GRGS.RL05MF; the pre-v3.1.1 line
+                    % parser assumed period-first and mis-parsed these)
                     if nc < 9, okBulk = false; continue, end
-                    per = V(:, 7);
-                    t0 = shLowLevel.icgemDate2Year(V(:, 8));
-                    t1 = shLowLevel.icgemDate2Year(V(:, 9));
+                    t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                    t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                    per = V(:, 9);
                 end
             else
                 % 1.0 disambiguation (documented in the line parser):
@@ -257,14 +260,16 @@ while ischar(line)
                 t0 = NaN; t1 = NaN; period = NaN;
                 if isV2
                     % 2.0: trnd -> ... sigC sigS t0 t1
-                    %      acos/asin -> ... sigC sigS period[yr] t0 t1
+                    %      acos/asin -> ... sigC sigS t0 t1 period[yr]
                     if strcmp(key, 'trnd')
                         t0 = shLowLevel.icgemDate2Year(str2double(parts{8}));
                         t1 = shLowLevel.icgemDate2Year(str2double(parts{9}));
                     else
-                        period = str2double(parts{8});
-                        t0 = shLowLevel.icgemDate2Year(str2double(parts{9}));
-                        t1 = shLowLevel.icgemDate2Year(str2double(parts{10}));
+                        % 2.0 real-world layout (GRGS RL05, spec):
+                        % ... sigC sigS t0 t1 period
+                        t0 = shLowLevel.icgemDate2Year(str2double(parts{8}));
+                        t1 = shLowLevel.icgemDate2Year(str2double(parts{9}));
+                        period = str2double(parts{10});
                     end
                 else
                     % 1.0 conventions vary; disambiguation (documented):
