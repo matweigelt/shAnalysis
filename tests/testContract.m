@@ -470,8 +470,12 @@ reg = demo_shAnalysis("list");
 verifyEqual(testCase, numel(reg), 16);
 verifyEqual(testCase, numel(unique([reg.id])), 16);
 verifyTrue(testCase, all(arrayfun(@(r) isa(r.run, 'function_handle'), reg)));
-% two cheap cases run headless without touching the screen
-demo_shAnalysis(["D01", "D13"], Visible = false);
+% two cheap cases run headless without touching the screen; a failing
+% demo raises demo:casesFailed, which is a hard test failure here
+% (D01 failing via an unqualified compat-era plot call slipped through
+% this smoke test once - never again)
+verifyWarningFree(testCase, ...
+    @() demo_shAnalysis(["D01", "D13"], Visible = false));
 close all hidden;
 verifyError(testCase, @() demo_shAnalysis("D99"), 'demo:unknownCase');
 % fail-and-continue contract: D16 into an impossible target (a FILE
