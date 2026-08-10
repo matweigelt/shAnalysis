@@ -303,7 +303,7 @@ end
 if haveDDK
     gK = g.applyDDK(W);
     newfig(vis, 'D04 DDK3 (real Wbd file)');
-    plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+    shx.plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
     title('DDK3 - raw');
 end
 end
