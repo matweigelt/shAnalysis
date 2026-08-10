@@ -1,9 +1,5 @@
 # shAnalysis v2.5
 
-
-![CI](https://github.com/<username>/shAnalysis/actions/workflows/ci.yml/badge.svg)
-
-
 Class-based MATLAB toolbox for spherical harmonic (Stokes coefficient)
 analysis of GRACE/GRACE-FO, GOCE, and static gravity field models.
 Merges the v1 function toolbox (reading, spectra, destriping, Gaussian

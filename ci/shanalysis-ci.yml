@@ -25,8 +25,18 @@ name: shAnalysis CI
 
 on:
   push:
+    paths:
+      - '3rdParty/shAnalysis/**'
+      - '.github/workflows/shanalysis-ci.yml'
   pull_request:
+    paths:
+      - '3rdParty/shAnalysis/**'
   workflow_dispatch: {}
+
+env:
+  WORKDIR: 3rdParty/shAnalysis
+  # Private repositories only - remove for public repos:
+  MLM_LICENSE_TOKEN: ${{ secrets.MATLAB_BATCH_TOKEN }}
 
 jobs:
   test:
@@ -35,8 +45,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
+        # add windows-latest to also mirror the PCWIN64 environment:
+        # os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    cache: true
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -50,14 +61,8 @@ jobs:
         uses: matlab-actions/run-command@v3
         with:
           command: >
-            fprintf('pwd: %s\n', pwd);
-            assert(isfolder('+shx'), 'repo layout: +shx missing in %s', pwd);
-            assert(isfolder('tests'), 'repo layout: tests missing in %s', pwd);
-            d = dir(fullfile('+shx', '*.m'));
-            fprintf('files in +shx: %d (expect 78)\n', numel(d));
+            cd(getenv('WORKDIR'));
             addpath(pwd);
-            fprintf('shx.legendreCached resolves to: %s\n', ...
-                which('shx.legendreCached'));
             results = runtests('tests', IncludeSubfolders = false);
             disp(table(results));
             assertSuccess(results);
@@ -67,5 +72,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
-          path: tests/perf_log.csv
+          path: |
+            ${{ env.WORKDIR }}/tests/perf_log.csv
           if-no-files-found: ignore
