@@ -20,8 +20,6 @@ function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 tc.TestData.root = root;
 tc.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
@@ -200,22 +198,6 @@ verifySize(tc, m.C, size(ts.Cs(:, :, 1)));
 end
 
 % ------------------------------------------------- compat wrapper contract
-function testCompatWrappersDelegate(tc)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(tc, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-g = randomField(12, 2020);
-[c1, s1] = shDestripe(g.C, g.S, 'minOrder', 4);        % compat
-[c2, s2] = shx.shDestripe(g.C, g.S, 'minOrder', 4);    % internal
-verifyEqual(tc, c1, c2, AbsTol = 0); verifyEqual(tc, s1, s2, AbsTol = 0);
-Wn1 = shGaussianWeights(20, 300); Wn2 = shx.shGaussianWeights(20, 300);
-verifyEqual(tc, Wn1, Wn2, AbsTol = 0);
-P1 = legendreALF(10, [-0.5, 0, 0.5]); P2 = shx.legendreALF(10, [-0.5, 0, 0.5]);
-verifyEqual(tc, P1, P2, AbsTol = 0);
-end
-
 % ----------------------------------------------------------------- helper
 function f = writeSyntheticTN14(tc)
 % Minimal TN-14-like table: 2 months; second month has no C30 (NaN).

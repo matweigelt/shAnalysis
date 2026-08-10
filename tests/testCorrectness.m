@@ -10,8 +10,6 @@ function setupOnce(testCase)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 testCase.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
 end
@@ -72,60 +70,7 @@ verifyEqual(testCase, out.C, gsm.C + gad.C, 'AbsTol', 0);
 end
 
 % -------------------------------------------------- filtering vs v1 cores
-function testDestripeMatchesCompat(testCase)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(testCase, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-rng(3); L = 40;
-g = randomField(L);
-g2 = g.destripe(minOrder = 5, polyOrder = 2);
-[Cf, Sf] = shDestripe(g.C, g.S, 'minOrder', 5, 'polyOrder', 2);
-verifyEqual(testCase, g2.C, Cf, 'AbsTol', 0);
-verifyEqual(testCase, g2.S, Sf, 'AbsTol', 0);
-g3 = g.destripe(minOrder = 5, polyOrder = 3, windowLength = 7);
-[Cw, Sw] = shDestripe(g.C, g.S, 'minOrder', 5, 'polyOrder', 3, 'windowLength', 7);
-verifyEqual(testCase, g3.C, Cw, 'AbsTol', 0);
-end
-
-function testGaussianMatchesCompatAndSigmas(testCase)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(testCase, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-rng(4); L = 30;
-g = randomField(L);
-g2 = g.gaussian(300);
-[Cf, Sf, Wn] = shGaussianFilter(g.C, g.S, 300);
-verifyEqual(testCase, g2.C, Cf, 'AbsTol', 0);
-verifyEqual(testCase, g2.S, Sf, 'AbsTol', 0);
-verifyEqual(testCase, g2.sigmaC, g.sigmaC .* Wn(:), 'RelTol', 1e-14);
-end
-
 % -------------------------------------------------------------- synthesis
-function testSynthesisCacheAndCompat(testCase)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(testCase, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-rng(5); L = 20;
-g = randomField(L);
-lat = -88:4:88; lon = 0:6:354;
-shx.legendreCached('clear');
-[G1, la1, lo1] = g.synthesis(lat, lon, UseCache = false);
-G2 = g.synthesis(lat, lon, UseCache = true);      % cold cache
-G3 = g.synthesis(lat, lon, UseCache = true);      % warm cache
-Gref = shSynthesis(g.C, g.S, g.GM, g.R, lat, lon);
-verifyEqual(testCase, G1, Gref, 'AbsTol', 0);
-verifyEqual(testCase, G2, Gref, 'RelTol', 1e-14);
-verifyEqual(testCase, G3, Gref, 'RelTol', 1e-14);
-verifyEqual(testCase, numel(la1), numel(lat));
-verifyEqual(testCase, numel(lo1), numel(lon));
-end
-
 function testQuadratureIdentity(testCase)
 idx = shx.shIndex(15);
 [Y, w] = shx.synthesisMatrix(idx);
@@ -287,21 +232,6 @@ g2 = shCoefficients.read(f);
 verifyEqual(testCase, g2.C, g.C, 'RelTol', 1e-13, 'AbsTol', 1e-18);
 verifyEqual(testCase, g2.S, g.S, 'RelTol', 1e-13, 'AbsTol', 1e-18);
 verifyEqual(testCase, g2.GM, g.GM, 'RelTol', 1e-10);
-end
-
-function testEvalAtMatchesCompat(testCase)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(testCase, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-f = fullfile(testCase.TestData.dataDir, 'test_variable.gfct');
-g = shCoefficients.read(f);
-ge = g.evalAt(2010.5);
-model = shReadGFC(f);
-[Ct, St] = shEvalGFCT(model, 2010.5);
-verifyEqual(testCase, ge.C, Ct, 'AbsTol', 0);
-verifyEqual(testCase, ge.S, St, 'AbsTol', 0);
 end
 
 function testVecRoundtrip(testCase)
@@ -1517,6 +1447,40 @@ g18 = shx.poleTideConvert(g);
 verifyNotEqual(testCase, g18.C(3, 2), g.C(3, 2));
 verifyEqual(testCase, g18.C(4:end, :), g.C(4:end, :), 'AbsTol', 0);
 verifyGreaterThan(testCase, numel(g18.history), numel(g.history));
+end
+
+function testSynthesisPoints(testCase)
+% v3.0.0 pointwise synthesis: pinned against the Python reference
+% (explicit deterministic field), radial identity dg = -dT/dr, and
+% MinDegree behaviour
+GM = 3.986004415e14; R = 6378136.3;
+C = zeros(5); S = zeros(5);
+C(3,1) = 1.5e-7; C(3,2) = -2.0e-8; C(3,3) = 3.0e-8;
+C(4,2) = 7.0e-9; C(5,5) = -4.0e-9;
+S(3,2) = 1.0e-8; S(3,3) = -6.0e-9; S(4,4) = 2.5e-9; S(5,2) = -1.2e-9;
+la = [37.5; -12.0]; lo = [22.0; 250.0]; r = [R; R + 450e3];
+tp = shx.synthesisPoints(C, S, GM, R, la, lo, r);
+verifyEqual(testCase, tp, [1.36712842337793; -9.60411712503133], ...
+    'RelTol', 1e-12);
+dg = shx.synthesisPoints(C, S, GM, R, la, lo, r, Quantity = "disturbance");
+verifyEqual(testCase, dg, [7.37824053551527e-07; -4.18114227787271e-06], ...
+    'RelTol', 1e-12);
+da = shx.synthesisPoints(C, S, GM, R, la, lo, r, Quantity = "anomaly");
+verifyEqual(testCase, da, [3.09131921845929e-07; -1.36804168846844e-06], ...
+    'RelTol', 1e-12);
+% radial identity at altitude: dg == -dT/dr (central differences)
+la0 = 10; lo0 = 100; r0 = R + 200e3; d = 0.5;
+Tm = shx.synthesisPoints(C, S, GM, R, la0, lo0, r0 - d);
+Tp = shx.synthesisPoints(C, S, GM, R, la0, lo0, r0 + d);
+an = shx.synthesisPoints(C, S, GM, R, la0, lo0, r0, Quantity = "disturbance");
+verifyEqual(testCase, -(Tp - Tm) / (2 * d), an, 'RelTol', 1e-8);
+% MinDegree = 0 includes the central term GM/r
+t0 = shx.synthesisPoints(0*C, 0*S, GM, R, 0, 0, R, MinDegree = 0);
+verifyEqual(testCase, t0, 0);                 % zero field, all degrees
+tC = shx.synthesisPoints(C, S, GM, R, la, lo, r, MinDegree = 3);
+verifyNotEqual(testCase, tC(1), tp(1));
+verifyError(testCase, @() shx.synthesisPoints(C, S, GM, R, la, lo(1), r), ...
+    'shx:synthesisPoints:sizeMismatch');
 end
 
 function testSpectralFamilyIdentities(testCase)

@@ -30,6 +30,40 @@ arguments
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
 end
+% ---- v3.0.0: numeric idx vector (rows of shx.listICGEM), "all", or a
+% list of names fetch multiple models in one call
+if isnumeric(model) || ...
+        (isstring(model) && (numel(model) > 1 || model == "all"))
+    if isempty(opts.List), T = shx.listICGEM(); else, T = opts.List; end
+    if isnumeric(model)
+        sel = model(:)';
+        assert(all(sel >= 1 & sel <= height(T) & sel == round(sel)), ...
+            'shx:fetchICGEM:badIdx', ...
+            'Numeric selection must be catalogue rows 1..%d (see shx.listICGEM).', ...
+            height(T));
+        rows = T(sel, :);
+    elseif isscalar(model) && model == "all"
+        rows = T;
+    else
+        rows = T(1, []); %#ok<NASGU>
+        idxs = zeros(1, numel(model));
+        for k = 1:numel(model)
+            h = find(strcmpi(T.name, model(k)), 1);
+            assert(~isempty(h), 'shx:fetchICGEM:notFound', ...
+                'Model "%s" not found (see shx.listICGEM).', model(k));
+            idxs(k) = h;
+        end
+        rows = T(idxs, :);
+    end
+    file = strings(1, height(rows)); infos = cell(1, height(rows));
+    for k = 1:height(rows)
+        [file(k), infos{k}] = shx.fetchICGEM(rows(k, :), Dest = opts.Dest, ...
+            Timeout = opts.Timeout, Proxy = opts.Proxy, ...
+            Update = opts.Update, List = T);
+    end
+    info = [infos{:}];
+    return
+end
 if istable(model)
     assert(height(model) == 1 && ismember('url', model.Properties.VariableNames), ...
         'shx:fetchICGEM:badRow', 'Table input must be ONE listICGEM row.');

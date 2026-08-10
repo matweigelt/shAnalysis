@@ -8,6 +8,3 @@ tests/perf_log.csv
 Thumbs.db
 Desktop.ini
 
-# private, unpublished (v1 reference implementations + legacy suite)
-compat/
-tests/legacy/

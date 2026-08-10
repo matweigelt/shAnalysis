@@ -19,4 +19,9 @@ tests/test_data/TN-14_C30_C20_SLR_GSFC.txt
 tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx
   Truncated head of an ITSG SINEX file (TU Graz), test fixture only.
 
+tests/test_data/loadLoveNumbers_Gegout97.txt
+  Load Love numbers (Gegout 1997 set) from the GROOPS data collection,
+  Graz University of Technology / GROOPS developers,
+  https://ftp.tugraz.at/pub/ITSG/groops/data/loading/. Test fixture only.
+
 The shAnalysis source code itself is MIT-licensed; see LICENSE.

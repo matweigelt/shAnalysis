@@ -5,7 +5,6 @@ function results = runAllTests(opts)
 %     tests/testCorrectness.m   numerics vs. golden/legacy/analytic values
 %     tests/testContract.m      error IDs, immutability, dimensions
 %     tests/testRobustness.m    edge cases, degenerate inputs, file I/O
-%     tests/legacy/test_shAnalysis.m   the v1 suite against compat/ (one
 %                               documented patch: kernel-ratio test masks
 %                               exact-zero symmetry points, see comment there)
 %     tests/testPerformance.m   benchmarks incl. Legendre-cache assertion
@@ -33,11 +32,7 @@ arguments
 end
 
 root = fileparts(mfilename('fullpath'));
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 addpath(root, fullfile(root, 'tests'));
-ldir = fullfile(root, 'tests', 'legacy');   % private, optional
-if isfolder(ldir), addpath(ldir); end
 
 logFile = char(opts.LogFile);
 if isempty(logFile)
@@ -52,9 +47,6 @@ fprintf('%s v%s test run - %s\n', v.Name, v.Version, char(datetime('now', ...
 fprintf('MATLAB %s on %s\n', version, computer);
 
 suites = {'testCorrectness', 'testContract', 'testRobustness'};
-if isfolder(ldir)                            % v1 suite needs compat/
-    suites{end+1} = 'test_shAnalysis';
-end
 if ~opts.SkipPerformance
     suites{end+1} = 'testPerformance';
 end

@@ -18,8 +18,6 @@ function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 tc.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
 end
@@ -1100,6 +1098,63 @@ verifyEqual(testCase, g.C(1, 1), 1);
 meta = shx.parseGraceFilename('ITSG-Grace2018_Kalman_n40_2008-04-15.gfc');
 verifyEqual(testCase, meta.epoch, 2008 + 105.5/366, 'AbsTol', 1e-9);
 verifyLessThan(testCase, meta.epochStop - meta.epochStart, 1.1/365);
+end
+
+function testFetchLoveNumbersMirror(tc)
+% v3.0.0: GROOPS Love-number fetch from a local mirror + parser contract
+d = tc.TestData.dataDir;
+src = fullfile(d, 'loadLoveNumbers_Gegout97.txt');
+assumeTrue(tc, isfile(src));
+mir = tempname; mkdir(mir); copyfile(src, mir);
+dst = tempname; mkdir(dst);
+c1 = onCleanup(@() rmdir(mir, 's')); c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+[f, inf] = shx.fetchLoveNumbers("loadLoveNumbers_Gegout97.txt", ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(f), 1);
+verifyEqual(tc, numel(inf.parsed), 1);
+kn = inf.parsed(1).kn;
+verifyEqual(tc, numel(kn), 1025);
+verifyEqual(tc, kn(1:2), [0; 0], 'AbsTol', 0);
+verifyEqual(tc, kn(3), -0.3054020195, 'AbsTol', 1e-10);   % degree 2
+verifyLessThan(tc, kn(3:end), 0);                          % all negative
+% second call skips (safe-swap idempotence)
+[~, i2] = shx.fetchLoveNumbers("loadLoveNumbers_Gegout97.txt", ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(i2.skipped), 1);
+verifyError(tc, @() shx.fetchLoveNumbers("nonsense.txt", BaseURL = mir), ...
+    'shx:fetchLoveNumbers:unknownName');
+end
+
+function testListITSGAndFetchAllMirror(tc)
+% v3.0.0: listITSG walks a local mirror tree; fetchITSG months="all" +
+% Catalog= selection operate on it offline
+mir = tempname;
+m96 = fullfile(mir, 'ITSG-Grace2018', 'monthly', 'monthly_n96');
+mkdir(m96); mkdir(fullfile(mir, 'ITSG-Grace2018', 'daily_kalman'));
+d = tc.TestData.dataDir;
+src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
+assumeTrue(tc, isfile(src));
+% two months, correct n96 naming for enumeration
+copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-04.gfc'));
+copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-05.gfc'));
+c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+T = shx.listITSG(BaseURL = mir);
+verifyEqual(tc, T.idx, (1:height(T))');
+verifyTrue(tc, any(T.release == "ITSG-Grace2018" & T.product == "monthly" ...
+    & T.nmax == 96));
+verifyTrue(tc, any(T.product == "daily"));
+dst = tempname; mkdir(dst);
+c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+[f, inf] = shx.fetchITSG("all", Release = "ITSG-Grace2018", Nmax = 96, ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(f), 2);
+verifyEqual(tc, numel(inf.fetched), 2);
+% Catalog selection: the monthly n96 row fetches the same two files
+ii = find(T.product == "monthly" & T.nmax == 96, 1);
+[f2, i2] = shx.fetchITSG(Catalog = ii, BaseURL = mir, Dest = dst, ...
+    Quiet = true);
+verifyEqual(tc, numel(f2), 2);
+verifyEqual(tc, numel(i2.skipped), 2);       % already present
 end
 
 function testICGEMListFixtureAndResolve(testCase)

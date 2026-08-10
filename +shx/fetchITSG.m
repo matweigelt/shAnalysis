@@ -51,6 +51,9 @@ arguments
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
+    opts.Release (1,1) string = ""
+    opts.BaseURL (1,1) string = "https://ftp.tugraz.at/pub/ITSG/GRACE"
+    opts.Catalog (1,:) double = []
 end
 daily = opts.Product == "daily";
 if isnan(opts.Nmax)
@@ -60,10 +63,68 @@ if daily
     assert(opts.Nmax == 40, 'shx:fetchITSG:badNmax', ...
         'Daily Kalman solutions are released at n40 only.');
 else
-    assert(any(opts.Nmax == [60, 96]), 'shx:fetchITSG:badNmax', ...
-        'Monthly solutions: Nmax must be 60 or 96.');
+    assert(any(opts.Nmax == [60, 96, 120]), 'shx:fetchITSG:badNmax', ...
+        'Monthly solutions: Nmax must be 60, 96, or 120.');
 end
-if isnumeric(months)
+% ---- Catalog= selection (rows of shx.listITSG) fetches folders fully
+if ~isempty(opts.Catalog)
+    T = shx.listITSG(BaseURL = opts.BaseURL, Timeout = opts.Timeout);
+    files = strings(1, 0); info = struct('fetched', strings(1, 0), ...
+        'updated', strings(1, 0), 'skipped', strings(1, 0), ...
+        'missing', strings(1, 0));
+    for ii = opts.Catalog(:)'
+        assert(ii >= 1 && ii <= height(T), 'shx:fetchITSG:badCatalog', ...
+            'Catalog index %g outside 1..%d (see shx.listITSG).', ii, height(T));
+        row = T(ii, :);
+        if row.product == "static"
+            warning('shx:fetchITSG:staticSkipped', ...
+                'Catalog %d is a static model folder; use shx.fetchICGEM.', ii);
+            continue
+        end
+        nmaxArg = row.nmax;
+        if row.product == "daily", nmaxArg = 40; end
+        [fk, ik] = shx.fetchITSG("all", Release = row.release, ...
+            Product = ternary(row.product == "daily", "daily", "monthly"), ...
+            Nmax = nmaxArg, Dest = opts.Dest, BaseURL = opts.BaseURL, ...
+            Timeout = opts.Timeout, Proxy = opts.Proxy, ...
+            Update = opts.Update, Quiet = opts.Quiet);
+        files = [files, fk]; %#ok<AGROW>
+        info.fetched = [info.fetched, ik.fetched];
+        info.updated = [info.updated, ik.updated];
+        info.skipped = [info.skipped, ik.skipped];
+        info.missing = [info.missing, ik.missing];
+    end
+    return
+end
+% ---- months = "all": enumerate every .gfc in the target folder(s)
+if (isstring(months) || ischar(months)) && string(months) == "all"
+    rels = opts.Release;
+    if strlength(rels) == 0
+        rels = ["ITSG-Grace2018", "ITSG-Grace_operational"];
+    end
+    names = strings(1, 0);
+    for rr = rels
+        if daily
+            error('shx:fetchITSG:allDaily', ...
+                'months = "all" with the daily product would fetch tens of GB; give explicit months/years.');
+        end
+        folder = sprintf("%s/%s/monthly/monthly_n%d", base, rr, opts.Nmax);
+        if localBase
+            dd = dir(fullfile(char(folder), '*.gfc'));
+            names = [names, string({dd.name})]; %#ok<AGROW>
+        else
+            html = webread(folder + "/", weboptions('Timeout', opts.Timeout));
+            tok = regexp(html, 'href="([^"]+\.gfc)"', 'tokens');
+            names = [names, string(cellfun(@(t) t{1}, tok, ...
+                'UniformOutput', false))]; %#ok<AGROW>
+        end
+    end
+    names = unique(names, 'stable');
+    assert(~isempty(names), 'shx:fetchITSG:emptyFolder', ...
+        'No .gfc files found (release/nmax combination present on server?).');
+    mm = extractBetween(names, "_n" + string(opts.Nmax) + "_", ".gfc");
+    mm = unique(mm(:)', 'stable');
+elseif isnumeric(months)
     mm = strings(1, 0);
     for y = months(:)'
         assert(y >= 2002 && y <= 2100, 'shx:fetchITSG:badMonth', ...
@@ -83,7 +144,8 @@ if strlength(dest) == 0
     dest = string(fullfile(shx.dataFolder(), sub));             % v2.4.1
 end
 if ~isfolder(dest), mkdir(dest); end
-base = "https://ftp.tugraz.at/pub/ITSG/GRACE";
+base = opts.BaseURL;
+localBase = isfolder(base);
 wo = weboptions('Timeout', opts.Timeout);
 files = strings(1, 0); fetched = files; skipped = files; missing = files;
 updated = files;
@@ -99,7 +161,9 @@ for m = mm
     y = str2double(extractBefore(m, 5));
     mo = str2double(extractAfter(m, 5));
     frac = y + (mo - 0.5) / 12;
-    if frac < 2017.5
+    if strlength(opts.Release) > 0
+        rel = opts.Release;                      % explicit: no mixing
+    elseif frac < 2017.5
         rel = "ITSG-Grace2018";
     else
         rel = "ITSG-Grace_operational";
@@ -129,7 +193,11 @@ for m = mm
         end
         tmpf = fp + ".part";
         try
-            webFetch(url, tmpf, opts.Timeout, opts.Proxy);
+            if localBase
+                copyfile(char(url), char(tmpf));
+            else
+                webFetch(url, tmpf, opts.Timeout, opts.Proxy);
+            end
             shx.shReadGFC(tmpf);                % verify BEFORE swap
             movefile(tmpf, fp, 'f');
             files(end+1) = string(fp); %#ok<AGROW>

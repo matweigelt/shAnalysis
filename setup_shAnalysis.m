@@ -76,6 +76,8 @@ arguments
     opts.Nmax (1,1) double {mustBeMember(opts.Nmax, [60, 96])} = 96
     opts.Docs (1,1) logical = false
     opts.DryRun (1,1) logical = false
+    opts.DataFolder (1,1) string = ""
+    opts.FetchITSG (1,1) string = "none"
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
@@ -121,6 +123,12 @@ summary = struct('root', root, 'pathAction', "planned", ...
     'dataFolder', "", 'plan', plan, 'fetched', strings(1, 0), ...
     'skipped', strings(1, 0), 'failed', strings(1, 0), 'ok', true);
 
+% ---- data folder override BEFORE any fetcher runs (v3.0.0): the
+% pre-v3 chicken-and-egg (dataFolder had to be set via a function that
+% is only on the path after setup) is gone
+if strlength(opts.DataFolder) > 0 && ~opts.DryRun
+    shx.dataFolder(char(opts.DataFolder));
+end
 if opts.DryRun
     % read-only dataFolder lookup (shx.dataFolder() would mkdir)
     if ispref('shAnalysis', 'dataFolder')
@@ -170,6 +178,21 @@ if level >= 2
     catch err
         summary.failed(end+1) = "fetchTN: " + err.message;
     end
+end
+% ---- optional bulk ITSG download (v3.0.0): FetchITSG = "all" pulls
+% every monthly solution (ITSG-Grace2018 + operational, Nmax = 96)
+if opts.FetchITSG == "all"
+    try
+        [~, iI] = shx.fetchITSG("all", Nmax = 96, Update = opts.Update, ...
+            Proxy = opts.Proxy, Quiet = opts.Quiet);
+        summary.fetched = [summary.fetched, iI.fetched, iI.updated];
+        summary.skipped = [summary.skipped, iI.skipped];
+    catch err
+        summary.failed(end+1) = "fetchITSG: " + err.message;
+    end
+elseif opts.FetchITSG ~= "none"
+    error('shAnalysis:setup:badFetchITSG', ...
+        'FetchITSG must be "none" or "all" (got "%s").', opts.FetchITSG);
 end
 if level >= 3
     try
