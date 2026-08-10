@@ -96,8 +96,13 @@ if fastPath                                     %#ok<ALIGN>
         error('shReadGFC:noData', ...
             'No gfc/gfct data records found in %s', filename);
     end
-    ncol = numel(sscanf(m1{1}, '%f'));
+    ncol = numel(sscanf(strrep(strrep(m1{1}, 'D', 'E'), 'd', 'e'), '%f'));
     stripped = strrep(body, 'gfc', '');
+    % FORTRAN D-exponents (EIGEN-6C4 switches to 0.98...D-11 mid-file):
+    % sscanf('%f') rejects 'D' where str2double accepts it. After the
+    % key strip only numeric text remains, so the normalization is safe;
+    % the consumed-everything validation still guards anything else.
+    stripped = strrep(strrep(stripped, 'D', 'E'), 'd', 'e');
     [vals, ~, errmsg, nexti] = sscanf(stripped, '%f', [ncol, Inf]);
     vals = vals';
     clean = isempty(errmsg) && ...
@@ -140,6 +145,11 @@ while ischar(line)
         if ~isempty(tok) && ~startsWith(tok, '#')
             parts = strsplit(tok);
             key = lower(parts{1});
+            % FORTRAN D-exponents: str2double returns NaN for them (CI-
+            % verified), which silently corrupted D-files to NaN above
+            % the switch degree. Normalize numeric parts only (the key
+            % 'dot' must survive).
+            parts(2:end) = strrep(strrep(parts(2:end), 'D', 'E'), 'd', 'e');
             isV2 = isfield(header, 'format') && ischar(header.format) ...
                 && contains(lower(header.format), 'icgem2.0');
             if strcmp(key, 'gfc') || (strcmp(key, 'gfct') && ~isV2)

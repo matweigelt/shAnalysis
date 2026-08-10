@@ -6,6 +6,14 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 ## [3.1.0] - Unreleased
 
 ### Fixed
+- `shReadGFC` fast path accepts FORTRAN D-exponents (EIGEN-6C4 switches
+  from e to D serialization at degree 371): normalized to E after the
+  key strip, matching str2double semantics. Previously such files fell
+  back to the legacy line parser - minutes for a 178 MB model, which
+  presented as fetchICGEM "stalling" during download verification.
+  CI exposed the deeper bug: str2double returns NaN for D-exponents,
+  so the legacy parser had silently corrupted such files to NaN above
+  the switch degree - both paths now normalize and agree.
 - `fetchICGEM` bulk mode ("all", index vectors) no longer stalls after
   the first file: the ICGEM server rate-limits rapid requests (HTTP
   429 / tarpit). Bulk fetching now throttles between models (`Pause=`,
