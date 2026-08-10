@@ -25,7 +25,7 @@ function [C, S, info] = shAnalysisGrid(grid, latVec, lonVec, nmax, opts)
 %               with zero kernel (e.g. n=0,1 for gravity_anomaly) are
 %               unobservable and returned as 0 (listed in INFO).
 %     GM, R     defaults 3.986004415e14, 6378136.3 (only used via kernel)
-%     kn        load Love numbers, required for quantity='ewh'
+%     kn ([])        load Love numbers, required for quantity='ewh'
 %     rho_ave, rho_water   EWH densities (5517, 1000)
 %     Weights   "none" (default) | "coslat" - area weighting of rings/
 %               points (recommended for equiangular ring grids: rows are
@@ -40,10 +40,10 @@ function [C, S, info] = shAnalysisGrid(grid, latVec, lonVec, nmax, opts)
 %     ChunkSize points per accumulation chunk for "ls" (default 2000)
 %
 %   Outputs
-%     C, S      (NMAX+1)x(NMAX+1) double, C(n+1,m+1)
-%     INFO      struct: method, nPoints, residRMS (post-fit, in grid
-%               units), condEst (per-order max for rings / normal-matrix
-%               estimate for ls), unobservedDegrees, regularized (logical)
+%     C     (nmax+1 x nmax+1) double  estimated cosine coefficients
+%     S     (nmax+1 x nmax+1) double  estimated sine coefficients
+%     info  (1,1) struct  fields: condest (1,1 double), nObs (1,1
+%           double), kaula (1,1 double, NaN when unregularized)
 %
 %   Notes: analysis of an incomplete/regional grid is an ill-posed
 %   problem; expect leakage across degrees unless Kaula (or restricting
@@ -51,6 +51,11 @@ function [C, S, info] = shAnalysisGrid(grid, latVec, lonVec, nmax, opts)
 %   (sin 0 = 0) and is always returned 0.
 %
 %   Claude (Fable 5), 2026-08-07.
+%
+%   Options
+%     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
+%     LatType ("geocentric")  see arguments block
+%     Flattening (1/298.257223563)  see arguments block
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 
 arguments

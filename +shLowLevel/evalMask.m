@@ -19,6 +19,7 @@ function [mask, grid] = evalMask(idx, region, opts)
 %                   exactly in latitude chunks (O(N*Nregion); fine to
 %                   Lmax ~ 60-96, cost noted in the doc page)
 %     R (6378136.3) sphere radius [m] for the km conversion
+%     OverSample (2)  see arguments block
 %   Outputs
 %     mask  (Ngrid,1) double in [0,1]
 %     grid  struct from shLowLevel.synthesisMatrix (latDeg, lonDeg per ring)

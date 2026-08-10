@@ -12,11 +12,11 @@ function writeGFC(filename, C, S, GM, R, opts)
 %     R          (1,1) double  [m]
 %     opts.SigmaC, opts.SigmaS  same layout, formal errors ([] -> zeros,
 %                               errors flag written as 'no')
-%     opts.ModelName   string   default "shAnalysis_export"
-%     opts.TideSystem  string   default "unknown"
+%     opts.ModelName ("shAnalysis_export")   string   default "shAnalysis_export"
+%     opts.TideSystem ("unknown")  string   default "unknown"
 %     opts.Comment     string   extra header comment lines ("" = none)
 %   Outputs: none (file on disk; plus <file>.provenance.json sidecar
-%   with tool version/MATLAB/metadata unless Sidecar = false, v2.7.0)
+%   with tool version/MATLAB/metadata unless Sidecar (true) = false, v2.7.0)
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

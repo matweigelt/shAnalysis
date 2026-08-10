@@ -7,12 +7,12 @@ function [model, Xres, coef, A, coefSigma, resVar, ar1] = fitDeterministicModel(
 %       x(t) = a + b*tc + c*cos(2*pi*tc) + d*sin(2*pi*tc)
 %                + e*cos(4*pi*tc) + f*sin(4*pi*tc)
 %                + sum_k [ g_k*cos(2*pi*tc/p_k) + h_k*sin(2*pi*tc/p_k) ]
-%   with tc = t - T0 and optional extra periods p_k [years] - e.g. the
+%   with tc = t - T0 (NaN) and optional extra periods p_k [years] - e.g. the
 %   GRACE tidal alias periods S2 = 161/365.25, K2 = 3.66, K1 = 7.48.
 %
 %   Options
 %     T0       (mean(tYears))  reference epoch [decimal years]
-%     Periods  ([])   extra periods p_k [years], row vector
+%     Periods (double.empty(1,0))  ([])   extra periods p_k [years], row vector
 %     Weights  ([])   T x 1 per-epoch weights (e.g. 1./s from VCE);
 %                     weighted LS with sqrt(w)-scaled rows
 %     Robust   (false) Huber IRLS per coefficient
@@ -26,6 +26,7 @@ function [model, Xres, coef, A, coefSigma, resVar, ar1] = fitDeterministicModel(
 %              trend scatter by 2.0x; corrected ratio 1.06 (the residual
 %              slight underestimate stems from the downward-biased sample
 %              r1 - documented approximation).
+%     Breaks (double.empty(1,0))  see arguments block
 %
 %   Outputs
 %     model      P x T          fitted deterministic part

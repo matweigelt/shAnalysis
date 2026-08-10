@@ -3,7 +3,16 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
-## [3.0.0] - Unreleased
+## [3.0.1] - Unreleased
+
+### Added
+- `tools/help_audit.py`: documentation completeness gate, run in CI
+  before the test suite. Every public function and method must document
+  every positional input, every option WITH its default, and every
+  output with size/type annotations, plus an example. 328 findings
+  fixed across the tree to reach zero; the gate keeps it there.
+
+## [3.0.0] - 2026-08-10 - DOI: 10.5281/zenodo.21876348
 
 ### BREAKING
 - Namespace renamed `+shx` -> `+shLowLevel`: every call site changes

@@ -7,13 +7,13 @@ function spec = shOrderRMS(C, S, opts)
 %
 %       ordVariance(m) = sum_n ( C_nm^2 + S_nm^2 )
 %       ordRMS         = sqrt(ordVariance)
-%       ordAmplitude   = R * ordRMS
+%       ordAmplitude   = R (6378136.3) * ordRMS
 %       cumVariance/cumRMS/cumAmplitude = running sums over m
 %
 %   Conventions mirror shDegreeRMS exactly (RMS = sqrt of the summed
 %   power, amplitude = R * RMS; degree/order power partitions are two
 %   marginals of the same total: sum(ordVariance) == sum(degVariance),
-%   tested). Formal errors via sigmaC/sigmaS give errVariance/errRMS/
+%   tested). Formal errors via sigmaC ([])/sigmaS ([]) give errVariance/errRMS/
 %   errAmplitude per order.
 %
 %   Inputs

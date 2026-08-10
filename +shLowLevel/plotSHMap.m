@@ -21,7 +21,7 @@ function h = plotSHMap(grid, latDeg, lonDeg, opts)
 %     Title (""), Units ("")  annotations
 %     ax ([])               target axes (default: current axes)
 %   Outputs
-%     h  axes handle
+%     h  (1,1) graphics handle  axes of the map plot
 %
 %   Claude (Fable 5), 2026-08-07 (v2.4).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

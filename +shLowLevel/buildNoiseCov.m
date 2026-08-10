@@ -8,7 +8,7 @@ function [N, info] = buildNoiseCov(Xres, idx, opts)
 %       across time, assembled block-diagonal. This reproduces the GRACE
 %       error structure responsible for striping (correlations between
 %       same-parity degrees of the same order) without any prior model.
-%       Cross-order and cross-parity terms are exactly zero. Shrinkage
+%       Cross-order and cross-parity terms are exactly zero. Shrinkage (0.1)
 %       toward the diagonal regularizes small-sample blocks.
 %       Caveat: at low degrees the residual variability is signal-
 %       dominated, so N is conservative there (the Wiener weight errs
@@ -16,7 +16,7 @@ function [N, info] = buildNoiseCov(Xres, idx, opts)
 %       rigorous path use mode 'full'.
 %
 %   'full': pass a released full covariance (e.g. ITSG / COST-G) via
-%       opts.FullCov, already reordered to idx ordering. Returned as-is
+%       opts.FullCov ([]), already reordered to idx ordering. Returned as-is
 %       (symmetrized). Combine with shLowLevel.vceRescale for monthly scaling.
 %
 %   Options:
@@ -26,7 +26,7 @@ function [N, info] = buildNoiseCov(Xres, idx, opts)
 %
 %   info: struct with block bookkeeping.
 %   Outputs
-%     N          (P x P) double or block struct   noise covariance (order/parity block-diagonal for Assemble='blocks')
+%     N          (P x P) double or block struct   noise covariance (order/parity block-diagonal for Assemble ('full')='blocks')
 %     info       struct: mode, shrinkage, blocks metadata
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

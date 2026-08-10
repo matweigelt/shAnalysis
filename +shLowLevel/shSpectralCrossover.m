@@ -16,7 +16,8 @@ function [nCrossover, degreeInterp] = shSpectralCrossover(spec)
 %
 %   Claude (Sonnet 4.6), 2026-07-11; merged into +shLowLevel: Claude (Fable 5), 2026-08-07.
 %   Outputs
-%     nc         (1 x 1) double   first degree where the error spectrum exceeds the signal (NaN if none)
+%     nCrossover    (1,1) double  first degree with err >= signal (NaN if none)
+%     degreeInterp  (1,1) double  linearly interpolated crossing degree
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

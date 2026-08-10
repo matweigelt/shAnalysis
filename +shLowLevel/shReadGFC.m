@@ -29,9 +29,9 @@ function model = shReadGFC(filename)
 %
 %   Claude (Sonnet 4.6), 2026-07-11; merged into +shLowLevel: Claude (Fable 5), 2026-08-07.
 %   Outputs
-%     C          (nmax+1 x nmax+1) double   cosine coefficients (static part)
-%     S          (nmax+1 x nmax+1) double   sine coefficients
-%     header     struct: GM, R, nmax, tide system, errors flag, variableTerms for gfct files
+%     model  (1,1) struct  fields: C/S/sigmaC/sigmaS (nmax+1 x nmax+1
+%            double), GM/R (1,1 double), nmax (1,1 double), tide (string),
+%            variable terms (trend/annual/semiannual) when present
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

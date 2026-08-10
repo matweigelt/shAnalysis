@@ -1,7 +1,7 @@
 function kernel = kernelFactors(quantity, nmax, GM, R, opts)
 %KERNELFACTORS Degree-dependent spectral factors for SH synthesis/analysis.
 %
-%   KERNEL = shLowLevel.kernelFactors(QUANTITY, NMAX, GM, R, kn=..., ...) returns
+%   KERNEL = shLowLevel.kernelFactors(QUANTITY, NMAX, GM, R, kn ([])=..., ...) returns
 %   the (NMAX+1)x1 factor f_n such that a field of QUANTITY is
 %       q(lat,lon) = sum_n f_n * sum_m Pbar_nm (C_nm cos + S_nm sin).
 %   Shared by shLowLevel.shSynthesis (multiply) and shLowLevel.shAnalysisGrid (divide);
@@ -14,13 +14,13 @@ function kernel = kernelFactors(quantity, nmax, GM, R, opts)
 %     'gravity_disturbance'   [m/s^2]    (GM/R^2)(n+1)
 %     'gravity_gradient_rr' * [1/s^2]    (GM/R^3)(n+1)(n+2)   (T_rr;
 %                             1 Eotvos = 1e-9 1/s^2)
-%     'ewh'                   [m]        R rho_ave/(3 rho_w) (2n+1)/(1+kn)
+%     'ewh'                   [m]        R rho_ave (5517)/(3 rho_w) (2n+1)/(1+kn)
 %     'surface_density'     * [kg/m^2]   R rho_ave/3 (2n+1)/(1+kn)
 %                             (= rho_w * ewh kernel; requires kn)
 %     'bottom_pressure'     * [Pa]       g0 * surface_density kernel,
 %                             g0 = GM/R^2 (ocean-bottom / surface
 %                             pressure equivalent; requires kn)
-%     'deformation_up'      * [m]        R hn/(1+kn): elastic vertical
+%     'deformation_up'      * [m]        R hn ([])/(1+kn): elastic vertical
 %                             load deformation (Wahr et al. 1998; the
 %                             GRACE <-> GNSS uplift comparison quantity;
 %                             requires kn AND hn). Horizontal components

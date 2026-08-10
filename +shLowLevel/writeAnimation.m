@@ -1,7 +1,7 @@
 function writeAnimation(ts, filename, opts)
 %WRITEANIMATION Export a monthly series as an MP4 map animation.
 %
-%   shLowLevel.writeAnimation(TS, 'ewh.mp4', quantity="ewh", kn=kn) renders one
+%   shLowLevel.writeAnimation(TS, 'ewh.mp4', quantity="ewh", kn ([])=kn) renders one
 %   shLowLevel.plotSHMap frame per epoch into an MPEG-4 via VideoWriter (base
 %   MATLAB), with a FIXED color scale over all epochs (robust 98th
 %   percentile across the whole stack - the single most common animation
@@ -11,10 +11,11 @@ function writeAnimation(ts, filename, opts)
 %     ts        (1,1) shSeries
 %     filename  char/string  .mp4 (Windows/macOS) or .avi (all platforms) target
 %   Options
-%     quantity ("ewh"), kn, hn        as in synthesis
+%     quantity ("ewh"), kn, hn ([])        as in synthesis
 %     lat (-89:2:89), lon (0:2:358)   grid [deg]
 %     FrameRate (4), CLim ([] = robust fixed), Coast (true),
 %     Units (""), Projection ("plate")
+%     Sidecar (true)  write <file>.provenance.json alongside the output
 %
 %   Claude (Fable 5), 2026-08-07 (v2.4).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

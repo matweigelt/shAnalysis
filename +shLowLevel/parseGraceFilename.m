@@ -12,11 +12,9 @@ function meta = parseGraceFilename(filename)
 %
 %   Inputs
 %     filename  char/string   path or bare filename
-%   Outputs (struct META)
-%     productType  string   "GSM"|"GAA"|"GAB"|"GAC"|"GAD"|"unknown"
-%     epoch        double   mid-epoch, decimal years (NaN if unparsed)
-%     epochStart   double   coverage start, decimal years (NaN)
-%     epochStop    double   coverage end, decimal years (NaN)
+%   Outputs
+%     meta  (1,1) struct  fields: center/product/release (string),
+%           epoch/year/month (double), nmax (double, NaN if absent)
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Outputs

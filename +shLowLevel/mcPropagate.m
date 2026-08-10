@@ -11,7 +11,7 @@ function out = mcPropagate(fun, g, opts)
 %   Sampling models:
 %     default        independent Gaussian per coefficient from
 %                    G.sigmaC / G.sigmaS (NaN sigmas -> not perturbed)
-%     Cov=M, Idx=idx correlated sampling from a full P x P covariance
+%     Cov ([])=M, Idx (struct([]))=idx correlated sampling from a full P x P covariance
 %                    (e.g. shLowLevel.readSINEX(..., Output="covariance").M
 %                    reordered via Index=idx) - Cholesky factorization
 %
@@ -22,12 +22,11 @@ function out = mcPropagate(fun, g, opts)
 %     opts.N (1,1) double = 500    number of samples
 %     opts.Cov double = []         full covariance (P x P, Idx ordering)
 %     opts.Idx struct = struct([]) shLowLevel.shIndex for Cov
-%     opts.Seed double = []        rng seed for reproducibility
+%     opts.Seed ([]) double = []        rng seed for reproducibility
 %     opts.KeepSamples (1,1) logical = false
-%   Outputs (struct)
-%     mean, sigma   size of fun output   empirical mean and 1-sigma
-%     N             samples used
-%     samples       (numel(y) x N) if KeepSamples
+%   Outputs
+%     out  (1,1) struct  fields: samples (K x nSamples double), mean,
+%          sigma (K x 1 double)  Monte-Carlo moments of the functional
 %
 %   MC error of sigma itself ~ sigma/sqrt(2N) (~3%% at N=500).
 %

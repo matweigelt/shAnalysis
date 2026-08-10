@@ -3,8 +3,8 @@ function [cnm, snm] = csFromVec(x, idx)
 %   [cnm, snm] = shLowLevel.csFromVec(x, idx). Coefficients outside the index
 %   range (n < MinDegree) are zero.
 %   Outputs
-%     C          (nmax+1 x nmax+1) double   cosine coefficients scattered from x
-%     S          (nmax+1 x nmax+1) double   sine coefficients scattered from x
+%     cnm  (nmax+1 x nmax+1) double  cosine coefficients, C(n+1, m+1)
+%     snm  (nmax+1 x nmax+1) double  sine coefficients, S(:, 1) = 0
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

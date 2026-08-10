@@ -71,8 +71,27 @@ methods
 
     function obj = shCoefficients(C, S, opts)
         %SHCOEFFICIENTS Construct from coefficient matrices.
+        %
+        %   Inputs
+        %     S  (nmax+1 x nmax+1) double  sine coefficients, same layout (S(:,1) = 0)
+        %     C  (nmax+1 x nmax+1) double  cosine coefficients, C(n+1, m+1) layout
         %   Outputs
-        %     obj        (1 x 1) shCoefficients   immutable coefficient set with GM, R, epoch, sigmas, history
+        %     obj        (1 x 1) shCoefficients   immutable coefficient set with GM (3.986004415e14), R (6378136.3), epoch, sigmas, history
+        %
+        %   Options
+        %     SigmaC ([])  see arguments block
+        %     SigmaS ([])  see arguments block
+        %     Epoch (NaN)  see arguments block
+        %     ProductType ("unknown")  see arguments block
+        %     TideSystem ("unknown")  see arguments block
+        %     Name ("")  see arguments block
+        %     Header (struct())  see arguments block
+        %     VariableTerms ([])  see arguments block
+        %     History (string.empty(0,1))  see arguments block
+        %
+        %   Outputs
+        %     obj  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             C double = 0
             S double = 0
@@ -120,8 +139,16 @@ methods
     % ---------------------------------------------------------- arithmetic
     function out = plus(a, b)
         %PLUS Coefficient addition (e.g. GSM + GAD background restore).
+        %
+        %   Inputs
+        %     b  (1,1) shCoefficients  right operand (same nmax and GM/R)
+        %     a  (1,1) shCoefficients  left operand
         %   Outputs
         %     out        (1 x 1) shCoefficients   sum; sigmas RSS; epochs must match
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         [a, b] = shCoefficients.checkPair(a, b, 'plus');
         shCoefficients.checkEpochs(a, b, 0.02, 'plus');
         out = a.combine(b, +1, ...
@@ -130,8 +157,16 @@ methods
 
     function out = minus(a, b)
         %MINUS Coefficient difference (e.g. monthly change gB - gA).
+        %
+        %   Inputs
+        %     b  (1,1) shCoefficients  right operand (same nmax and GM/R)
+        %     a  (1,1) shCoefficients  left operand
         %   Outputs
         %     out        (1 x 1) shCoefficients   difference; sigmas RSS
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         [a, b] = shCoefficients.checkPair(a, b, 'minus');
         out = a.combine(b, -1, "difference");
         out.epoch = NaN;
@@ -141,16 +176,30 @@ methods
 
     function out = uminus(a)
         %UMINUS Unary minus: negate all coefficients.
+        %
+        %   Inputs
+        %     a  (1,1) shCoefficients  left operand
         %   Outputs
         %     out        (1 x 1) shCoefficients   negated coefficients (sigmas kept)
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         out = a; out.C = -a.C; out.S = -a.S;
         out.history(end+1) = "negated";
     end
 
     function out = mtimes(a, b)
         %MTIMES Scalar scaling.
+        %
+        %   Inputs
+        %     b  (1,1) double or shCoefficients  scalar factor (either side) - fields cannot be multiplied
         %   Outputs
         %     out        (1 x 1) shCoefficients   scalar-scaled; sigmas scale by |a|
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         if isa(a, 'shCoefficients') && isnumeric(b) && isscalar(b)
             out = a; f = b;
         elseif isa(b, 'shCoefficients') && isnumeric(a) && isscalar(a)
@@ -170,9 +219,16 @@ methods
         %   REP = g.compare(G2, ...) delegates to shLowLevel.compareSolutions
         %   with OBJ as the first solution; all options pass through
         %   (Plot=true for the 4-panel figure).
+        %
+        %   Inputs
+        %     other  (1,1) shCoefficients  solution to compare against OBJ
         %   Outputs
         %     rep        (1 x 1) struct   shLowLevel.compareSolutions report
         %     h          (1 x 1) graphics handle   figure (Plot = true)
+        %
+        %   Outputs
+        %     rep  (1,1) struct  shLowLevel.compareSolutions report
+        %     h    (1,1) graphics handle  figure (Plot = true only)
         [rep, h] = shLowLevel.compareSolutions(obj, other, varargin{:});
     end
 
@@ -182,8 +238,15 @@ methods
         %   (nmax+1 x nmax+1) matrix W (per-coefficient weighting or
         %   tapering); a scalar factor delegates to mtimes. Sigmas scale
         %   by |factor| elementwise (v2.5.1).
+        %
+        %   Inputs
+        %     b  (1,1) shCoefficients or double array  elementwise factor
         %   Outputs
         %     out        (1 x 1) shCoefficients   elementwise-scaled coefficients
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         if isa(a, 'shCoefficients') && isnumeric(b)
             out = a; f = b;
         elseif isa(b, 'shCoefficients') && isnumeric(a)
@@ -210,8 +273,15 @@ methods
     % ------------------------------------------------------------ editing
     function out = truncate(obj, nmaxNew)
         %TRUNCATE Reduce the maximum degree.
+        %
+        %   Inputs
+        %     nmaxNew  (1,1) double  new maximum degree (must not exceed the current nmax)
         %   Outputs
         %     out        (1 x 1) shCoefficients   truncated to the new nmax
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             nmaxNew (1,1) double {mustBeInteger, mustBeNonnegative}
@@ -230,8 +300,20 @@ methods
 
     function out = setCoefficient(obj, n, m, Cval, Sval, opts)
         %SETCOEFFICIENT Replace a single (n,m) coefficient pair.
+        %
+        %   Inputs
+        %     Sval  (1,1) double  new S(n+1, m+1) value (NaN keeps the current one)
+        %     Cval  (1,1) double  new C(n+1, m+1) value
         %   Outputs
         %     out        (1 x 1) shCoefficients   copy with C/S(n+1, m+1) replaced
+        %
+        %   Options
+        %     SigmaC (NaN)  see arguments block
+        %     SigmaS (NaN)  see arguments block
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             n (1,1) double {mustBeInteger, mustBeNonnegative}
@@ -269,6 +351,10 @@ methods
         %   non-NaN C30 for that month), "never", "always".
         %   Outputs
         %     out        (1 x 1) shCoefficients   C20 (and C30 when available) replaced by the SLR values, sigmas updated
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             tn
@@ -307,7 +393,7 @@ methods
         %ADDDEGREE1 Insert TN-13 geocenter (degree-1) coefficients.
         %   OUT = obj.addDegree1(TN) with TN from shLowLevel.readTN13 (or a
         %   filename) sets C10, C11, S11 (with their sigmas) from the
-        %   TN-13 record nearest to obj.epoch (within opts.Tolerance,
+        %   TN-13 record nearest to obj.epoch (within opts.Tolerance (0.05),
         %   default 0.05 yr). Without degree 1, EWH/mass grids are
         %   systematically biased - this completes the standard
         %   GSM + TN-14 + TN-13 processing chain.
@@ -317,6 +403,10 @@ methods
         %   Outputs  out  shCoefficients with degree 1 set
         %   Outputs
         %     out        (1 x 1) shCoefficients   degree-1 row set from the TN-13 record nearest to obj.epoch
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             tn
@@ -354,6 +444,10 @@ methods
         %   filter with proper covariance semantics).
         %   Outputs
         %     out        (1 x 1) shCoefficients   Swenson-Wahr decorrelated
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             opts.minOrder (1,1) double = 6
@@ -376,8 +470,15 @@ methods
 
     function out = gaussian(obj, radiusKm)
         %GAUSSIAN Jekeli (1981) isotropic smoothing; sigmas scaled by Wn.
+        %
+        %   Inputs
+        %     radiusKm  (1,1) double  Gaussian filter half-response radius [km]
         %   Outputs
         %     out        (1 x 1) shCoefficients   Gaussian-smoothed; sigmas scaled by Wn
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             radiusKm (1,1) double {mustBePositive}
@@ -398,6 +499,9 @@ methods
         %DEGREERMS Degree variance/RMS/amplitude spectrum (+ error spectrum).
         %   Outputs
         %     spec       struct: n, amp/rms/var, err   degree spectrum incl. formal-error curve
+        %
+        %   Options
+        %     n0 (0)  see arguments block
         arguments
             obj
             opts.n0 (1,1) double = 0
@@ -412,7 +516,11 @@ methods
     function [n0, nInterp] = crossover(obj, opts)
         %CROSSOVER Signal-vs-formal-error crossover degree.
         %   Outputs
-        %     nc         (1 x 1) double   signal/error crossover degree (NaN if none within nmax)
+        %     n0 (2)       (1,1) double  first degree with err >= signal (NaN if none)
+        %     nInterp  (1,1) double  interpolated crossing degree
+        %
+        %   Options
+        %     n0 (2)  see arguments block
         arguments
             obj
             opts.n0 (1,1) double = 2
@@ -428,6 +536,10 @@ methods
         %SPECTRUM Plot the degree-amplitude spectrum. h = obj.spectrum(...)
         %   Outputs
         %     h          (1 x 1) graphics handle   spectrum plot
+        %
+        %   Outputs
+        %     spec  (1,1) struct  shLowLevel.shDegreeRMS output (degree, degRMS,
+        %           degAmplitude, cum*, err* when sigmas are present)
         h = shLowLevel.plotSHSpectrum(obj.degreeRMS, varargin{:});
     end
 
@@ -435,14 +547,17 @@ methods
         %TRIANGLE Plot the degree/order coefficient triangle. h = obj.triangle(...)
         %   Outputs
         %     h          (1 x 1) graphics handle   coefficient triangle plot
+        %
+        %   Outputs
+        %     h  (1,1) graphics handle  axes of the coefficient triangle plot
         h = shLowLevel.plotSHCoeffTriangle(obj.C, obj.S, varargin{:});
     end
 
     % ------------------------------------------------------------ spatial
     function [grid, lat, lon] = synthesis(obj, latVec, lonVec, opts)
         %SYNTHESIS Spatial synthesis (geoid, gravity, potential, EWH).
-        %   [GRID, LAT, LON] = obj.synthesis(LATVEC, LONVEC, quantity=...,
-        %   kn=..., nmin=..., nmax=..., UseCache=true).
+        %   [GRID, LAT, LON] = obj.synthesis(LATVEC, LONVEC, quantity ("geoid")=...,
+        %   kn ([])=..., nmin (0)=..., nmax (NaN)=..., UseCache (true)=true).
         %   The Legendre functions are served from a verified process-wide
         %   cache (shLowLevel.legendreCached), so monthly time series on a fixed
         %   grid pay the recursion only once - no manual 'P' passing.
@@ -452,6 +567,16 @@ methods
         %     grid       (nlat x nlon) double   synthesized field
         %     lat        (1 x nlat) double   geocentric latitudes
         %     lon        (1 x nlon) double   longitudes
+        %
+        %   Options
+        %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
+        %     Height (0)  see arguments block
+        %     rho_ave (5517)  see arguments block
+        %     rho_water (1000)  see arguments block
+        %     Method ("auto")  see arguments block
+        %     LatType ("geocentric")  see arguments block
+        %     Flattening (1/298.257223563)  see arguments block
+        %     MaxMemGB (4)  see arguments block
         arguments
             obj
             latVec (1,:) double
@@ -497,13 +622,17 @@ methods
     end
 
     function out = toReference(obj, opts)
-        %TOREFERENCE Convert to another (GM, R) reference (exact).
+        %TOREFERENCE Convert to another (GM (NaN), R (NaN)) reference (exact).
         %   OUT = g.toReference(GM=3.986004418e14, R=6378137.0)
         %   re-expresses the coefficients via shLowLevel.rescaleGMR; the
         %   physical field is invariant (Python-validated). Sigmas
         %   rescale identically; GM/R properties are updated.
         %   Outputs
         %     out        (1 x 1) shCoefficients   rescaled to the given GM/R
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             opts.GM (1,1) double = NaN
@@ -523,11 +652,11 @@ methods
     function out = subtractNormalField(obj, opts)
         %SUBTRACTNORMALFIELD Remove the ellipsoidal normal field.
         %   OUT = g.subtractNormalField()            % WGS84
-        %   OUT = g.subtractNormalField(System="GRS80")
+        %   OUT = g.subtractNormalField(System ("WGS84")="GRS80")
         %   Computes the even zonals from the DEFINING constants
         %   (shLowLevel.normalFieldCS, Heiskanen-Moritz closed form; validated
         %   against NIMA TR8350.2 to all published digits), rescales
-        %   them from the ellipsoid's own (GM, a) to the object's
+        %   them from the ellipsoid's own (GM (NaN), a (NaN)) to the object's
         %   (GM, R) - the WGS84 GM and a DIFFER from the ICGEM values,
         %   skipping this step costs millimetres - and subtracts them
         %   including the degree-0 GM ratio term. The result is the
@@ -540,6 +669,14 @@ methods
         %   converted silently - noted in history only.
         %   Outputs
         %     out        (1 x 1) shCoefficients   disturbing field (even zonals of the normal field removed)
+        %
+        %   Options
+        %     f (NaN)  see arguments block
+        %     omega (NaN)  see arguments block
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             opts.System (1,1) string ...
@@ -567,10 +704,25 @@ methods
 
     function h = map(obj, latDeg, lonDeg, opts)
         %MAP Synthesize and plot in one call (shLowLevel.plotSHMap).
-        %   H = g.map(-89:89, 0:359, quantity="ewh", kn=kn) - all
+        %   H = g.map(-89:89, 0:359, quantity ("geoid")="ewh", kn ([])=kn) - all
         %   synthesis options plus the plotSHMap display options.
+        %
+        %   Inputs
+        %     lonDeg  (1,:) double  longitudes [deg]
+        %     latDeg  (1,:) double  latitudes [deg, geocentric]
         %   Outputs
         %     h          (1 x 1) graphics handle   synthesized map plot
+        %
+        %   Options
+        %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
+        %     Height (0)  see arguments block
+        %     nmin (0)  see arguments block
+        %     Projection ("plate")  see arguments block
+        %     Coast (true)  see arguments block
+        %     CLim ([])  see arguments block
+        %     Units ("")  see arguments block
+        %     Title ("")  see arguments block
+        %     ax ([])  see arguments block
         arguments
             obj
             latDeg (1,:) double = -89:2:89
@@ -602,8 +754,16 @@ methods
 
     function out = fan(obj, rDegKm, rOrdKm)
         %FAN Han fan filter (degree x order Gaussian) - shLowLevel.shFanFilter.
+        %
+        %   Inputs
+        %     rOrdKm  (1,1) double  fan filter order-direction radius [km]
+        %     rDegKm  (1,1) double  fan filter degree-direction radius [km]
         %   Outputs
         %     out        (1 x 1) shCoefficients   fan-filtered
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             rDegKm (1,1) double {mustBePositive}
@@ -619,14 +779,21 @@ methods
     function [up, north, east] = deformation(obj, latDeg, lonDeg, opts)
         %DEFORMATION Elastic load deformation up/north/east [m].
         %   [UP, NORTH, EAST] = g.deformation(LAT, LON, kn=, hn=, ln=,
-        %       Mode="grid"|"points", nmin=1, LatType="geocentric")
+        %       Mode ("grid")="grid"|"points", nmin (1)=1, LatType ("geocentric")="geocentric")
         %   from the object's (residual!) coefficients - remove a mean
         %   field first. Love numbers are always user-supplied; see
         %   shLowLevel.shSynthesisDeformation for formulas and validation.
+        %
+        %   Inputs
+        %     lonDeg  (1,:) double  longitudes [deg]
+        %     latDeg  (1,:) double  latitudes [deg, geocentric]
         %   Outputs
         %     up         (nlat x nlon | npts) double   vertical deformation [m]
         %     north      same size   north component [m]
         %     east       same size   east component [m]
+        %
+        %   Options
+        %     Flattening (1/298.257223563)  see arguments block
         arguments
             obj
             latDeg (1,:) double
@@ -659,6 +826,10 @@ methods
         %   filtered uncertainties).
         %   Outputs
         %     out        (1 x 1) shCoefficients   DDK-decorrelated
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             W
@@ -676,6 +847,10 @@ methods
         %EVALAT Evaluate gfct time-variable terms at an epoch.
         %   Outputs
         %     out        (1 x 1) shCoefficients   gfct variable terms evaluated at the epoch; static models pass through unchanged
+        %
+        %   Outputs
+        %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             obj
             epoch (1,1) double
@@ -690,6 +865,12 @@ methods
 
     function write(obj, filename, opts)
         %WRITE Export to an ICGEM .gfc file (round-trip tested).
+        %
+        %
+        %   Inputs
+        %     filename  char/string  path of the file to read/write (gzipped .gz accepted where documented)
+        %   Options
+        %     Comment ("")  see arguments block
         arguments
             obj
             filename {mustBeTextScalar}
@@ -708,6 +889,10 @@ methods
         %VEC Pack into a coefficient vector in shLowLevel.shIndex ordering.
         %   Outputs
         %     x          (P x 1) double   coefficients in idx ordering
+        %
+        %   Outputs
+        %     x    (P x 1) double  stacked coefficients in shLowLevel.shIndex order
+        %     sig  (P x 1) double  matching sigmas ([] when absent)
         arguments
             obj
             idx (1,1) struct
@@ -735,9 +920,16 @@ methods (Static)
         %READ Read an ICGEM .gfc/.gfct/.gfc.gz file into an shCoefficients.
         %   G = shCoefficients.read(FILE) parses product type and mid-epoch
         %   from standard GRACE L2 filenames (GSM/GAA/GAB/GAC/GAD-2_...);
-        %   override with Epoch=..., ProductType=... when needed.
+        %   override with Epoch (NaN)=..., ProductType ("")=... when needed.
+        %
+        %   Inputs
+        %     filename  char/string  path of the file to read/write (gzipped .gz accepted where documented)
         %   Outputs
         %     obj        (1 x 1) shCoefficients   parsed gfc/gfct(.gz) with GM, R, sigmas, variable terms, Epoch= as given
+        %
+        %   Outputs
+        %     obj  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             filename {mustBeTextScalar}
             opts.Epoch (1,1) double = NaN
@@ -772,6 +964,10 @@ methods (Static)
         %   metadata from the template LIKE (an shCoefficients).
         %   Outputs
         %     obj        (1 x 1) shCoefficients   rebuilt from x with sizes/GM/R/epoch of the template
+        %
+        %   Outputs
+        %     obj  (1,1) shCoefficients  modified copy; the operation is appended to the
+        %              history (immutable value-class pattern)
         arguments
             x (:,1) double
             idx (1,1) struct
@@ -789,20 +985,30 @@ methods (Static)
         %   Stokes coefficients (the inverse of synthesis).
         %
         %   [OBJ, INFO] = shCoefficients.analysis(GRID, LAT, LON, NMAX,
-        %       quantity=..., Method=..., Weights=..., Kaula=..., ...)
+        %       quantity ("geoid")=..., Method ("auto")=..., Weights ("none")=..., Kaula (0)=..., ...)
         %   estimates an shCoefficients object from a ring grid
         %   (GRID nlat x nlon, uniform full-circle LON: exact fast
         %   per-order solver) or from scattered points (equal-length
         %   GRID/LAT/LON vectors: full least squares). See
         %   shLowLevel.shAnalysisGrid for the estimation options, the Kaula
         %   regularization needed for under-determined sampling, and the
-        %   exactness guarantees. GM/R/Epoch/Name flow into the object.
+        %   exactness guarantees. GM (3.986004415e14)/R (6378136.3)/Epoch (NaN)/Name ("analysis") flow into the object.
         %
         %   Inputs   grid (nlat,nlon) or (Np,1) double, lat/lon [deg]
+        %     lonVec  (P,1) double  observation longitudes [deg]
+        %     latVec  (P,1) double  observation latitudes [deg, geocentric]
         %            nmax (1,1) double
         %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs
         %     obj        (1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)
+        %
+        %   Options
+        %     kn ([])  load Love numbers, degrees 0..nmax (user-supplied; e.g. shLowLevel.fetchLoveNumbers)
+        %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
+        %     rho_ave (5517)  see arguments block
+        %     rho_water (1000)  see arguments block
+        %     LatType ("geocentric")  see arguments block
+        %     Flattening (1/298.257223563)  see arguments block
         arguments
             grid double
             latVec double

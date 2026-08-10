@@ -11,6 +11,7 @@ function s = vceRescale(N, Xres, idx, opts)
 %
 %   Options:
 %     MinDegree  (round(2/3*Lmax))  lower bound of the noise-dominated band
+%     Rows (true(0, 1))  see arguments block
 %   Outputs
 %     s          (T x 1) or (nBands x T) double   monthly (band-wise) VCE noise variance factors
 %

@@ -11,7 +11,7 @@ function h = taylorDiagram(refStd, stds, corrs, opts)
 %   shLowLevel.compareSeries. Base MATLAB graphics only.
 %
 %   Options
-%     Labels ([])         string array, one per point
+%     Labels (strings(1, 0)) ([])         string array, one per point
 %     Title ("Taylor diagram")
 %     Normalize (false)   divide all stds by REFSTD (radius 1 = reference)
 %

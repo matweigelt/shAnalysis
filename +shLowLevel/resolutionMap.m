@@ -5,7 +5,7 @@ function res = resolutionMap(op, t, latDeg, lonDeg, opts)
 %   query point, the effective smoothing kernel of month T:
 %       xf(P) = y_P' * W_t * x   =>   kernel coefficients k = W_t' * y_P
 %   and finds the great-circle distance psi_1/2 at which the kernel drops
-%   to half its peak, along NAz azimuths. Replaces the single "equivalent
+%   to half its peak, along NAz (8) azimuths. Replaces the single "equivalent
 %   Gaussian radius" with a spatially and azimuthally resolved resolution
 %   product (N-S vs E-W half-width ratio = striping fingerprint).
 %   All transect evaluations per query point run through ONE vectorized
@@ -19,11 +19,8 @@ function res = resolutionMap(op, t, latDeg, lonDeg, opts)
 %     opts.NAz    (1,1)   azimuth count, default 8
 %     opts.PsiMax (1,1)   radial search range [deg], default 20
 %     opts.NPsi   (1,1)   radial samples, default 120
-%   Outputs (struct RES)
-%     psiHalfDeg (nPts x NAz)  half-width per azimuth [deg], NaN if none
-%     azDeg      (1 x NAz)
-%     kmMean/kmMin/kmMax (nPts x 1)   R = 6371 km
-%     anisotropy (nPts x 1)   max/min half-width ratio
+%   Outputs
+%     res  (nlat x nlon) double  local resolution [km] of the filter
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Outputs

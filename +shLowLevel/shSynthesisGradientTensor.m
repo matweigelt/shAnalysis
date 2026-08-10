@@ -2,7 +2,7 @@ function [comps, info] = shSynthesisGradientTensor(C, S, GM, R, latDeg, lonDeg, 
 %SHSYNTHESISGRADIENTTENSOR Full gravity gradient tensor in the local NEU frame.
 %
 %   [COMPS, INFO] = shLowLevel.shSynthesisGradientTensor(C, S, GM, R, LAT, LON,
-%       Height=250e3) synthesizes all six independent components of the
+%       Height (250e3)=250e3) synthesizes all six independent components of the
 %   disturbing gravity gradient tensor (GOCE-style diagnostics) in the
 %   local north-east-up frame at radius r = R + Height:
 %
