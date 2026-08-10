@@ -27,6 +27,7 @@ arguments
     opts.Dest (1,1) string = ""
     opts.Timeout (1,1) double = 300
     opts.List table = table()
+    opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
 end
 if istable(model)
@@ -68,7 +69,7 @@ fprintf('  %s %s from ICGEM...\n', ...
     ternary(present, 'updating', 'fetching'), string([base, ext]));
 tmpf = file + ".part";
 try
-    websave(tmpf, row.url, weboptions('Timeout', opts.Timeout));
+    webFetch(row.url, tmpf, opts.Timeout, opts.Proxy);
     if endsWith(lower(file), [".gfc", ".gfc.gz"])
         shx.shReadGFC(tmpf);                    % verify BEFORE swap
     else

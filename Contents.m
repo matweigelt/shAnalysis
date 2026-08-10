@@ -1,5 +1,5 @@
-% shAnalysis v2.6.0 - Spherical harmonic (Stokes coefficient) analysis for
-% Version 2.6.0 (R2026a-compatible) 08-Aug-2026
+% shAnalysis v2.7.0 - Spherical harmonic (Stokes coefficient) analysis for
+% Version 2.7.0 (R2026a-compatible) 10-Aug-2026
 % GRACE/GRACE-FO, GOCE, and static gravity field models: class-based,
 % with time-series support, GAX background handling, climatology, and
 % the tvANS time-variable anisotropic Wiener filter.
@@ -163,6 +163,12 @@
 %   shx.version - toolbox metadata (name, version, date, root) from
 %   Contents.m; shx.fetch* now take Update=true for a safe, parse-verified
 %   refresh of existing files (TN-13/TN-14 grow monthly upstream).
+%   New in v2.7.0: shx.poleTideConvert (IERS2010 <-> IERS2018 mean-pole
+%   conventions for C21/S21, solid + ocean, Python-validated - mixing
+%   conventions biases C21/S21 trends at the mm-EWH level); Proxy= in
+%   all fetchers (per-call proxy via matlab.net.http); provenance JSON
+%   sidecars on writeGFC/writeGrid/writeAnimation (Sidecar=false to
+%   disable); writeGrid netCDF is CF-1.8 complete.
 %   New in v2.6.0 - the comparison suite: shx.compareSolutions and
 %   shx.compareSeries (also g.compare / ts.compare) aggregate the
 %   standard metric set over the primitives shx.diffSpectrum (difference

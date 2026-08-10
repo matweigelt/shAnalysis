@@ -31,6 +31,7 @@ arguments
     opts.Epochs (:,1) double = []
     opts.LatType (1,1) string = "geocentric"
     opts.Description (1,1) string = ""
+    opts.Sidecar (1,1) logical = true
 end
 filename = char(filename);
 parent = fileparts(filename);
@@ -52,8 +53,12 @@ nccreate(filename, 'lon', 'Dimensions', {'lon', nlon});
 ncwrite(filename, 'lat', latDeg);
 ncwrite(filename, 'lon', mod(lonDeg, 360));
 ncwriteatt(filename, 'lat', 'units', 'degrees_north');
+ncwriteatt(filename, 'lat', 'standard_name', 'latitude');
+ncwriteatt(filename, 'lat', 'axis', 'Y');
 ncwriteatt(filename, 'lat', 'lat_type', char(opts.LatType));
 ncwriteatt(filename, 'lon', 'units', 'degrees_east');
+ncwriteatt(filename, 'lon', 'standard_name', 'longitude');
+ncwriteatt(filename, 'lon', 'axis', 'X');
 if T > 1
     nccreate(filename, 'time', 'Dimensions', {'time', T});
     t0 = datetime(2002, 1, 1);
@@ -63,6 +68,9 @@ if T > 1
         days(frac .* days(datetime(yy + 1, 1, 1) - datetime(yy, 1, 1)));
     ncwrite(filename, 'time', days(dts - t0));
     ncwriteatt(filename, 'time', 'units', 'days since 2002-01-01');
+    ncwriteatt(filename, 'time', 'standard_name', 'time');
+    ncwriteatt(filename, 'time', 'calendar', 'standard');
+    ncwriteatt(filename, 'time', 'axis', 'T');
     nccreate(filename, vn, 'Dimensions', ...
         {'lon', nlon, 'lat', nlat, 'time', T});
     ncwrite(filename, vn, permute(grid, [2 1 3]));
@@ -73,9 +81,42 @@ end
 if strlength(opts.Units) > 0
     ncwriteatt(filename, vn, 'units', char(opts.Units));
 end
+ncwriteatt(filename, vn, 'long_name', ...
+    ternary(strlength(opts.Description) > 0, char(opts.Description), vn));
+ncwriteatt(filename, vn, 'coordinates', 'lat lon');
 if strlength(opts.Description) > 0
     ncwriteatt(filename, '/', 'description', char(opts.Description));
 end
-ncwriteatt(filename, '/', 'source', ...
-    'shAnalysis v2.4 - Claude (Fable 5), 2026-08-07');
+v = shx.version();
+ncwriteatt(filename, '/', 'Conventions', 'CF-1.8');
+ncwriteatt(filename, '/', 'title', vn);
+ncwriteatt(filename, '/', 'source', sprintf('%s v%s (%s)', ...
+    v.Name, v.Version, v.Date));
+ncwriteatt(filename, '/', 'history', sprintf('%s: written by %s v%s', ...
+    char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
+    v.Name, v.Version));
+if opts.Sidecar
+    writeSidecar(string(filename), struct('name', vn, ...
+        'nlat', nlat, 'nlon', nlon, 'nEpochs', T, ...
+        'units', char(opts.Units), 'latType', char(opts.LatType)));
+end
+end
+
+function writeSidecar(target, extra)
+% provenance JSON sidecar: <target>.provenance.json (v2.7.0)
+v = shx.version();
+p = struct('tool', sprintf('%s %s (%s)', v.Name, v.Version, v.Date), ...
+    'provenance', v.Provenance, ...
+    'created', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
+    'matlab', sprintf('%s / %s', version, computer), ...
+    'file', char(target));
+fn = fieldnames(extra);
+for k = 1:numel(fn), p.(fn{k}) = extra.(fn{k}); end
+fid = fopen(char(string(target) + ".provenance.json"), 'w');
+fprintf(fid, '%s\n', jsonencode(p, 'PrettyPrint', true));
+fclose(fid);
+end
+
+function out = ternary(cond, a, b)
+if cond, out = a; else, out = b; end
 end

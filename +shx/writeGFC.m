@@ -15,7 +15,8 @@ function writeGFC(filename, C, S, GM, R, opts)
 %     opts.ModelName   string   default "shAnalysis_export"
 %     opts.TideSystem  string   default "unknown"
 %     opts.Comment     string   extra header comment lines ("" = none)
-%   Outputs: none (file on disk)
+%   Outputs: none (file on disk; plus <file>.provenance.json sidecar
+%   with tool version/MATLAB/metadata unless Sidecar = false, v2.7.0)
 %
 %   Claude (Fable 5), 2026-08-07.
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
@@ -31,6 +32,7 @@ arguments
     opts.ModelName {mustBeTextScalar} = "shAnalysis_export"
     opts.TideSystem {mustBeTextScalar} = "unknown"
     opts.Comment {mustBeTextScalar} = ""
+    opts.Sidecar (1,1) logical = true
 end
 
 nmax = size(C, 1) - 1;
@@ -68,6 +70,26 @@ for n = 0:nmax
             n, m, C(n+1,m+1), S(n+1,m+1), sC(n+1,m+1), sS(n+1,m+1));
     end
 end
+if opts.Sidecar
+    writeSidecar(string(filename), struct('nmax', nmax, ...
+        'GM', GM, 'R', R, 'modelName', char(opts.ModelName), ...
+        'tideSystem', char(opts.TideSystem)));
+end
+end
+
+function writeSidecar(target, extra)
+% provenance JSON sidecar: <target>.provenance.json (v2.7.0)
+v = shx.version();
+p = struct('tool', sprintf('%s %s (%s)', v.Name, v.Version, v.Date), ...
+    'provenance', v.Provenance, ...
+    'created', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
+    'matlab', sprintf('%s / %s', version, computer), ...
+    'file', char(target));
+fn = fieldnames(extra);
+for k = 1:numel(fn), p.(fn{k}) = extra.(fn{k}); end
+fid = fopen(char(string(target) + ".provenance.json"), 'w');
+fprintf(fid, '%s\n', jsonencode(p, 'PrettyPrint', true));
+fclose(fid);
 end
 
 function out = ternary(cond, a, b)

@@ -25,6 +25,9 @@ function [files, info] = fetchTN(opts)
 %     BaseURL ("")                      override source: an https base or
 %                                       a LOCAL MIRROR FOLDER (institute
 %                                       mirrors, offline tests)
+%     Proxy ("")                        per-call proxy, e.g.
+%                                       "http://proxy.uni.de:8080" (websave
+%                                       otherwise honours MATLAB Web Preferences)
 %     Timeout (60), Quiet (false)
 %
 %   Outputs
@@ -50,6 +53,7 @@ arguments
     opts.Update (1,1) logical = false
     opts.Dest (1,1) string = ""
     opts.BaseURL (1,1) string = ""
+    opts.Proxy (1,1) string = ""
     opts.Timeout (1,1) double = 60
     opts.Quiet (1,1) logical = false
 end
@@ -111,7 +115,7 @@ for k = 1:numel(names)
             end
             copyfile(src, tmpf);
         else
-            websave(tmpf, url, wo);
+            webFetch(url, tmpf, opts.Timeout, opts.Proxy);
         end
         parsers{k}(tmpf);                   % verify the FRESH copy
         ok = true;

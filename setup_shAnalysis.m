@@ -76,6 +76,7 @@ arguments
     opts.Nmax (1,1) double {mustBeMember(opts.Nmax, [60, 96])} = 96
     opts.Docs (1,1) logical = false
     opts.DryRun (1,1) logical = false
+    opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
 end
@@ -162,7 +163,7 @@ summary.dataFolder = string(shx.dataFolder());
 if level >= 2
     try
         [~, iTN] = shx.fetchTN(Providers = opts.Providers, ...
-            Update = opts.Update, Quiet = opts.Quiet);
+            Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, iTN.fetched, iTN.updated];
         summary.skipped = [summary.skipped, iTN.skipped];
         summary.failed  = [summary.failed,  iTN.failed];
@@ -173,7 +174,7 @@ end
 if level >= 3
     try
         [~, iD] = shx.fetchDDK(unique(opts.DDK), ...
-            Update = opts.Update, Quiet = opts.Quiet);
+            Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, iD.fetched, iD.updated];
         summary.skipped = [summary.skipped, iD.skipped];
     catch err
@@ -183,7 +184,7 @@ end
 if level >= 4
     try
         [~, iI] = shx.fetchITSG(opts.Months, Nmax = opts.Nmax, ...
-            Update = opts.Update, Quiet = opts.Quiet);
+            Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, string(iI.fetched), ...
             string(iI.updated)];
         summary.skipped = [summary.skipped, string(iI.skipped)];

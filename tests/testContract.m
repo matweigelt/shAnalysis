@@ -443,6 +443,8 @@ shx.writeAnimation(ts, tmp, quantity = "geoid", ...
 verifyTrue(testCase, isfile(tmp));
 d = dir(tmp);
 verifyGreaterThan(testCase, d.bytes, 1000);
+verifyTrue(testCase, isfile([tmp '.provenance.json']));   % v2.7.0
+delete([tmp '.provenance.json']);
 end
 
 function deleteIfThere(f)
@@ -687,6 +689,40 @@ mk = @(s) shSeries(Cs + s * 1e-11 * randn(n1, n1, T), ...
     LatDeg = -80:20:80, LonDeg = 0:30:330);
 verifyTrue(testCase, isgraphics(h2));
 close all
+end
+
+function testProvenanceSidecars(testCase)
+% v2.7.0: writers emit <file>.provenance.json (Sidecar=false disables)
+% and writeGrid netCDF is CF-1.8 complete with a dynamic source stamp
+rng(22); L = 6;
+C = 1e-9 * randn(L+1); S = 1e-9 * randn(L+1); S(:, 1) = 0;
+tmp = tempname; mkdir(tmp);
+cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+fg = fullfile(tmp, 'out.gfc');
+shx.writeGFC(fg, C, S, 3.986004415e14, 6378136.3);
+sj = [fg '.provenance.json'];
+verifyTrue(testCase, isfile(sj));
+p = jsondecode(fileread(sj));
+verifyTrue(testCase, contains(p.tool, "shAnalysis"));
+verifyEqual(testCase, p.nmax, L);
+verifyTrue(testCase, isfield(p, 'matlab') && isfield(p, 'created'));
+% opt-out
+fg2 = fullfile(tmp, 'out2.gfc');
+shx.writeGFC(fg2, C, S, 3.986004415e14, 6378136.3, Sidecar = false);
+verifyFalse(testCase, isfile([fg2 '.provenance.json']));
+% netCDF: CF-1.8 attributes + sidecar
+lat = -80:20:80; lon = 0:30:330;
+G = randn(numel(lat), numel(lon));
+fn = fullfile(tmp, 'grid.nc');
+shx.writeGrid(fn, G, lat, lon, Name = "ewh", Units = "m");
+verifyEqual(testCase, ncreadatt(fn, '/', 'Conventions'), 'CF-1.8');
+verifyEqual(testCase, ncreadatt(fn, 'lat', 'standard_name'), 'latitude');
+verifyEqual(testCase, ncreadatt(fn, 'lon', 'axis'), 'X');
+verifyEqual(testCase, ncreadatt(fn, 'ewh', 'coordinates'), 'lat lon');
+src = ncreadatt(fn, '/', 'source');
+v = shx.version();
+verifyTrue(testCase, contains(src, char(v.Version)));   % no stale stamps
+verifyTrue(testCase, isfile([fn '.provenance.json']));
 end
 
 function testVersionMetadata(testCase)
