@@ -167,13 +167,13 @@ methods
 
     function [rep, h] = compare(obj, other, varargin)
         %COMPARE Full comparison against another solution (v2.6.0).
-        %   REP = g.compare(G2, ...) delegates to shx.compareSolutions
+        %   REP = g.compare(G2, ...) delegates to shLowLevel.compareSolutions
         %   with OBJ as the first solution; all options pass through
         %   (Plot=true for the 4-panel figure).
         %   Outputs
-        %     rep        (1 x 1) struct   shx.compareSolutions report
+        %     rep        (1 x 1) struct   shLowLevel.compareSolutions report
         %     h          (1 x 1) graphics handle   figure (Plot = true)
-        [rep, h] = shx.compareSolutions(obj, other, varargin{:});
+        [rep, h] = shLowLevel.compareSolutions(obj, other, varargin{:});
     end
 
     function out = times(a, b)
@@ -262,7 +262,7 @@ methods
 
     function out = applyTN14(obj, tn, opts)
         %APPLYTN14 Replace C20 (and C30 where provided) from a TN-14 table.
-        %   OUT = obj.applyTN14(TN) with TN from shx.readTN14 (or a
+        %   OUT = obj.applyTN14(TN) with TN from shLowLevel.readTN14 (or a
         %   filename). Requires a finite obj.epoch; the nearest TN epoch
         %   within opts.Tolerance (default 0.05 yr) is used.
         %   opts.ReplaceC30: "auto" (default: replace when the table has a
@@ -276,7 +276,7 @@ methods
             opts.ReplaceC30 (1,1) string ...
                 {mustBeMember(opts.ReplaceC30, ["auto","never","always"])} = "auto"
         end
-        if ischar(tn) || isstring(tn), tn = shx.readTN14(tn); end
+        if ischar(tn) || isstring(tn), tn = shLowLevel.readTN14(tn); end
         if ~isfinite(obj.epoch)
             error('shCoefficients:noEpoch', ...
                 'applyTN14 requires a finite epoch (set via read/constructor).');
@@ -305,14 +305,14 @@ methods
 
     function out = addDegree1(obj, tn, opts)
         %ADDDEGREE1 Insert TN-13 geocenter (degree-1) coefficients.
-        %   OUT = obj.addDegree1(TN) with TN from shx.readTN13 (or a
+        %   OUT = obj.addDegree1(TN) with TN from shLowLevel.readTN13 (or a
         %   filename) sets C10, C11, S11 (with their sigmas) from the
         %   TN-13 record nearest to obj.epoch (within opts.Tolerance,
         %   default 0.05 yr). Without degree 1, EWH/mass grids are
         %   systematically biased - this completes the standard
         %   GSM + TN-14 + TN-13 processing chain.
         %
-        %   Inputs   tn   struct from shx.readTN13, or filename
+        %   Inputs   tn   struct from shLowLevel.readTN13, or filename
         %            Tolerance (1,1) double = 0.05 [yr]
         %   Outputs  out  shCoefficients with degree 1 set
         %   Outputs
@@ -322,7 +322,7 @@ methods
             tn
             opts.Tolerance (1,1) double = 0.05
         end
-        if ischar(tn) || isstring(tn), tn = shx.readTN13(tn); end
+        if ischar(tn) || isstring(tn), tn = shLowLevel.readTN13(tn); end
         if ~isfinite(obj.epoch)
             error('shCoefficients:noEpoch', ...
                 'addDegree1 requires a finite epoch (set via read/constructor).');
@@ -361,7 +361,7 @@ methods
             opts.windowLength double = []
         end
         out = obj;
-        [out.C, out.S] = shx.shDestripe(obj.C, obj.S, ...
+        [out.C, out.S] = shLowLevel.shDestripe(obj.C, obj.S, ...
             'minOrder', opts.minOrder, 'polyOrder', opts.polyOrder, ...
             'windowLength', opts.windowLength);
         if isempty(opts.windowLength)
@@ -383,7 +383,7 @@ methods
             radiusKm (1,1) double {mustBePositive}
         end
         out = obj;
-        [out.C, out.S, Wn] = shx.shGaussianFilter(obj.C, obj.S, radiusKm);
+        [out.C, out.S, Wn] = shLowLevel.shGaussianFilter(obj.C, obj.S, radiusKm);
         if ~isempty(obj.sigmaC)
             out.sigmaC = obj.sigmaC .* Wn(:);
         end
@@ -406,7 +406,7 @@ methods
         if ~isempty(obj.sigmaC) && ~isempty(obj.sigmaS)
             args = [args, {'sigmaC', obj.sigmaC, 'sigmaS', obj.sigmaS}];
         end
-        spec = shx.shDegreeRMS(obj.C, obj.S, args{:});
+        spec = shLowLevel.shDegreeRMS(obj.C, obj.S, args{:});
     end
 
     function [n0, nInterp] = crossover(obj, opts)
@@ -421,21 +421,21 @@ methods
             error('shCoefficients:noSigmas', ...
                 'crossover requires formal errors (sigmaC/sigmaS).');
         end
-        [n0, nInterp] = shx.shSpectralCrossover(obj.degreeRMS(n0 = opts.n0));
+        [n0, nInterp] = shLowLevel.shSpectralCrossover(obj.degreeRMS(n0 = opts.n0));
     end
 
     function h = spectrum(obj, varargin)
         %SPECTRUM Plot the degree-amplitude spectrum. h = obj.spectrum(...)
         %   Outputs
         %     h          (1 x 1) graphics handle   spectrum plot
-        h = shx.plotSHSpectrum(obj.degreeRMS, varargin{:});
+        h = shLowLevel.plotSHSpectrum(obj.degreeRMS, varargin{:});
     end
 
     function h = triangle(obj, varargin)
         %TRIANGLE Plot the degree/order coefficient triangle. h = obj.triangle(...)
         %   Outputs
         %     h          (1 x 1) graphics handle   coefficient triangle plot
-        h = shx.plotSHCoeffTriangle(obj.C, obj.S, varargin{:});
+        h = shLowLevel.plotSHCoeffTriangle(obj.C, obj.S, varargin{:});
     end
 
     % ------------------------------------------------------------ spatial
@@ -444,7 +444,7 @@ methods
         %   [GRID, LAT, LON] = obj.synthesis(LATVEC, LONVEC, quantity=...,
         %   kn=..., nmin=..., nmax=..., UseCache=true).
         %   The Legendre functions are served from a verified process-wide
-        %   cache (shx.legendreCached), so monthly time series on a fixed
+        %   cache (shLowLevel.legendreCached), so monthly time series on a fixed
         %   grid pay the recursion only once - no manual 'P' passing.
         %   EWH requires explicitly supplied load Love numbers kn (never
         %   hardcoded).
@@ -474,7 +474,7 @@ methods
         end
         if opts.LatType == "geodetic"
             % map grids are usually geodetic; SH math needs geocentric
-            latVec = shx.geodetic2geocentric(latVec, ...
+            latVec = shLowLevel.geodetic2geocentric(latVec, ...
                 Flattening = opts.Flattening);
         end
         nmaxEff = opts.nmax;
@@ -486,20 +486,20 @@ methods
         if ~isempty(opts.kn), args = [args, {'kn', opts.kn}]; end
         if ~isempty(opts.hn), args = [args, {'hn', opts.hn}]; end
         % cache only when the full Legendre stack fits the budget;
-        % otherwise let shx.shSynthesis stream latitude bands (v2.2)
+        % otherwise let shLowLevel.shSynthesis stream latitude bands (v2.2)
         fitsMem = (nmaxEff+1)^2 * numel(latVec) * 8 <= opts.MaxMemGB * 2^30;
         if opts.UseCache && fitsMem
-            P = shx.legendreCached(nmaxEff, deg2rad(latVec(:)'));
+            P = shLowLevel.legendreCached(nmaxEff, deg2rad(latVec(:)'));
             args = [args, {'P', P}];
         end
-        [grid, lat, lon] = shx.shSynthesis(obj.C, obj.S, obj.GM, obj.R, ...
+        [grid, lat, lon] = shLowLevel.shSynthesis(obj.C, obj.S, obj.GM, obj.R, ...
             latVec, lonVec, args{:});
     end
 
     function out = toReference(obj, opts)
         %TOREFERENCE Convert to another (GM, R) reference (exact).
         %   OUT = g.toReference(GM=3.986004418e14, R=6378137.0)
-        %   re-expresses the coefficients via shx.rescaleGMR; the
+        %   re-expresses the coefficients via shLowLevel.rescaleGMR; the
         %   physical field is invariant (Python-validated). Sigmas
         %   rescale identically; GM/R properties are updated.
         %   Outputs
@@ -512,7 +512,7 @@ methods
         GM2 = opts.GM; if isnan(GM2), GM2 = obj.GM; end
         R2 = opts.R;   if isnan(R2),  R2 = obj.R;  end
         out = obj;
-        [out.C, out.S, sg] = shx.rescaleGMR(obj.C, obj.S, ...
+        [out.C, out.S, sg] = shLowLevel.rescaleGMR(obj.C, obj.S, ...
             obj.GM, obj.R, GM2, R2, obj.sigmaC, obj.sigmaS);
         out.sigmaC = sg.C; out.sigmaS = sg.S;
         out.GM = GM2; out.R = R2;
@@ -525,7 +525,7 @@ methods
         %   OUT = g.subtractNormalField()            % WGS84
         %   OUT = g.subtractNormalField(System="GRS80")
         %   Computes the even zonals from the DEFINING constants
-        %   (shx.normalFieldCS, Heiskanen-Moritz closed form; validated
+        %   (shLowLevel.normalFieldCS, Heiskanen-Moritz closed form; validated
         %   against NIMA TR8350.2 to all published digits), rescales
         %   them from the ellipsoid's own (GM, a) to the object's
         %   (GM, R) - the WGS84 GM and a DIFFER from the ICGEM values,
@@ -549,12 +549,12 @@ methods
             opts.f (1,1) double = NaN
             opts.omega (1,1) double = NaN
         end
-        [CnEll, infoN] = shx.normalFieldCS(obj.nmax, ...
+        [CnEll, infoN] = shLowLevel.normalFieldCS(obj.nmax, ...
             System = opts.System, GM = opts.GM, a = opts.a, ...
             f = opts.f, omega = opts.omega);
         % normal field w.r.t. (GM_ell, a_ell) -> object's (GM, R)
         Cell = zeros(obj.nmax + 1); Cell(:, 1) = CnEll;
-        Cn = shx.rescaleGMR(Cell, zeros(obj.nmax + 1), ...
+        Cn = shLowLevel.rescaleGMR(Cell, zeros(obj.nmax + 1), ...
             infoN.GM, infoN.a, obj.GM, obj.R);
         out = obj;
         out.C(:, 1) = obj.C(:, 1) - Cn(:, 1);
@@ -566,7 +566,7 @@ methods
     end
 
     function h = map(obj, latDeg, lonDeg, opts)
-        %MAP Synthesize and plot in one call (shx.plotSHMap).
+        %MAP Synthesize and plot in one call (shLowLevel.plotSHMap).
         %   H = g.map(-89:89, 0:359, quantity="ewh", kn=kn) - all
         %   synthesis options plus the plotSHMap display options.
         %   Outputs
@@ -594,14 +594,14 @@ methods
         if strlength(ttl) == 0
             ttl = sprintf("%s (%s)", obj.name, opts.quantity);
         end
-        h = shx.plotSHMap(grid, latDeg, lonDeg, ...
+        h = shLowLevel.plotSHMap(grid, latDeg, lonDeg, ...
             Projection = opts.Projection, Coast = opts.Coast, ...
             CLim = opts.CLim, Units = opts.Units, Title = ttl, ...
             ax = opts.ax);
     end
 
     function out = fan(obj, rDegKm, rOrdKm)
-        %FAN Han fan filter (degree x order Gaussian) - shx.shFanFilter.
+        %FAN Han fan filter (degree x order Gaussian) - shLowLevel.shFanFilter.
         %   Outputs
         %     out        (1 x 1) shCoefficients   fan-filtered
         arguments
@@ -610,7 +610,7 @@ methods
             rOrdKm (1,1) double {mustBePositive}
         end
         out = obj;
-        [out.C, out.S] = shx.shFanFilter(obj.C, obj.S, rDegKm, ...
+        [out.C, out.S] = shLowLevel.shFanFilter(obj.C, obj.S, rDegKm, ...
             rOrdKm, R = obj.R);
         out.history(end+1) = sprintf( ...
             "fan filtered (deg %g km, ord %g km)", rDegKm, rOrdKm);
@@ -622,7 +622,7 @@ methods
         %       Mode="grid"|"points", nmin=1, LatType="geocentric")
         %   from the object's (residual!) coefficients - remove a mean
         %   field first. Love numbers are always user-supplied; see
-        %   shx.shSynthesisDeformation for formulas and validation.
+        %   shLowLevel.shSynthesisDeformation for formulas and validation.
         %   Outputs
         %     up         (nlat x nlon | npts) double   vertical deformation [m]
         %     north      same size   north component [m]
@@ -642,20 +642,20 @@ methods
             opts.Flattening (1,1) double = 1/298.257223563
         end
         if opts.LatType == "geodetic"
-            latDeg = shx.geodetic2geocentric(latDeg, ...
+            latDeg = shLowLevel.geodetic2geocentric(latDeg, ...
                 Flattening = opts.Flattening);
         end
-        [up, north, east] = shx.shSynthesisDeformation(obj.C, obj.S, ...
+        [up, north, east] = shLowLevel.shSynthesisDeformation(obj.C, obj.S, ...
             obj.R, latDeg, lonDeg, kn = opts.kn, hn = opts.hn, ...
             ln = opts.ln, nmin = opts.nmin, Mode = opts.Mode);
     end
 
     function out = applyDDK(obj, W)
         %APPLYDDK Apply a DDK (order-block-diagonal) decorrelation filter.
-        %   OUT = obj.applyDDK(W) with W from shx.readDDK (struct, .mat,
+        %   OUT = obj.applyDDK(W) with W from shLowLevel.readDDK (struct, .mat,
         %   or documented ASCII exchange format). Degrees not covered by
         %   the filter pass through unchanged; sigmas are NOT propagated
-        %   through the filter (set to NaN - use shx.mcPropagate for
+        %   through the filter (set to NaN - use shLowLevel.mcPropagate for
         %   filtered uncertainties).
         %   Outputs
         %     out        (1 x 1) shCoefficients   DDK-decorrelated
@@ -663,9 +663,9 @@ methods
             obj
             W
         end
-        W = shx.readDDK(W);
+        W = shLowLevel.readDDK(W);
         out = obj;
-        [out.C, out.S] = shx.applyDDK(obj.C, obj.S, W);
+        [out.C, out.S] = shLowLevel.applyDDK(obj.C, obj.S, W);
         out.sigmaC = nan(size(obj.C)); out.sigmaS = nan(size(obj.S));
         out.history(end+1) = sprintf("DDK filter applied (%s, nmax=%d)", ...
             W.name, W.nmax);
@@ -683,7 +683,7 @@ methods
         model = struct('C', obj.C, 'S', obj.S, ...
             'variableTerms', obj.variableTerms);
         out = obj;
-        [out.C, out.S] = shx.shEvalGFCT(model, epoch);
+        [out.C, out.S] = shLowLevel.shEvalGFCT(model, epoch);
         out.epoch = epoch;
         out.history(end+1) = sprintf("gfct evaluated at %.4f", epoch);
     end
@@ -698,14 +698,14 @@ methods
         cmt = strjoin(obj.history, " | ");
         if strlength(opts.Comment) > 0, cmt = opts.Comment + " | " + cmt; end
         nm = obj.name; if strlength(nm) == 0, nm = "shAnalysis_export"; end
-        shx.writeGFC(filename, obj.C, obj.S, obj.GM, obj.R, ...
+        shLowLevel.writeGFC(filename, obj.C, obj.S, obj.GM, obj.R, ...
             SigmaC = obj.sigmaC, SigmaS = obj.sigmaS, ...
             ModelName = nm, TideSystem = obj.tideSystem, Comment = cmt);
     end
 
     % ---------------------------------------------------- tvANS interface
     function x = vec(obj, idx)
-        %VEC Pack into a coefficient vector in shx.shIndex ordering.
+        %VEC Pack into a coefficient vector in shLowLevel.shIndex ordering.
         %   Outputs
         %     x          (P x 1) double   coefficients in idx ordering
         arguments
@@ -716,7 +716,7 @@ methods
             error('shCoefficients:badIndex', ...
                 'idx.Lmax=%d exceeds nmax=%d.', idx.Lmax, obj.nmax);
         end
-        x = shx.vecFromCS(obj.C, obj.S, idx);
+        x = shLowLevel.vecFromCS(obj.C, obj.S, idx);
     end
 
     function disp(obj)
@@ -743,8 +743,8 @@ methods (Static)
             opts.Epoch (1,1) double = NaN
             opts.ProductType (1,1) string = ""
         end
-        m = shx.shReadGFC(char(filename));
-        meta = shx.parseGraceFilename(filename);
+        m = shLowLevel.shReadGFC(char(filename));
+        meta = shLowLevel.parseGraceFilename(filename);
         ep = opts.Epoch;
         if isnan(ep), ep = meta.epoch; end
         pt = opts.ProductType;
@@ -767,7 +767,7 @@ methods (Static)
     end
 
     function obj = fromVec(x, idx, like)
-        %FROMVEC Unpack a shx.shIndex-ordered vector into an shCoefficients.
+        %FROMVEC Unpack a shLowLevel.shIndex-ordered vector into an shCoefficients.
         %   G = shCoefficients.fromVec(X, IDX, LIKE) copies GM/R and other
         %   metadata from the template LIKE (an shCoefficients).
         %   Outputs
@@ -777,7 +777,7 @@ methods (Static)
             idx (1,1) struct
             like (1,1) shCoefficients
         end
-        [cnm, snm] = shx.csFromVec(x, idx);
+        [cnm, snm] = shLowLevel.csFromVec(x, idx);
         obj = shCoefficients(cnm, snm, GM = like.GM, R = like.R, ...
             Epoch = like.epoch, ProductType = like.productType, ...
             TideSystem = like.tideSystem, Name = like.name + "_fromVec", ...
@@ -794,13 +794,13 @@ methods (Static)
         %   (GRID nlat x nlon, uniform full-circle LON: exact fast
         %   per-order solver) or from scattered points (equal-length
         %   GRID/LAT/LON vectors: full least squares). See
-        %   shx.shAnalysisGrid for the estimation options, the Kaula
+        %   shLowLevel.shAnalysisGrid for the estimation options, the Kaula
         %   regularization needed for under-determined sampling, and the
         %   exactness guarantees. GM/R/Epoch/Name flow into the object.
         %
         %   Inputs   grid (nlat,nlon) or (Np,1) double, lat/lon [deg]
         %            nmax (1,1) double
-        %   Outputs  obj  shCoefficients;  info: see shx.shAnalysisGrid
+        %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs
         %     obj        (1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)
         arguments
@@ -825,10 +825,10 @@ methods (Static)
             opts.Flattening (1,1) double = 1/298.257223563
         end
         if opts.LatType == "geodetic"
-            latVec = shx.geodetic2geocentric(latVec, ...
+            latVec = shLowLevel.geodetic2geocentric(latVec, ...
                 Flattening = opts.Flattening);
         end
-        [C, S, info] = shx.shAnalysisGrid(grid, latVec, lonVec, nmax, ...
+        [C, S, info] = shLowLevel.shAnalysisGrid(grid, latVec, lonVec, nmax, ...
             Method = opts.Method, quantity = char(opts.quantity), ...
             GM = opts.GM, R = opts.R, kn = opts.kn, hn = opts.hn, ...
             rho_ave = opts.rho_ave, rho_water = opts.rho_water, ...

@@ -21,11 +21,11 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <h1>Comparison suite (v2.6.0)</h1>
-<p><span class="tag">v2.6.0</span> Standard metrics for comparing solutions and series in the spectral, spatial and temporal domain - each accessible standalone, aggregated by <code class="inline">shx.compareSolutions</code> / <code class="inline">shx.compareSeries</code>.</p>
+<p><span class="tag">v2.6.0</span> Standard metrics for comparing solutions and series in the spectral, spatial and temporal domain - each accessible standalone, aggregated by <code class="inline">shLowLevel.compareSolutions</code> / <code class="inline">shLowLevel.compareSeries</code>.</p>
 
 <h2>Single points of access</h2>
-<pre>rep = shx.compareSolutions(g1, g2, Names = ["CSR", "ITSG"], Plot = true);
-rep = shx.compareSeries({tsCSR, tsGFZ, tsJPL}, Names = ["CSR","GFZ","JPL"]);
+<pre>rep = shLowLevel.compareSolutions(g1, g2, Names = ["CSR", "ITSG"], Plot = true);
+rep = shLowLevel.compareSeries({tsCSR, tsGFZ, tsJPL}, Names = ["CSR","GFZ","JPL"]);
 rep = g.compare(g2);          % method forms
 rep = ts.compare({ts2, ts3});</pre>
 <p>Both enforce a <b>common basis</b> first: truncation to the smallest nmax, GM/R
@@ -36,20 +36,20 @@ processing chains, not solutions.</p>
 <h2>The metric set</h2>
 <table>
 <tr><th>domain</th><th>metric</th><th>function</th></tr>
-<tr><td>spectral</td><td>difference degree amplitude vs both signal spectra; per-degree correlation; agreement crossover degree</td><td><code class="inline">shx.diffSpectrum</code></td></tr>
-<tr><td>spatial</td><td>area-weighted (cos &phi;) bias, RMSD, centered RMSD, pattern correlation, std ratio; Mask= for land/ocean/basins</td><td><code class="inline">shx.spatialStats</code></td></tr>
-<tr><td>temporal</td><td>Nash-Sutcliffe efficiency (punishes bias and amplitude, unlike correlation)</td><td><code class="inline">shx.nashSutcliffe</code></td></tr>
-<tr><td>temporal</td><td>correlation with AR(1)-corrected significance (Neff, two-sided p via betainc - base MATLAB)</td><td><code class="inline">shx.effectiveCorr</code></td></tr>
+<tr><td>spectral</td><td>difference degree amplitude vs both signal spectra; per-degree correlation; agreement crossover degree</td><td><code class="inline">shLowLevel.diffSpectrum</code></td></tr>
+<tr><td>spatial</td><td>area-weighted (cos &phi;) bias, RMSD, centered RMSD, pattern correlation, std ratio; Mask= for land/ocean/basins</td><td><code class="inline">shLowLevel.spatialStats</code></td></tr>
+<tr><td>temporal</td><td>Nash-Sutcliffe efficiency (punishes bias and amplitude, unlike correlation)</td><td><code class="inline">shLowLevel.nashSutcliffe</code></td></tr>
+<tr><td>temporal</td><td>correlation with AR(1)-corrected significance (Neff, two-sided p via betainc - base MATLAB)</td><td><code class="inline">shLowLevel.effectiveCorr</code></td></tr>
 <tr><td>temporal</td><td>trend difference &plusmn; combined sigma (Kendall AR(1)-corrected fits); annual amplitude ratio and phase lag [days]</td><td>via <code class="inline">compareSeries</code></td></tr>
 <tr><td>errors</td><td>&chi;&sup2;/dof of coefficient differences vs combined formal sigmas: tests error <i>realism</i>, a separate question from agreement</td><td>via <code class="inline">compare*</code></td></tr>
-<tr><td>multi-solution</td><td>generalized three-cornered hat: individual noise level per solution (N &ge; 3) - the question pairwise metrics cannot answer</td><td><code class="inline">shx.threeCorneredHat</code></td></tr>
+<tr><td>multi-solution</td><td>generalized three-cornered hat: individual noise level per solution (N &ge; 3) - the question pairwise metrics cannot answer</td><td><code class="inline">shLowLevel.threeCorneredHat</code></td></tr>
 </table>
 
 <h2>Visualization</h2>
 <p><code class="inline">Plot = true</code> renders 4-panel figures: spectra + crossover, degree
 correlation, difference map and order-RMS of the difference (solutions); comparison
 series, Taylor diagram, trend-difference spectra and difference series (series).
-<code class="inline">shx.taylorDiagram(refStd, stds, corrs)</code> stands alone and consumes
+<code class="inline">shLowLevel.taylorDiagram(refStd, stds, corrs)</code> stands alone and consumes
 <code class="inline">spatialStats</code> outputs directly.</p>
 
 <h2>Validation</h2>
@@ -58,7 +58,7 @@ TCH noise recovery within 1% (T = 20000), and the AR(1) correction reduces the
 false-positive rate of the correlation test from ~30% to ~6% at &phi; = 0.7.</p>
 
 <h2>See also</h2>
-<p class="seealso"><a href="version.html">shx.version</a></p>
+<p class="seealso"><a href="version.html">shLowLevel.version</a></p>
 
 <hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 2026-08-08 (v2.6.0).</p>
 </div></body></html>

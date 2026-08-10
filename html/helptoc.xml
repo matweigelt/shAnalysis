@@ -2,8 +2,9 @@
 <toc version="2.0">
 <tocitem target="shAnalysis.html">shAnalysis Toolbox
   <tocitem target="setup.html">setup_shAnalysis (v2.5)</tocitem>
-  <tocitem target="version.html">shx.version - toolbox metadata</tocitem>
+  <tocitem target="version.html">shLowLevel.version - toolbox metadata</tocitem>
   <tocitem target="comparison.html">Comparison suite (v2.6.0)</tocitem>
+  <tocitem target="apiReference.html">API reference (generated, v3.0.0)</tocitem>
   <tocitem target="shCoefficients.html">shCoefficients class</tocitem>
   <tocitem target="shSeries.html">shSeries class</tocitem>
   <tocitem target="shClimatology.html">shClimatology class</tocitem>

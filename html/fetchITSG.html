@@ -20,12 +20,12 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">I/O</span>
-<h1>shx.fetchITSG / shSeries.fromFolder</h1>
+<h1>shLowLevel.fetchITSG / shSeries.fromFolder</h1>
 <p>On-demand download of real ITSG monthly solutions and folder loading.</p>
 <h2>Syntax</h2>
-<pre>[files, info] = shx.fetchITSG(2010:2016);        % whole years, monthly
-shx.fetchITSG(["2008-04","2010-11"], Nmax=60);   % single months
-shx.fetchITSG("2008-04", Product="daily");       % daily Kalman, n40
+<pre>[files, info] = shLowLevel.fetchITSG(2010:2016);        % whole years, monthly
+shLowLevel.fetchITSG(["2008-04","2010-11"], Nmax=60);   % single months
+shLowLevel.fetchITSG("2008-04", Product="daily");       % daily Kalman, n40
 ts = shSeries.fromFolder(info.dest, Truncate=60);</pre>
 <h2>Description</h2>
 <p><b>Daily product (v2.4.1):</b> the ITSG daily Kalman-smoother solutions - one ICGEM .gfc per day (~83 kB, n40 only, formal errors, zero_tide), released for both ITSG-Grace2018 and the operational GRACE-FO series. The months/years spec expands to all days (a year is ~365 files, ~30 MB); target dataFolder/itsg_daily, kept separate from the monthly series so fromFolder never mixes samplings. Filename epochs (mid-day decimal year) parse automatically.</p>

@@ -18,10 +18,8 @@ function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 tc.TestData.dataDir = fullfile(here, 'test_data');
-shx.legendreCached('clear');
+shLowLevel.legendreCached('clear');
 end
 
 function g = randomField(nmax, epoch)
@@ -80,7 +78,7 @@ end
 function testRankDeficientBasinsRidge(tc)
 ts = randomSeries(10, 24);
 [tsF, op] = ts.filter("tvANS");                 %#ok<ASGLU>
-idx = shx.shIndex(ts.nmax, MinDegree = 2);
+idx = shLowLevel.shIndex(ts.nmax, MinDegree = 2);
 rng(13);
 b = randn(idx.P, 1);
 B = [b, b];                                     % exactly collinear pair
@@ -199,7 +197,7 @@ fprintf(fid, 'GRCOF2    1    0  1.3e-10  0.0      3.0e-11  0.0      20080501.000
 fprintf(fid, 'GRCOF2    1    1 -4.1e-10  2.6e-10  3.1e-11  3.2e-11  20080501.0000 20080531.2359\n');
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-tn = shx.readTN13(f);
+tn = shLowLevel.readTN13(f);
 verifyEqual(tc, numel(tn.epoch), 2);
 verifyEqual(tc, tn.C10(1), 1.2e-10);
 verifyEqual(tc, tn.S11(2), 2.6e-10);
@@ -228,7 +226,7 @@ fprintf(fid, ' 1 1  4.0e-22\n 2 1  1.0e-23  9.0e-22\n 3 1  0.0  2.0e-23  1.6e-21
 fprintf(fid, '-SOLUTION/MATRIX_ESTIMATE L COVA\n%%ENDSNX\n');
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-snx = shx.readSINEX(f);
+snx = shLowLevel.readSINEX(f);
 verifyEqual(tc, snx.kind, 'COVA');
 verifyEqual(tc, snx.x, [-4.84e-04; 2.03e-06; 1.40e-06]);
 verifyEqual(tc, snx.M(1,1), 4.0e-22);
@@ -251,7 +249,7 @@ fprintf(fid, '-SOLUTION/NORMAL_EQUATION_MATRIX U\n%%ENDSNX\n');
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
 idx = struct('n', [2;2;2], 'm', [0;1;1], 'cs', [0;0;1], 'P', 3);
-snx = shx.readSINEX(f, Output = "covariance", Index = idx);
+snx = shLowLevel.readSINEX(f, Output = "covariance", Index = idx);
 verifyEqual(tc, snx.kind, 'COVA');
 verifyEqual(tc, snx.x, [-4.84e-04; 2.03e-06; 1.40e-06], 'AbsTol', 0);
 % covariance must be inv(NEQ) reordered: check against direct computation
@@ -275,13 +273,13 @@ fprintf(fid, 'trnd 2 0  1.0e-11 0.0 0 0 20150101 20200101\n');
 fprintf(fid, 'acos 2 0  2.0e-11 0.0 0 0 1.0 20100101 20200101\n');
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-model = shx.shReadGFC(f);
+model = shLowLevel.shReadGFC(f);
 % at 2012.0: first piece, no trend (inactive), annual cos with t0=2010.0
-[Ct, ~] = shx.shEvalGFCT(model, 2012.0);
+[Ct, ~] = shLowLevel.shEvalGFCT(model, 2012.0);
 verifyEqual(tc, Ct(3,1), -4.0e-04 + 2.0e-11*cos(2*pi*2.0), 'RelTol', 1e-12);
 verifyEqual(tc, Ct(3,2), 1.0e-06);              % static gfc untouched
 % at 2016.5: second piece + trend from its own t0 (2015.0) + annual
-[Ct2, ~] = shx.shEvalGFCT(model, 2016.5);
+[Ct2, ~] = shLowLevel.shEvalGFCT(model, 2016.5);
 expected = -5.0e-04 + 1.0e-11*1.5 + 2.0e-11*cos(2*pi*6.5);
 verifyEqual(tc, Ct2(3,1), expected, 'RelTol', 1e-10);
 % C/S expose the most recent piece
@@ -323,10 +321,10 @@ function testAnalysisSingleRing(tc)
 % degenerate: one latitude ring cannot separate degrees -> rankDeficient
 lon = (0:29) * 12;
 g = ones(1, 30);
-verifyError(tc, @() shx.shAnalysisGrid(g, 10, lon, 4, Method = "rings"), ...
-    'shx:shAnalysisGrid:rankDeficient');
+verifyError(tc, @() shLowLevel.shAnalysisGrid(g, 10, lon, 4, Method = "rings"), ...
+    'shLowLevel:shAnalysisGrid:rankDeficient');
 % but with Kaula it returns finite coefficients
-[C, S] = shx.shAnalysisGrid(g, 10, lon, 4, Method = "rings", Kaula = 1);
+[C, S] = shLowLevel.shAnalysisGrid(g, 10, lon, 4, Method = "rings", Kaula = 1);
 verifyTrue(tc, all(isfinite(C(:))) && all(isfinite(S(:))));
 end
 
@@ -337,7 +335,7 @@ function testRealSINEXFixture(tc)
 % submatrix. Expected numbers cross-checked in Python.
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n96_2008-04_head12.snx');
 assumeTrue(tc, isfile(f), 'real SINEX fixture not present');
-snx = shx.readSINEX(f);
+snx = shLowLevel.readSINEX(f);
 verifyEqual(tc, snx.kind, 'NEQ');
 verifyEqual(tc, numel(snx.x), 12);
 verifyEqual(tc, snx.n(1:6), [2;2;2;2;2;3]);
@@ -349,7 +347,7 @@ verifyEqual(tc, snx.x(5), -1.40033136191992e-06, 'AbsTol', 0);
 verifyEqual(tc, snx.sig(1), 1.13782e-11, 'AbsTol', 0);
 % NEQ -> covariance (Cholesky inversion of the PD 12x12 submatrix);
 % expected sigmas from independent numpy inversion
-snxC = shx.readSINEX(f, Output = "covariance");
+snxC = shLowLevel.readSINEX(f, Output = "covariance");
 verifyEqual(tc, snxC.kind, 'COVA');
 verifyTrue(tc, issymmetric(snxC.M) || norm(snxC.M - snxC.M', 'fro') < 1e-30);
 sd = sqrt(diag(snxC.M));
@@ -358,7 +356,7 @@ verifyEqual(tc, sd(2), 2.87455389e-12, 'RelTol', 1e-6);
 verifyEqual(tc, sd(3), 3.04963470e-12, 'RelTol', 1e-6);
 % Index reorder into an explicit target ordering
 idx = struct('n', [3;2;2], 'm', [0;0;1], 'cs', [0;0;1], 'P', 3);
-snxR = shx.readSINEX(f, Index = idx);
+snxR = shLowLevel.readSINEX(f, Index = idx);
 verifyEqual(tc, snxR.x(1), 9.57262594695377e-07, 'AbsTol', 0);   % C30
 verifyEqual(tc, snxR.x(2), -4.84169356322812e-04, 'AbsTol', 0);  % C20
 verifyEqual(tc, snxR.x(3), 1.44480342951435e-09, 'AbsTol', 0);   % S21
@@ -375,7 +373,7 @@ fprintf(fid, ' 1 1 1.0e21 2.0e19 3.0e19\n');    % j+2 = 3 > Q = 1
 fprintf(fid, '-SOLUTION/NORMAL_EQUATION_MATRIX U\n%%ENDSNX\n');
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-verifyError(tc, @() shx.readSINEX(f), 'shx:readSINEX:badMatrixIndex');
+verifyError(tc, @() shLowLevel.readSINEX(f), 'shLowLevel:readSINEX:badMatrixIndex');
 end
 
 function testSetupPathIdempotent(tc)
@@ -392,7 +390,7 @@ verifyTrue(tc, isempty(s.fetched) && isempty(s.failed));
 end
 
 function testFetchTNSkipAndVerify(tc)
-% OFFLINE contract of shx.fetchTN: files already present in Dest are
+% OFFLINE contract of shLowLevel.fetchTN: files already present in Dest are
 % skipped without any network access but still verified by parse; a
 % present-but-corrupt file is reported in info.failed and excluded from
 % files (and NOT deleted, since it was not fetched by this call).
@@ -404,7 +402,7 @@ copyfile(fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt'), ...
 copyfile(fullfile(d, 'TN-13_GEOC_CSR_RL06.3.txt'), tmp);
 copyfile(fullfile(d, 'TN-13_GEOC_JPL_RL06.3.txt'), tmp);
 copyfile(fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt'), tmp);
-[files, info] = shx.fetchTN(Dest = tmp, Quiet = true);
+[files, info] = shLowLevel.fetchTN(Dest = tmp, Quiet = true);
 verifyEqual(tc, numel(files), 4);
 verifyEqual(tc, numel(info.skipped), 4);
 verifyTrue(tc, isempty(info.fetched) && isempty(info.failed));
@@ -413,9 +411,9 @@ tmp2 = tempname; mkdir(tmp2);
 cleanup2 = onCleanup(@() rmdir(tmp2, 's')); %#ok<NASGU>
 bad = fullfile(tmp2, 'TN-13_GEOC_CSR_RL06.3.txt');
 writelines("this is not a TN-13 file", bad);
-w0 = warning('off', 'shx:fetchTN:failed');
+w0 = warning('off', 'shLowLevel:fetchTN:failed');
 restoreW = onCleanup(@() warning(w0)); %#ok<NASGU>
-[files2, info2] = shx.fetchTN(Dest = tmp2, Providers = "CSR", ...
+[files2, info2] = shLowLevel.fetchTN(Dest = tmp2, Providers = "CSR", ...
     TN14 = false, Quiet = true);
 verifyTrue(tc, isempty(files2));
 verifyEqual(tc, numel(info2.failed), 1);
@@ -443,7 +441,7 @@ dm = dir(fullfile(mir, nmC)); szMir = dm.bytes;
 dp = dir(fullfile(dst, nmC)); szPre = dp.bytes;
 verifyNotEqual(tc, szPre, szMir);        % providers differ in size
 % (1) no Update: existing file skipped and untouched
-[f0, i0] = shx.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
+[f0, i0] = shLowLevel.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
     TN14 = false, Quiet = true);
 verifyEqual(tc, numel(f0), 1);
 verifyEqual(tc, i0.skipped, string(nmC));
@@ -451,7 +449,7 @@ verifyTrue(tc, isempty(i0.updated) && isempty(i0.fetched));
 d0 = dir(fullfile(dst, nmC));
 verifyEqual(tc, d0.bytes, szPre);
 % (2) Update: replaced by the mirror copy after parse verification
-[f1, i1] = shx.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
+[f1, i1] = shLowLevel.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
     TN14 = false, Update = true, Quiet = true);
 verifyEqual(tc, numel(f1), 1);
 verifyEqual(tc, i1.updated, string(nmC));
@@ -461,7 +459,7 @@ verifyEqual(tc, d1.bytes, szMir);
 % (3) failed refresh: TN-14 absent in the mirror -> existing file kept
 nm14 = 'TN-14_C30_C20_SLR_GSFC.txt';
 copyfile(fullfile(d, nm14), fullfile(dst, nm14));
-[f2, i2] = shx.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
+[f2, i2] = shLowLevel.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
     TN14 = true, Update = true, Quiet = true);
 verifyTrue(tc, any(contains(i2.failed, "TN-14")));
 verifyTrue(tc, any(i2.skipped == string(nm14)));   % kept + re-verified
@@ -470,7 +468,7 @@ verifyTrue(tc, isfile(fullfile(dst, nm14)));
 % (4) fresh dest: mirror serves a NEW file (fetched, not updated)
 dst2 = tempname; mkdir(dst2);
 c3 = onCleanup(@() rmdir(dst2, 's')); %#ok<NASGU>
-[f3, i3] = shx.fetchTN(Dest = dst2, BaseURL = mir, Providers = "CSR", ...
+[f3, i3] = shLowLevel.fetchTN(Dest = dst2, BaseURL = mir, Providers = "CSR", ...
     TN14 = false, Quiet = true);
 verifyEqual(tc, numel(f3), 1);
 verifyEqual(tc, i3.fetched, string(nmC));
@@ -484,11 +482,11 @@ function testFetchProxyPlumbing(tc)
 dst = tempname; mkdir(dst);
 c1 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
 % websave path (no proxy): unreachable base -> clean failure report
-[~, i0] = shx.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
+[~, i0] = shLowLevel.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
     Providers = "CSR", TN14 = false, Timeout = 2, Quiet = true);
 verifyEqual(tc, numel(i0.failed), 1);
 % webFetch path (proxy set): unreachable proxy -> clean failure report
-[~, i1] = shx.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
+[~, i1] = shLowLevel.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
     Providers = "CSR", TN14 = false, Timeout = 2, Quiet = true, ...
     Proxy = "http://127.0.0.1:9");
 verifyEqual(tc, numel(i1.failed), 1);
@@ -498,7 +496,7 @@ mir = tempname; mkdir(mir);
 c2 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
 nmC = 'TN-13_GEOC_CSR_RL06.3.txt';
 copyfile(fullfile(d, nmC), fullfile(mir, nmC));
-[f2, i2] = shx.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
+[f2, i2] = shLowLevel.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
     TN14 = false, Quiet = true, Proxy = "http://127.0.0.1:9");
 verifyEqual(tc, numel(f2), 1);
 verifyEqual(tc, i2.fetched, string(nmC));
@@ -515,7 +513,7 @@ function testRealTN14GSFC(tc)
 % upstream file with additional months still passes.
 f = fullfile(tc.TestData.dataDir, 'TN-14_C30_C20_SLR_GSFC.txt');
 assumeTrue(tc, isfile(f), 'real TN-14 file not present');
-tn = shx.readTN14(f);
+tn = shLowLevel.readTN14(f);
 verifyGreaterThanOrEqual(tc, numel(tn.epoch), 258);
 verifyEqual(tc, tn.C20(1), -4.8416934147454e-04, 'AbsTol', 0);
 verifyEqual(tc, tn.sigmaC20(1), 0.1628e-10, 'AbsTol', 1e-16);
@@ -540,8 +538,8 @@ d = tc.TestData.dataDir;
 fC = fullfile(d, 'TN-13_GEOC_CSR_RL06.3.txt');
 fJ = fullfile(d, 'TN-13_GEOC_JPL_RL06.3.txt');
 assumeTrue(tc, isfile(fC) && isfile(fJ), 'CSR/JPL TN-13 not present');
-tnC = shx.readTN13(fC);
-tnJ = shx.readTN13(fJ);
+tnC = shLowLevel.readTN13(fC);
+tnJ = shLowLevel.readTN13(fJ);
 for tn = [tnC, tnJ]
     verifyEqual(tc, numel(tn.epoch), 256);
     verifyTrue(tc, all(isfinite(tn.C10) & isfinite(tn.C11) & ...
@@ -557,7 +555,7 @@ verifyEqual(tc, tnJ.S11(end), 2.394137498e-10, 'AbsTol', 0);
 % cross-provider consistency vs the GFZ file (epoch-matched)
 fG = fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt');
 if isfile(fG)
-    tnG = shx.readTN13(fG);
+    tnG = shLowLevel.readTN13(fG);
     [ok, iC] = ismember(round(tnG.epoch, 6), round(tnC.epoch, 6));
     r = corrcoef(tnG.C10(ok), tnC.C10(iC(ok)));
     verifyGreaterThan(tc, r(1, 2), 0.9);
@@ -581,7 +579,7 @@ function testUserSuppliedDDKFiles(tc)
 % ordering checks on whatever subset is available locally.
 dirs = {tc.TestData.dataDir};
 try
-    dd = fullfile(shx.dataFolder(), 'DDK');   % fetchDDK target
+    dd = fullfile(shLowLevel.dataFolder(), 'DDK');   % fetchDDK target
     if isfolder(dd), dirs{end+1} = dd; end
 catch
 end
@@ -600,7 +598,7 @@ assumeTrue(tc, ~isempty(files), 'no Wbd files present');
 strength = zeros(numel(files), 1); gain60 = zeros(numel(files), 1);
 keep = true(numel(files), 1);
 for k = 1:numel(files)
-    W = shx.readDDK(fullfile(files(k).folder, files(k).name));
+    W = shLowLevel.readDDK(fullfile(files(k).folder, files(k).name));
     verifyEqual(tc, W.nmax, 120);
     verifyEqual(tc, numel(W.blocks), 241);
     b0 = W.blocks(1);                       % m = 0, C, degrees 2..120
@@ -633,7 +631,7 @@ function testRealTN13GFZ(tc)
 % Expected numbers cross-checked with an independent Python parse.
 f = fullfile(tc.TestData.dataDir, 'TN-13_GEOC_GFZ_RL06_3.txt');
 assumeTrue(tc, isfile(f), 'real TN-13 file not present');
-tn = shx.readTN13(f);
+tn = shLowLevel.readTN13(f);
 verifyEqual(tc, numel(tn.epoch), 256);
 verifyTrue(tc, all(isfinite(tn.C10) & isfinite(tn.C11) & isfinite(tn.S11)));
 verifyTrue(tc, all(diff(tn.epoch) > 0));
@@ -676,8 +674,8 @@ assumeTrue(tc, isfile(f), 'real TN-13 file not present');
 tmp = tempname; mkdir(tmp);
 cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
 gz = gzip(f, tmp);
-tn  = shx.readTN13(f);
-tnZ = shx.readTN13(gz{1});
+tn  = shLowLevel.readTN13(f);
+tnZ = shLowLevel.readTN13(gz{1});
 verifyEqual(tc, tnZ.epoch, tn.epoch, 'AbsTol', 0);
 verifyEqual(tc, tnZ.C10, tn.C10, 'AbsTol', 0);
 verifyEqual(tc, tnZ.S11, tn.S11, 'AbsTol', 0);
@@ -701,7 +699,7 @@ for k = 1:numel(f)
         % v2.2: stream just the SOLUTION/ESTIMATE block instead of skipping
         try
             tS = tic;
-            est = shx.readSINEX(fk, Only = "estimate");
+            est = shLowLevel.readSINEX(fk, Only = "estimate");
             fprintf(['  [stream] %s (%.0f MB): %d estimate params in ' ...
                 '%.1f s (matrix blocks skipped)\n'], f(k).name, ...
                 f(k).bytes/1e6, numel(est.x), toc(tS));
@@ -713,7 +711,7 @@ for k = 1:numel(f)
         end
         continue;
     end
-    snx = shx.readSINEX(fk);
+    snx = shLowLevel.readSINEX(fk);
     fprintf('  [ok]   %s: %d params, kind=%s\n', f(k).name, numel(snx.x), snx.kind);
     verifyGreaterThan(tc, numel(snx.x), 0);
     verifyTrue(tc, all(snx.m <= snx.n) && all(snx.n >= 0) && all(snx.n <= 2190));
@@ -752,7 +750,7 @@ for blocksMode = ["on", "off"]
 end
 % and the collinear-basin ridge path on top of such a series stays finite
 [~, op] = ts.filter("tvANS");
-idx = shx.shIndex(nmax, MinDegree = 2);
+idx = shLowLevel.shIndex(nmax, MinDegree = 2);
 rng(32); b = randn(idx.P, 1);
 avg = ts.basinAverage([b, b] / norm(b)^2 * idx.P, Deconvolve = true, ...
     Op = op, Ridge = 1e-6);
@@ -773,7 +771,7 @@ fprintf(fid, '%.15e %.15e %.15e\n', M2');
 fprintf(fid, 'block 2 1 2 4\n');
 fprintf(fid, '%.15e %.15e %.15e\n', eye(3)');
 fclose(fid);
-W = shx.readDDK(f);
+W = shLowLevel.readDDK(f);
 verifyEqual(tc, numel(W.blocks), 2);
 verifyEqual(tc, W.blocks(1).M, M2, 'AbsTol', 1e-14);
 verifyEqual(tc, W.nmax, 4);
@@ -801,7 +799,7 @@ verifyEqual(tc, tsF.Cs(3:5, 3, 4), M2 * ts.Cs(3:5, 3, 4), 'AbsTol', 1e-15);
 end
 
 function testReadLoveNumbersLayouts(tc)
-% shx.readLoveNumbers (v2.5): layouts, sparse interpolation, degree-1
+% shLowLevel.readLoveNumbers (v2.5): layouts, sparse interpolation, degree-1
 % frame conversion. All numeric expectations Python-validated
 % (Blewitt 2003 PREM: CE (-0.290, 0.113, 0.021) -> CF (-0.269, 0.134);
 % pchip-in-log(1+n) reconstruction error 1.3e-4 on Farrell sampling).
@@ -812,7 +810,7 @@ w = @(name, txt) writelines(txt, fullfile(tmp, name));
 % 2-column default with a prose comment
 w("f1.txt", ["% my kn table"; "0 0.000"; "1 0.021"; ...
     "2 -0.303"; "3 -0.194"]);
-LN = shx.readLoveNumbers(fullfile(tmp, "f1.txt"));
+LN = shLowLevel.readLoveNumbers(fullfile(tmp, "f1.txt"));
 verifyEqual(tc, LN.n, (0:3)');
 verifyEqual(tc, LN.kn(3), -0.303, 'AbsTol', 0);
 verifyTrue(tc, all(isnan(LN.hn)));
@@ -820,19 +818,19 @@ verifyTrue(tc, all(isnan(LN.hn)));
 % commented Farrell-order header
 w("f2.txt", ["#  n    h'      l'      k'"; "0 -0.13 0.0 0.0"; ...
     "1 -0.29 0.113 0.021"; "2 -0.99 0.02 -0.303"]);
-LN = shx.readLoveNumbers(fullfile(tmp, "f2.txt"));
+LN = shLowLevel.readLoveNumbers(fullfile(tmp, "f2.txt"));
 verifyEqual(tc, LN.kn(2), 0.021, 'AbsTol', 0);
 verifyEqual(tc, LN.hn(2), -0.29, 'AbsTol', 0);
 
 % headerless 4-column is ambiguous by contract
 w("f3.txt", ["0 0 0 0"; "1 1 1 1"]);
-verifyError(tc, @() shx.readLoveNumbers(fullfile(tmp, "f3.txt")), ...
-    'shx:readLoveNumbers:ambiguousColumns');
+verifyError(tc, @() shLowLevel.readLoveNumbers(fullfile(tmp, "f3.txt")), ...
+    'shLowLevel:readLoveNumbers:ambiguousColumns');
 
 % Columns= override, csv separators, unordered rows
 w("f4.txt", ["2, -0.99, 0.02, -0.303"; "1, -0.29, 0.113, 0.021"; ...
     "0, -0.13, 0, 0"]);
-LN = shx.readLoveNumbers(fullfile(tmp, "f4.txt"), Columns = "n h l k");
+LN = shLowLevel.readLoveNumbers(fullfile(tmp, "f4.txt"), Columns = "n h l k");
 verifyEqual(tc, LN.n, (0:2)');
 verifyEqual(tc, LN.kn(3), -0.303, 'AbsTol', 0);
 
@@ -840,9 +838,9 @@ verifyEqual(tc, LN.kn(3), -0.303, 'AbsTol', 0);
 ns = [0 1 2 3 4 5 6 8 10 12 18 32 56 100];
 rows = compose("%d %.8f", ns', -0.30 * ns' ./ (ns' + 6.0));
 w("f5.txt", rows);
-verifyError(tc, @() shx.readLoveNumbers(fullfile(tmp, "f5.txt"), ...
-    MaxDegree = 96), 'shx:readLoveNumbers:degreeGap');
-[LN, info] = shx.readLoveNumbers(fullfile(tmp, "f5.txt"), ...
+verifyError(tc, @() shLowLevel.readLoveNumbers(fullfile(tmp, "f5.txt"), ...
+    MaxDegree = 96), 'shLowLevel:readLoveNumbers:degreeGap');
+[LN, info] = shLowLevel.readLoveNumbers(fullfile(tmp, "f5.txt"), ...
     MaxDegree = 96, Interp = "pchip");
 nn = (0:96)';
 verifyEqual(tc, LN.kn, -0.30 * nn ./ (nn + 6.0), 'AbsTol', 2e-3);
@@ -851,16 +849,16 @@ verifyTrue(tc, any(info.interpolated) && ~info.interpolated(1));
 % frame conversion CE->CF (Blewitt PREM) and refused ->CE
 w("f6.txt", ["# n h l k"; "0 -0.13 0 0"; "1 -0.290 0.113 0.021"; ...
     "2 -0.99 0.02 -0.303"]);
-LN = shx.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
+LN = shLowLevel.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
     InFrame = "CE", OutFrame = "CF");
 verifyEqual(tc, LN.hn(2), -0.269, 'AbsTol', 5e-4);
 verifyEqual(tc, LN.ln(2), 0.134, 'AbsTol', 5e-4);
 verifyEqual(tc, LN.kn(1), 0, 'AbsTol', 0);       % only degree 1 shifts
-verifyError(tc, @() shx.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
+verifyError(tc, @() shLowLevel.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
     InFrame = "CM", OutFrame = "CE"), ...
-    'shx:readLoveNumbers:frameNotRecoverable');
+    'shLowLevel:readLoveNumbers:frameNotRecoverable');
 % exact identity k1(CM) = -1 from CE input
-LN = shx.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
+LN = shLowLevel.readLoveNumbers(fullfile(tmp, "f6.txt"), ...
     InFrame = "CE", OutFrame = "CM");
 verifyEqual(tc, LN.kn(2), -1, 'AbsTol', 1e-12);
 
@@ -939,7 +937,7 @@ ncwriteatt(f, 'time', 'units', 'days since 2002-01-01');
 ncwriteatt(f, 'lwe_thickness', 'units', 'cm');
 rng(44); E = randn(numel(lon), numel(lat), numel(tt));
 ncwrite(f, 'lwe_thickness', E);
-mas = shx.readMascon(f);
+mas = shLowLevel.readMascon(f);
 verifySize(tc, mas.ewh, [numel(lat), numel(lon), 2]);   % permuted to lat x lon
 verifyEqual(tc, mas.ewh(:, :, 1), E(:, :, 1)', 'AbsTol', 0);
 verifyEqual(tc, mas.epoch(1), 2002 + 100/365, 'AbsTol', 1e-3);
@@ -951,8 +949,8 @@ function testSINEXStreamingEstimateOnly(tc)
 % streaming Only="estimate" == full-read estimates on the real fixture
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n96_2008-04_head12.snx');
 assumeTrue(tc, isfile(f));
-full_ = shx.readSINEX(f);
-est = shx.readSINEX(f, Only = "estimate");
+full_ = shLowLevel.readSINEX(f);
+est = shLowLevel.readSINEX(f, Only = "estimate");
 verifyEqual(tc, est.n, full_.n);
 verifyEqual(tc, est.m, full_.m);
 verifyEqual(tc, est.cs, full_.cs);
@@ -963,7 +961,7 @@ verifyTrue(tc, isempty(est.M));
 tmp = tempname; mkdir(tmp);
 cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
 gz = gzip(f, tmp);
-estZ = shx.readSINEX(gz{1}, Only = "estimate");
+estZ = shLowLevel.readSINEX(gz{1}, Only = "estimate");
 verifyEqual(tc, estZ.x, full_.x, 'AbsTol', 0);
 end
 
@@ -973,7 +971,7 @@ function testRealDDKWbdBinary(tc)
 % the repository-documented reference values
 f = fullfile(tc.TestData.dataDir, 'Wbd_2-120.a_1d12p_4');
 assumeTrue(tc, isfile(f));
-W = shx.readDDK(f);
+W = shLowLevel.readDDK(f);
 verifyEqual(tc, W.nmax, 120);
 verifyEqual(tc, numel(W.blocks), 241);
 % block ordering: C0, C1, S1, ..., C120, S120
@@ -988,7 +986,7 @@ refHead = [0.999995413476564; 0.000000054102768; 0.000000668145433; ...
     -0.000000013374350; 0.000000077291901];
 verifyEqual(tc, W.blocks(1).M(1:5, 1), refHead, 'AbsTol', 1e-15);
 % truncation to n96: leading submatrices, reference-consistent
-W96 = shx.readDDK(f, Nmax = 96);
+W96 = shLowLevel.readDDK(f, Nmax = 96);
 verifyEqual(tc, W96.nmax, 96);
 verifyEqual(tc, numel(W96.blocks), 193);         % orders 0..96
 verifyEqual(tc, W96.blocks(1).M, W.blocks(1).M(1:95, 1:95), 'AbsTol', 0);
@@ -1000,8 +998,8 @@ C = tril(randn(n1)) * 1e-9; S = tril(randn(n1), -1) * 1e-9; S(:, 1) = 0;
 g = shCoefficients(C, S);
 gF = g.applyDDK(W96);
 verifyEqual(tc, gF.C(3:97, 1), W96.blocks(1).M * g.C(3:97, 1), 'AbsTol', 1e-24);
-sF = shx.shDegreeRMS(gF.C, gF.S);
-s0 = shx.shDegreeRMS(g.C, g.S);
+sF = shLowLevel.shDegreeRMS(gF.C, gF.S);
+s0 = shLowLevel.shDegreeRMS(g.C, g.S);
 r = sF.degRMS ./ max(s0.degRMS, realmin);
 % thresholds grounded by the Python cross-run on this filter: white-
 % field ratios ~0.96 (n=5), 0.024 (n=60), 2e-4 (n=90), max 1.031 (off-
@@ -1015,20 +1013,20 @@ end
 function testFingerprintContracts(testCase)
 L = 12; n = (0:L)';
 kn = -0.3 * n ./ (n + 3); hn = -0.9 * n ./ (n + 2) - 0.1;
-idxBad = shx.shIndex(L, MinDegree = 2);
+idxBad = shLowLevel.shIndex(L, MinDegree = 2);
 ocean = @(la, lo) double(la < 50);
 loadF = @(la, lo) -10 * double(la > 60);
 verifyError(testCase, ...
-    @() shx.seaLevelFingerprint(loadF, ocean, idxBad, kn = kn, hn = hn), ...
-    'shx:seaLevelFingerprint:badIndex');
-idx = shx.shIndex(L, MinDegree = 0);
+    @() shLowLevel.seaLevelFingerprint(loadF, ocean, idxBad, kn = kn, hn = hn), ...
+    'shLowLevel:seaLevelFingerprint:badIndex');
+idx = shLowLevel.shIndex(L, MinDegree = 0);
 verifyError(testCase, ...
-    @() shx.seaLevelFingerprint(struct('bad', 1), ocean, idx, ...
-    kn = kn, hn = hn), 'shx:seaLevelFingerprint:badLoad');
+    @() shLowLevel.seaLevelFingerprint(struct('bad', 1), ocean, idx, ...
+    kn = kn, hn = hn), 'shLowLevel:seaLevelFingerprint:badLoad');
 % grid-valued load form: constant land load, must still conserve
-[~, ~, grid0] = shx.synthesisMatrix(idx, NLat = 2*(L+1), NLon = 2*(2*L+2));
+[~, ~, grid0] = shLowLevel.synthesisMatrix(idx, NLat = 2*(L+1), NLon = 2*(2*L+2));
 Ng = numel(grid0.latDeg) * numel(grid0.lonDeg);
-[S, ~, info] = shx.seaLevelFingerprint(-5 * ones(Ng, 1), ocean, idx, ...
+[S, ~, info] = shLowLevel.seaLevelFingerprint(-5 * ones(Ng, 1), ocean, idx, ...
     kn = kn, hn = hn);
 verifyLessThan(testCase, abs(info.massResidual), 1e-12);
 verifyEqual(testCase, numel(S), Ng);
@@ -1039,7 +1037,7 @@ L = 4; n1 = L + 1;
 Cs = randn(n1, n1, 5); Cs(2, 1, 3) = NaN;
 Ss = zeros(n1, n1, 5);
 ts = shSeries(Cs, Ss = Ss, Epochs = 2010 + (1:5)/12);
-verifyError(testCase, @() shx.eofAnalysis(ts), 'shx:eofAnalysis:nanInSeries');
+verifyError(testCase, @() shLowLevel.eofAnalysis(ts), 'shLowLevel:eofAnalysis:nanInSeries');
 end
 
 function testFromFolderRealFiles(testCase)
@@ -1097,33 +1095,95 @@ verifyEqual(testCase, g.productType, "GSM");
 verifyTrue(testCase, ~isempty(g.sigmaC) && any(g.sigmaC(:) > 0));
 verifyEqual(testCase, g.C(1, 1), 1);
 % meta from the filename parser directly
-meta = shx.parseGraceFilename('ITSG-Grace2018_Kalman_n40_2008-04-15.gfc');
+meta = shLowLevel.parseGraceFilename('ITSG-Grace2018_Kalman_n40_2008-04-15.gfc');
 verifyEqual(testCase, meta.epoch, 2008 + 105.5/366, 'AbsTol', 1e-9);
 verifyLessThan(testCase, meta.epochStop - meta.epochStart, 1.1/365);
+end
+
+function testFetchLoveNumbersMirror(tc)
+% v3.0.0: GROOPS Love-number fetch from a local mirror + parser contract
+d = tc.TestData.dataDir;
+src = fullfile(d, 'loadLoveNumbers_Gegout97.txt');
+assumeTrue(tc, isfile(src));
+mir = tempname; mkdir(mir); copyfile(src, mir);
+dst = tempname; mkdir(dst);
+c1 = onCleanup(@() rmdir(mir, 's')); c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+[f, inf] = shLowLevel.fetchLoveNumbers("loadLoveNumbers_Gegout97.txt", ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(f), 1);
+verifyEqual(tc, numel(inf.parsed), 1);
+kn = inf.parsed(1).kn;
+verifyEqual(tc, numel(kn), 1025);
+verifyEqual(tc, kn(1:2), [0; 0], 'AbsTol', 0);
+verifyEqual(tc, kn(3), -0.3054020195, 'AbsTol', 1e-10);   % degree 2
+verifyLessThan(tc, kn(3:end), 0);                          % all negative
+% second call skips (safe-swap idempotence)
+[~, i2] = shLowLevel.fetchLoveNumbers("loadLoveNumbers_Gegout97.txt", ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(i2.skipped), 1);
+verifyError(tc, @() shLowLevel.fetchLoveNumbers("nonsense.txt", BaseURL = mir), ...
+    'shLowLevel:fetchLoveNumbers:unknownName');
+end
+
+function testListITSGAndFetchAllMirror(tc)
+% v3.0.0: listITSG walks a local mirror tree; fetchITSG months="all" +
+% Catalog= selection operate on it offline
+mir = tempname;
+m96 = fullfile(mir, 'ITSG-Grace2018', 'monthly', 'monthly_n96');
+mkdir(m96); mkdir(fullfile(mir, 'ITSG-Grace2018', 'daily_kalman'));
+d = tc.TestData.dataDir;
+src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
+assumeTrue(tc, isfile(src));
+% two months, correct n96 naming for enumeration
+copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-04.gfc'));
+copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-05.gfc'));
+c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+T = shLowLevel.listITSG(BaseURL = mir);
+verifyEqual(tc, T.idx, (1:height(T))');
+verifyTrue(tc, any(T.release == "ITSG-Grace2018" & T.product == "monthly" ...
+    & T.nmax == 96));
+verifyTrue(tc, any(T.product == "daily"));
+dst = tempname; mkdir(dst);
+c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+[f, inf] = shLowLevel.fetchITSG("all", Release = "ITSG-Grace2018", Nmax = 96, ...
+    BaseURL = mir, Dest = dst, Quiet = true);
+verifyEqual(tc, numel(f), 2);
+verifyEqual(tc, numel(inf.fetched), 2);
+% Catalog selection: the monthly n96 row fetches the same two files
+ii = find(T.product == "monthly" & T.nmax == 96, 1);
+[f2, i2] = shLowLevel.fetchITSG(Catalog = ii, BaseURL = mir, Dest = dst, ...
+    Quiet = true);
+verifyEqual(tc, numel(f2), 2);
+verifyEqual(tc, numel(i2.skipped), 2);       % already present
 end
 
 function testICGEMListFixtureAndResolve(testCase)
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fx = fullfile(d, 'icgem_list_fixture.html');
 assumeTrue(testCase, isfile(fx));
-T = shx.listICGEM(Source = fx);
+T = shLowLevel.listICGEM(Source = fx);
 verifyGreaterThan(testCase, height(T), 30);
+% v3.0.0: numbered catalogue + numeric selection contract (offline)
+verifyTrue(testCase, ismember('idx', T.Properties.VariableNames));
+verifyEqual(testCase, T.idx, (1:height(T))');
+verifyError(testCase, @() shLowLevel.fetchICGEM(height(T) + 7, List = T), ...
+    'shLowLevel:fetchICGEM:badIdx');
 verifyTrue(testCase, any(T.name == "Tongji-GMMG2025S"));
 verifyTrue(testCase, all(startsWith(T.url, "https://icgem.gfz.de/getmodel/gfc/")));
 verifyTrue(testCase, all(isfinite(T.year)));
 % name resolution against the fixture list - no network involved
 verifyError(testCase, ...
-    @() shx.fetchICGEM("definitely_no_such_model", List = T), ...
-    'shx:fetchICGEM:notFound');
-verifyError(testCase, @() shx.fetchICGEM("WHU", List = T), ...
-    'shx:fetchICGEM:ambiguous');
+    @() shLowLevel.fetchICGEM("definitely_no_such_model", List = T), ...
+    'shLowLevel:fetchICGEM:notFound');
+verifyError(testCase, @() shLowLevel.fetchICGEM("WHU", List = T), ...
+    'shLowLevel:fetchICGEM:ambiguous');
 % temporal branch on a saved live page (the v2.4.1 nested-group regexp
 % crash regression: MATLAB tokens = outermost parentheses only).
 % v2.4.2: the branch now parses the FULL /sp/ series-page catalogue
 % (the old getseries-only match returned 3 release-note rows).
 fx2 = fullfile(d, 'icgem_temporal_fixture.html');
 if isfile(fx2)
-    [Tt, infoT] = shx.listICGEM(Type = "temporal", Source = fx2);
+    [Tt, infoT] = shLowLevel.listICGEM(Type = "temporal", Source = fx2);
     verifyGreaterThan(testCase, height(Tt), 60);   % 74 series on the capture
     verifyTrue(testCase, all(ismember(["CSR"; "GFZ"; "JPL"; "COST-G"; ...
         "ITSG"; "Tongji"], Tt.center)));
@@ -1142,7 +1202,7 @@ end
 % ARE statically listed - the old "JS-only" caveat is obsolete)
 fx3 = fullfile(d, 'icgem_series_fixture.html');
 if isfile(fx3)
-    F = shx.listICGEM(Type = "temporal", Series = "x", Source = fx3);
+    F = shLowLevel.listICGEM(Type = "temporal", Series = "x", Source = fx3);
     verifyGreaterThan(testCase, height(F), 400);   % 486 files on the capture
     verifyTrue(testCase, any(F.name == "ITSG-Grace2018_n120_2002-04.gfc"));
     verifyTrue(testCase, all(startsWith(F.url, ...
@@ -1150,11 +1210,11 @@ if isfile(fx3)
     verifyTrue(testCase, all(endsWith(F.name, [".gfc", ".gz"])));
 end
 verifyError(testCase, ...
-    @() shx.listICGEM(Type = "static", Series = "x", Source = fx), ...
-    'shx:listICGEM:seriesNeedsTemporal');
+    @() shLowLevel.listICGEM(Type = "static", Series = "x", Source = fx), ...
+    'shLowLevel:listICGEM:seriesNeedsTemporal');
 verifyError(testCase, ...
-    @() shx.listICGEM(Type = "temporal", Series = "x", Source = fx2), ...
-    'shx:listICGEM:noFiles');           % catalogue page has no file links
+    @() shLowLevel.listICGEM(Type = "temporal", Series = "x", Source = fx2), ...
+    'shLowLevel:listICGEM:noFiles');           % catalogue page has no file links
 % exact-name resolution finds the row (skip download: file marker trick)
 tmp = fullfile(tempdir, sprintf('shx_icgem_%d', randi(1e9)));
 mkdir(tmp);
@@ -1162,7 +1222,7 @@ cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
 row = T(T.name == "Tongji-GMMG2025S", :);
 [~, b, e] = fileparts(char(row.url));
 fid = fopen(fullfile(tmp, [b, e]), 'w'); fclose(fid);   % pretend cached
-[f, info] = shx.fetchICGEM("Tongji-GMMG2025S", List = T, Dest = tmp);
+[f, info] = shLowLevel.fetchICGEM("Tongji-GMMG2025S", List = T, Dest = tmp);
 verifyTrue(testCase, info.skipped);
 verifyTrue(testCase, isfile(f));
 end

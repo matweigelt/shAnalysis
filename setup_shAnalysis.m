@@ -13,16 +13,16 @@ function summary = setup_shAnalysis(opts)
 %
 %   Download levels are CUMULATIVE ("several levels"):
 %     "none"     path only (default).
-%     "core"     shx.fetchTN: GSFC TN-14 (C20/C30) + TN-13 geocenter
+%     "core"     shLowLevel.fetchTN: GSFC TN-14 (C20/C30) + TN-13 geocenter
 %                files (GFZ/CSR/JPL, ~250 KB total) - the low-degree
 %                completion chain. Every file is verified by parse.
-%     "filters"  core + shx.fetchDDK(DDK): anisotropic DDK
+%     "filters"  core + shLowLevel.fetchDDK(DDK): anisotropic DDK
 %                decorrelation matrices (~10 MB each).
-%     "starter"  filters + shx.fetchITSG(Months, Nmax=Nmax): a small
+%     "starter"  filters + shLowLevel.fetchITSG(Months, Nmax=Nmax): a small
 %                monthly-solution starter set - by default the n96
 %                companions of the two shipped n60 fixture months
 %                (2008-04 GRACE, 2025-12 GRACE-FO).
-%   Downloads land in shx.dataFolder() subfolders (TN/, DDK/,
+%   Downloads land in shLowLevel.dataFolder() subfolders (TN/, DDK/,
 %   itsg_series/); existing files are skipped, so re-running is cheap
 %   and idempotent. Failures are collected per file and reported - an
 %   offline machine still gets a working path setup plus the shipped
@@ -76,6 +76,8 @@ arguments
     opts.Nmax (1,1) double {mustBeMember(opts.Nmax, [60, 96])} = 96
     opts.Docs (1,1) logical = false
     opts.DryRun (1,1) logical = false
+    opts.DataFolder (1,1) string = ""
+    opts.FetchITSG (1,1) string = "none"
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
@@ -99,17 +101,17 @@ else
     plan(end+1) = "path: addpath (this session only): " + root;
 end
 if level >= 2
-    plan(end+1) = "core: shx.fetchTN -> TN-14 (GSFC) + TN-13 (" + ...
+    plan(end+1) = "core: shLowLevel.fetchTN -> TN-14 (GSFC) + TN-13 (" + ...
         strjoin(opts.Providers, "/") + "), verified by parse" + ...
         ternary(opts.Update, " (update existing)", "");
 end
 if level >= 3
-    plan(end+1) = "filters: shx.fetchDDK -> DDK" + ...
+    plan(end+1) = "filters: shLowLevel.fetchDDK -> DDK" + ...
         strjoin(string(unique(opts.DDK)), ", DDK") + " (~10 MB each)" + ...
         ternary(opts.Update, " (update existing)", "");
 end
 if level >= 4
-    plan(end+1) = "starter: shx.fetchITSG -> ITSG n" + opts.Nmax + ...
+    plan(end+1) = "starter: shLowLevel.fetchITSG -> ITSG n" + opts.Nmax + ...
         " months " + strjoin(opts.Months, ", ") + ...
         ternary(opts.Update, " (update existing)", "");
 end
@@ -121,8 +123,14 @@ summary = struct('root', root, 'pathAction', "planned", ...
     'dataFolder', "", 'plan', plan, 'fetched', strings(1, 0), ...
     'skipped', strings(1, 0), 'failed', strings(1, 0), 'ok', true);
 
+% ---- data folder override BEFORE any fetcher runs (v3.0.0): the
+% pre-v3 chicken-and-egg (dataFolder had to be set via a function that
+% is only on the path after setup) is gone
+if strlength(opts.DataFolder) > 0 && ~opts.DryRun
+    shLowLevel.dataFolder(char(opts.DataFolder));
+end
 if opts.DryRun
-    % read-only dataFolder lookup (shx.dataFolder() would mkdir)
+    % read-only dataFolder lookup (shLowLevel.dataFolder() would mkdir)
     if ispref('shAnalysis', 'dataFolder')
         summary.dataFolder = string(getpref('shAnalysis', 'dataFolder'));
     else
@@ -159,10 +167,10 @@ if ~opts.Quiet
 end
 
 % ----------------------------------------------------------- downloads
-summary.dataFolder = string(shx.dataFolder());
+summary.dataFolder = string(shLowLevel.dataFolder());
 if level >= 2
     try
-        [~, iTN] = shx.fetchTN(Providers = opts.Providers, ...
+        [~, iTN] = shLowLevel.fetchTN(Providers = opts.Providers, ...
             Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, iTN.fetched, iTN.updated];
         summary.skipped = [summary.skipped, iTN.skipped];
@@ -171,9 +179,24 @@ if level >= 2
         summary.failed(end+1) = "fetchTN: " + err.message;
     end
 end
+% ---- optional bulk ITSG download (v3.0.0): FetchITSG = "all" pulls
+% every monthly solution (ITSG-Grace2018 + operational, Nmax = 96)
+if opts.FetchITSG == "all"
+    try
+        [~, iI] = shLowLevel.fetchITSG("all", Nmax = 96, Update = opts.Update, ...
+            Proxy = opts.Proxy, Quiet = opts.Quiet);
+        summary.fetched = [summary.fetched, iI.fetched, iI.updated];
+        summary.skipped = [summary.skipped, iI.skipped];
+    catch err
+        summary.failed(end+1) = "fetchITSG: " + err.message;
+    end
+elseif opts.FetchITSG ~= "none"
+    error('shAnalysis:setup:badFetchITSG', ...
+        'FetchITSG must be "none" or "all" (got "%s").', opts.FetchITSG);
+end
 if level >= 3
     try
-        [~, iD] = shx.fetchDDK(unique(opts.DDK), ...
+        [~, iD] = shLowLevel.fetchDDK(unique(opts.DDK), ...
             Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, iD.fetched, iD.updated];
         summary.skipped = [summary.skipped, iD.skipped];
@@ -183,7 +206,7 @@ if level >= 3
 end
 if level >= 4
     try
-        [~, iI] = shx.fetchITSG(opts.Months, Nmax = opts.Nmax, ...
+        [~, iI] = shLowLevel.fetchITSG(opts.Months, Nmax = opts.Nmax, ...
             Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
         summary.fetched = [summary.fetched, string(iI.fetched), ...
             string(iI.updated)];

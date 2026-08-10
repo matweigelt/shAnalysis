@@ -32,7 +32,7 @@ function reg = demo_shAnalysis(cases, opts)
 %   Data policy: D01-D04 use the REAL ITSG files shipped in
 %   tests/test_data (GRACE 2008-04, GRACE-FO 2025-12, DDK3 Wbd) - D02/
 %   D04 show the real 17.7-yr mass-change difference with real stripes.
-%   D05/D06 use a real monthly series once shx.fetchITSG(years) has
+%   D05/D06 use a real monthly series once shLowLevel.fetchITSG(years) has
 %   populated tests/test_data/itsg_series (>= 24 months). D12/D13/D14
 %   stay synthetic BY DESIGN: they demonstrate recovery of KNOWN truth
 %   (modes, breaks, noise factors), which real data cannot provide.
@@ -85,7 +85,7 @@ if ~isempty(failList)
     fprintf(', %d FAILED (%s)', numel(failList), strjoin(failList, ', '));
 end
 fprintf(' ----\n');
-v = shx.version();
+v = shLowLevel.version();
 fprintf('Provenance: %s v%s, Claude (Fable 5), %s.\n', ...
     v.Name, v.Version, v.Date);
 if ~isempty(failList) && nargout == 0
@@ -175,9 +175,9 @@ end
 end
 
 function ts = tryRealSeries(Lcut)
-% real monthly series if shx.fetchITSG has populated itsg_series/
+% real monthly series if shLowLevel.fetchITSG has populated itsg_series/
 ts = [];
-cands = [string(fullfile(shx.dataFolder(), 'itsg_series')), ...
+cands = [string(fullfile(shLowLevel.dataFolder(), 'itsg_series')), ...
     string(fullfile(fileparts(mfilename('fullpath')), 'tests', ...
     'test_data', 'itsg_series'))];                 % new + legacy location
 for d = cands
@@ -212,15 +212,15 @@ if isempty(g), g = demoField(60, 11); fprintf('  (synthetic field)\n');
 else, fprintf('  (real ITSG file)\n'); end
 newfig(vis, 'D01 triangle & spectrum');
 subplot(1, 2, 1);
-shx.plotSHCoeffTriangle(g.C, g.S, 'ax', gca);
+shLowLevel.plotSHCoeffTriangle(g.C, g.S, 'ax', gca);
 subplot(1, 2, 2);
 if ~isempty(g.sigmaC)
     sC = g.sigmaC; sS = g.sigmaS;             % real formal errors
 else
     sC = abs(g.C) * 0.02 + 1e-13; sS = sC;    % mock if none
 end
-spec = shx.shDegreeRMS(g.C, g.S, 'R', g.R, 'sigmaC', sC, 'sigmaS', sS);
-shx.plotSHSpectrum(spec, 'ax', gca, 'Kaula', 1e-5, 'MarkCrossover', true);
+spec = shLowLevel.shDegreeRMS(g.C, g.S, 'R', g.R, 'sigmaC', sC, 'sigmaS', sS);
+shLowLevel.plotSHSpectrum(spec, 'ax', gca, 'Kaula', 1e-5, 'MarkCrossover', true);
 end
 
 function d02(vis, ~)
@@ -247,8 +247,8 @@ newfig(vis, 'D02 upward continuation');
 g = g.truncate(min(g.nmax, 45));
 ga0 = g.synthesis(lat, lon, quantity = "gravity_anomaly");
 ga4 = g.synthesis(lat, lon, quantity = "gravity_anomaly", Height = 400e3);
-subplot(1, 2, 1); shx.plotSHMap(ga0*1e5, lat, lon, Units="mGal", Title="anomaly, surface", ax=gca);
-subplot(1, 2, 2); shx.plotSHMap(ga4*1e5, lat, lon, Units="mGal", Title="anomaly at 400 km", ax=gca);
+subplot(1, 2, 1); shLowLevel.plotSHMap(ga0*1e5, lat, lon, Units="mGal", Title="anomaly, surface", ax=gca);
+subplot(1, 2, 2); shLowLevel.plotSHMap(ga4*1e5, lat, lon, Units="mGal", Title="anomaly at 400 km", ax=gca);
 fprintf('  attenuation at 400 km: rms ratio %.3f\n', sqrt(mean(ga4(:).^2))/sqrt(mean(ga0(:).^2)));
 end
 
@@ -257,9 +257,9 @@ g = tryRealITSG();
 if isempty(g)
     % synthetic full field: rescaled normal field + Kaula residual
     gr = demoField(40, 13);
-    [CnE, iN] = shx.normalFieldCS(40);
+    [CnE, iN] = shLowLevel.normalFieldCS(40);
     Cell = zeros(41); Cell(:, 1) = CnE;
-    CnR = shx.rescaleGMR(Cell, zeros(41), iN.GM, iN.a, gr.GM, gr.R);
+    CnR = shLowLevel.rescaleGMR(Cell, zeros(41), iN.GM, iN.a, gr.GM, gr.R);
     g = shCoefficients(gr.C*1e-1 + CnR, gr.S*1e-1, GM = gr.GM, R = gr.R);
     fprintf('  (synthetic full field)\n');
 end
@@ -286,16 +286,16 @@ gF = g.fan(350, 200);
 gD = g.destripe();
 newfig(vis, 'D04 filter differences (removed signal)');
 subplot(1, 3, 1);
-shx.plotSHCoeffTriangle(gG.C, gG.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shLowLevel.plotSHCoeffTriangle(gG.C, gG.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('Gaussian 350 - raw');
 subplot(1, 3, 2);
-shx.plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shLowLevel.plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('fan 350/200 - raw');
 subplot(1, 3, 3);
-shx.plotSHCoeffTriangle(gD.C, gD.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shLowLevel.plotSHCoeffTriangle(gD.C, gD.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('destripe - raw');
 try
-    W = shx.readDDK("DDK3", Nmax = 40);            % name resolution (v2.4.1)
+    W = shLowLevel.readDDK("DDK3", Nmax = 40);            % name resolution (v2.4.1)
     haveDDK = true;
 catch
     haveDDK = false;
@@ -303,7 +303,7 @@ end
 if haveDDK
     gK = g.applyDDK(W);
     newfig(vis, 'D04 DDK3 (real Wbd file)');
-    shx.plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+    shLowLevel.plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
     title('DDK3 - raw');
 end
 end
@@ -313,7 +313,7 @@ ts = tryRealSeries(30);
 synth = isempty(ts);
 if synth
     ts = demoSeries(30, 60, 15);
-    fprintf('  (synthetic series; shx.fetchITSG(2010:2016) enables real data)\n');
+    fprintf('  (synthetic series; shLowLevel.fetchITSG(2010:2016) enables real data)\n');
 else
     fprintf('  (real ITSG series, %d months)\n', ts.nEpochs);
 end
@@ -321,17 +321,17 @@ cl = ts.climatology();
 lat = -89:3:88; lon = 0:3:357;
 newfig(vis, 'D05 climatology maps');
 subplot(1, 2, 1);
-shx.plotSHMap(shx.shSynthesis(cl.trendC, cl.trendS, ts.GM, ts.R, lat, lon), ...
+shLowLevel.plotSHMap(shLowLevel.shSynthesis(cl.trendC, cl.trendS, ts.GM, ts.R, lat, lon), ...
     lat, lon, Units = "geoid m/yr", Title = "trend", ax = gca);
 subplot(1, 2, 2);
-amp = sqrt(shx.shSynthesis(cl.cosAnnC, cl.cosAnnS, ts.GM, ts.R, lat, lon).^2 ...
-    + shx.shSynthesis(cl.sinAnnC, cl.sinAnnS, ts.GM, ts.R, lat, lon).^2);
-shx.plotSHMap(amp, lat, lon, Units = "geoid m", Title = "annual amplitude", ...
-    CLim = [0, shx.pctile(amp, 98)], Colormap = "parula", ax = gca);
+amp = sqrt(shLowLevel.shSynthesis(cl.cosAnnC, cl.cosAnnS, ts.GM, ts.R, lat, lon).^2 ...
+    + shLowLevel.shSynthesis(cl.sinAnnC, cl.sinAnnS, ts.GM, ts.R, lat, lon).^2);
+shLowLevel.plotSHMap(amp, lat, lon, Units = "geoid m", Title = "annual amplitude", ...
+    CLim = [0, shLowLevel.pctile(amp, 98)], Colormap = "parula", ax = gca);
 % basin series: synthetic gets an artificial gap; real series carry
 % their own (2017-2018 mission gap, dropouts)
-idx = shx.shIndex(30, MinDegree = 0);
-b = shx.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90]);
+idx = shLowLevel.shIndex(30, MinDegree = 0);
+b = shLowLevel.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90]);
 if synth
     keep = [1:30, 41:60];                      % artificial gap 31-40
 else
@@ -341,10 +341,10 @@ tsg = ts.select(keep);
 c = zeros(numel(keep), 1);
 for k = 1:numel(keep)
     gk = tsg.at(k);
-    c(k) = b' * shx.vecFromCS(gk.C, gk.S, idx) / (b' * b);
+    c(k) = b' * shLowLevel.vecFromCS(gk.C, gk.S, idx) / (b' * b);
 end
 newfig(vis, 'D05 basin series');
-shx.plotBasinSeries(tsg.epochs, c, 0.1 * std(c) * ones(size(c)), ...
+shLowLevel.plotBasinSeries(tsg.epochs, c, 0.1 * std(c) * ones(size(c)), ...
     Units = "geoid m", Label = "test basin");
 end
 
@@ -352,63 +352,63 @@ function d06(vis, ~)
 ts = tryRealSeries(30);
 if isempty(ts)
     ts = demoSeries(30, 48, 16);
-    fprintf('  (synthetic series; shx.fetchITSG(2010:2016) enables real data)\n');
+    fprintf('  (synthetic series; shLowLevel.fetchITSG(2010:2016) enables real data)\n');
 else
     ts = ts - ts.mean();
     fprintf('  (real ITSG series, %d months)\n', ts.nEpochs);
 end
 [tsF, op] = ts.filter("tvANS", Blocks = "auto");
 idx = op.idx;
-b = shx.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90]);
+b = shLowLevel.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90]);
 [avgHat, out] = tsF.basinAverage(b, Deconvolve = true, Op = op);
 newfig(vis, 'D06 tvANS basin series with posterior sigma');
-shx.plotBasinSeries(ts.epochs(:), avgHat(:), out.sigma(:), ...
+shLowLevel.plotBasinSeries(ts.epochs(:), avgHat(:), out.sigma(:), ...
     Units = "geoid m", Label = "tvANS + deconvolution");
 fprintf('  VCE factors: min %.2f max %.2f\n', min(op.s), max(op.s));
 end
 
 function d07(vis, ~)
 g = demoField(24, 17);
-[xg, ~] = shx.gaussLegendre(25);
+[xg, ~] = shLowLevel.gaussLegendre(25);
 lat = asind(xg(:)'); lon = (0:49) * 360 / 50;
 grid = g.synthesis(lat, lon, UseCache = false);
 g2 = shCoefficients.analysis(grid, lat, lon, 24);
 newfig(vis, 'D07 analysis roundtrip error');
-shx.plotSHCoeffTriangle(g2.C, g2.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shLowLevel.plotSHCoeffTriangle(g2.C, g2.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title(sprintf('recovered - true (max %.1e)', ...
     max(abs(g2.C(:) - g.C(:)))));
 fprintf('  ring roundtrip max error %.2e\n', max(abs(g2.C(:) - g.C(:))));
 end
 
 function d08(vis, ~)
-L = 24; idx = shx.shIndex(L, MinDegree = 0);
-[b, infoB] = shx.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90], ...
+L = 24; idx = shLowLevel.shIndex(L, MinDegree = 0);
+[b, infoB] = shLowLevel.basinKernel(idx, [-5 90; -5 130; 25 130; 25 90], ...
     TaperKm = 200);
 newfig(vis, 'D08 basin kernel (tapered)');
 lat = -60:2:60; lon = 40:2:180;
-[Cb, Sb] = shx.csFromVec(b, idx);
-shx.plotSHMap(shx.shSynthesis(Cb, Sb, 1, 1, lat, lon), lat, lon, ...
+[Cb, Sb] = shLowLevel.csFromVec(b, idx);
+shLowLevel.plotSHMap(shLowLevel.shSynthesis(Cb, Sb, 1, 1, lat, lon), lat, lon, ...
     Title = sprintf('basin kernel, taper 200 km (area %.4f)', infoB.areaFraction));
 % scaling factor on a Gaussian operator
 ts = demoSeries(L, 12, 18);
-Wn = shx.shGaussianWeights(L, 400);
+Wn = shLowLevel.shGaussianWeights(L, 400);
 W = diag(Wn(idx.n + 1));
-k = shx.basinScaling(W, b, ts, idx = idx, tYears = ts.epochs');
+k = shLowLevel.basinScaling(W, b, ts, idx = idx, tYears = ts.epochs');
 fprintf('  Gaussian-400 basin scaling factor k = %.3f\n', k);
 end
 
 function d09(vis, ~)
 rng(19);
-idx = shx.shIndex(8, MinDegree = 2);
+idx = shLowLevel.shIndex(8, MinDegree = 2);
 A = randn(idx.P) * 1e-10; M = A * A' + 1e-22 * eye(idx.P);
 newfig(vis, 'D09 covariance & error map');
 subplot(1, 2, 1);
-shx.plotCovariance(M, idx, ax = gca);
+shLowLevel.plotCovariance(M, idx, ax = gca);
 subplot(1, 2, 2);
 lat = -85:5:85; lon = 0:5:355;
-sig = shx.errorMap(M, idx, lat, lon, quantity = "geoid");
-shx.plotSHMap(sig, lat, lon, Units = "m", Title = "formal sigma (geoid)", ...
-    CLim = [0, shx.pctile(sig, 98)], Colormap = "parula", ax = gca);
+sig = shLowLevel.errorMap(M, idx, lat, lon, quantity = "geoid");
+shLowLevel.plotSHMap(sig, lat, lon, Units = "m", Title = "formal sigma (geoid)", ...
+    CLim = [0, shLowLevel.pctile(sig, 98)], Colormap = "parula", ax = gca);
 end
 
 function d10(vis, ~)
@@ -435,13 +435,13 @@ end
 function d11(vis, ~)
 g = demoField(30, 21);
 lat = -85:5:85; lon = 0:5:355;
-[G, info] = shx.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, ...
+[G, info] = shLowLevel.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, ...
     Height = 250e3);
 newfig(vis, 'D11 gradient tensor at 250 km (Eotvos)');
 f = ["uu" "nn" "ee" "un" "ue" "ne"];
 for k = 1:6
     subplot(2, 3, k);
-    shx.plotSHMap(G.(f(k)) * 1e9, lat, lon, Title = "G_{" + f(k) + "}", ...
+    shLowLevel.plotSHMap(G.(f(k)) * 1e9, lat, lon, Title = "G_{" + f(k) + "}", ...
         Coast = false, ax = gca);
 end
 fprintf('  Laplace trace residual: %.1e (built-in self-check)\n', ...
@@ -458,7 +458,7 @@ a1 = 3 * sin(2*pi*(1:T)/16)'; a2 = randn(T, 1);
 Cs = zeros(n1, n1, T);
 for t = 1:T, Cs(:, :, t) = a1(t) * P1 + a2(t) * P2; end
 ts = shSeries(Cs, Ss = zeros(n1, n1, T), Epochs = 2015 + (1:T)'/12);
-[modes, pcs, ve] = shx.eofAnalysis(ts, NModes = 2);
+[modes, pcs, ve] = shLowLevel.eofAnalysis(ts, NModes = 2);
 newfig(vis, 'D12 EOF modes');
 lat = -87:3:87; lon = 0:3:357;
 subplot(2, 2, 1); modes{1}.map(lat, lon, Title = sprintf("mode 1 (%.0f%%)", 100*ve(1)));
@@ -508,7 +508,7 @@ for c = 1:3
     end
     tsC{c} = shSeries(Cs, Ss = Ss, Epochs = base.epochs);
 end
-[~, info] = shx.combineCenters(tsC);
+[~, info] = shLowLevel.combineCenters(tsC);
 newfig(vis, 'D14 multi-center VCE');
 subplot(1, 2, 1);
 plot(info.epochs, info.weights', '.-'); grid on;
@@ -524,14 +524,14 @@ end
 
 function d15(vis, ~)
 L = 32; [kn, hn] = synthLove(L);
-idx = shx.shIndex(L, MinDegree = 0);
+idx = shLowLevel.shIndex(L, MinDegree = 0);
 ocean = @(la, lo) ~(la > 55 & (lo < 60 | lo > 300));
 loadF = @(la, lo) -100 * double(la > 65 & lo < 40);
-[~, grid, info] = shx.seaLevelFingerprint(loadF, ocean, idx, ...
+[~, grid, info] = shLowLevel.seaLevelFingerprint(loadF, ocean, idx, ...
     kn = kn, hn = hn);
 newfig(vis, 'D15 sea-level fingerprint');
 Sn = info.S2D / info.eustatic; Sn(info.S2D == 0) = NaN;
-shx.plotSHMap(Sn, grid.latDeg, grid.lonDeg, Units = "S / eustatic", ...
+shLowLevel.plotSHMap(Sn, grid.latDeg, grid.lonDeg, Units = "S / eustatic", ...
     Title = sprintf('fingerprint (%d iters, mass residual %.0e)', ...
     info.iterations, abs(info.massResidual)), CLim = [-1.5 1.5]);
 fprintf('  eustatic %.4g m | conservation residual %.1e | converged: %d\n', ...
@@ -544,14 +544,14 @@ lat = (-88:4:88)'; lon = (0:4:356)';
 G = zeros(numel(lat), numel(lon), 3);
 for t = 1:3
     gk = ts.at(t);
-    G(:, :, t) = shx.shSynthesis(gk.C, gk.S, gk.GM, gk.R, lat', lon');
+    G(:, :, t) = shLowLevel.shSynthesis(gk.C, gk.S, gk.GM, gk.R, lat', lon');
 end
 ncf = fullfile(outdir, 'shx_demo_series.nc');
-shx.writeGrid(ncf, G, lat, lon, Name = "geoid", Units = "m", ...
+shLowLevel.writeGrid(ncf, G, lat, lon, Name = "geoid", Units = "m", ...
     Epochs = ts.epochs);
 fprintf('  wrote %s\n', ncf);
 mp4 = fullfile(outdir, 'shx_demo_anim.mp4');
-shx.writeAnimation(ts, mp4, quantity = "geoid", lat = -85:5:85, ...
+shLowLevel.writeAnimation(ts, mp4, quantity = "geoid", lat = -85:5:85, ...
     lon = 0:5:355, FrameRate = 2, Units = "m");
 fprintf('  wrote %s\n', mp4);
 end

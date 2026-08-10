@@ -5,7 +5,7 @@ function tests = testContract
 %   error path throws its documented identifier, value objects are
 %   immutable (methods return new objects, originals untouched), output
 %   dimensions match the documented contracts, and the compat/ wrappers
-%   remain signature-identical to shx internals.
+%   remain signature-identical to shLowLevel internals.
 %
 %   Run:  results = runtests('testContract');
 %
@@ -20,11 +20,9 @@ function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-cdir = fullfile(root, 'compat');            % private, optional
-if isfolder(cdir), addpath(cdir); end
 tc.TestData.root = root;
 tc.TestData.dataDir = fullfile(here, 'test_data');
-shx.legendreCached('clear');
+shLowLevel.legendreCached('clear');
 end
 
 function g = randomField(nmax, epoch)
@@ -81,8 +79,8 @@ verifyError(tc, @() g1.applyTN14(tnFile), 'shCoefficients:epochNotInTable');
 g2 = randomField(10, 2020.13);      % nearest row has NaN C30
 verifyError(tc, @() g2.applyTN14(tnFile, ReplaceC30 = "always"), ...
     'shCoefficients:noC30');
-verifyError(tc, @() shx.readTN14('no_such_file.txt'), ...
-    'shx:readTN14:fileNotFound');
+verifyError(tc, @() shLowLevel.readTN14('no_such_file.txt'), ...
+    'shLowLevel:readTN14:fileNotFound');
 end
 
 function testCrossoverNoSigmasID(tc)
@@ -96,7 +94,7 @@ verifyError(tc, ...
     @() g.synthesis(-80:10:80, 0:10:350, quantity = "ewh"), ...
     'shSynthesis:missingLoveNumbers');
 verifyError(tc, ...
-    @() shx.shSynthesis(g.C, g.S, g.GM, g.R, 0, 0, 'quantity', 'nonsense'), ...
+    @() shLowLevel.shSynthesis(g.C, g.S, g.GM, g.R, 0, 0, 'quantity', 'nonsense'), ...
     'shSynthesis:badQuantity');
 end
 
@@ -184,7 +182,7 @@ n = (spec.degree(1):spec.degree(end))';
 verifyEqual(tc, numel(spec.degRMS), numel(n));
 verifyEqual(tc, numel(spec.degAmplitude), numel(n));
 
-idx = shx.shIndex(g.nmax, MinDegree = 2);
+idx = shLowLevel.shIndex(g.nmax, MinDegree = 2);
 x = g.vec(idx);
 verifySize(tc, x, [idx.P, 1]);
 g5 = shCoefficients.fromVec(x, idx, g);
@@ -200,22 +198,6 @@ verifySize(tc, m.C, size(ts.Cs(:, :, 1)));
 end
 
 % ------------------------------------------------- compat wrapper contract
-function testCompatWrappersDelegate(tc)
-% cross-validation against the PRIVATE v1 reference implementations
-% (compat/ is not published); runs locally, filtered on CI
-assumeTrue(tc, isfolder(fullfile(fileparts( ...
-    fileparts(mfilename('fullpath'))), 'compat')), ...
-    'compat reference implementations not present (unpublished)');
-g = randomField(12, 2020);
-[c1, s1] = shDestripe(g.C, g.S, 'minOrder', 4);        % compat
-[c2, s2] = shx.shDestripe(g.C, g.S, 'minOrder', 4);    % internal
-verifyEqual(tc, c1, c2, AbsTol = 0); verifyEqual(tc, s1, s2, AbsTol = 0);
-Wn1 = shGaussianWeights(20, 300); Wn2 = shx.shGaussianWeights(20, 300);
-verifyEqual(tc, Wn1, Wn2, AbsTol = 0);
-P1 = legendreALF(10, [-0.5, 0, 0.5]); P2 = shx.legendreALF(10, [-0.5, 0, 0.5]);
-verifyEqual(tc, P1, P2, AbsTol = 0);
-end
-
 % ----------------------------------------------------------------- helper
 function f = writeSyntheticTN14(tc)
 % Minimal TN-14-like table: 2 months; second month has no C30 (NaN).
@@ -236,8 +218,8 @@ end
 
 % =================================================================== v2.1
 function testAnalysisBadInputID(testCase)
-verifyError(testCase, @() shx.shAnalysisGrid(ones(3,4), 1:5, 1:4, 2), ...
-    'shx:shAnalysisGrid:badInput');
+verifyError(testCase, @() shLowLevel.shAnalysisGrid(ones(3,4), 1:5, 1:4, 2), ...
+    'shLowLevel:shAnalysisGrid:badInput');
 end
 
 function testAnalysisBadGridID(testCase)
@@ -246,39 +228,39 @@ g = ones(8, 10);
 lat = linspace(-60, 60, 8);
 lon = [0 30 70 100 140 180 220 260 300 340];
 verifyError(testCase, ...
-    @() shx.shAnalysisGrid(g, lat, lon, 2, Method = "rings"), ...
-    'shx:shAnalysisGrid:badGrid');
+    @() shLowLevel.shAnalysisGrid(g, lat, lon, 2, Method = "rings"), ...
+    'shLowLevel:shAnalysisGrid:badGrid');
 end
 
 function testAnalysisAliasedGridID(testCase)
 % nlon <= 2*nmax aliases orders
 g = ones(20, 10); lat = linspace(-80, 80, 20); lon = (0:9)*36;
-verifyError(testCase, @() shx.shAnalysisGrid(g, lat, lon, 6, Method = "rings"), ...
-    'shx:shAnalysisGrid:badGrid');
+verifyError(testCase, @() shLowLevel.shAnalysisGrid(g, lat, lon, 6, Method = "rings"), ...
+    'shLowLevel:shAnalysisGrid:badGrid');
 end
 
 function testSynthesisBadMethodID(testCase)
 C = zeros(3); S = zeros(3);
-verifyError(testCase, @() shx.shSynthesis(C, S, 1, 1, 0, [0 10 50], ...
+verifyError(testCase, @() shLowLevel.shSynthesis(C, S, 1, 1, 0, [0 10 50], ...
     'method', 'fft'), 'shSynthesis:badMethod');
 end
 
 function testReadTN13ErrorIDs(testCase)
-verifyError(testCase, @() shx.readTN13('/nonexistent/tn13.txt'), ...
-    'shx:readTN13:fileNotFound');
+verifyError(testCase, @() shLowLevel.readTN13('/nonexistent/tn13.txt'), ...
+    'shLowLevel:readTN13:fileNotFound');
 f = [tempname '.txt'];
 fid = fopen(f, 'w'); fprintf(fid, 'header only\nno data here\n'); fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-verifyError(testCase, @() shx.readTN13(f), 'shx:readTN13:noData');
+verifyError(testCase, @() shLowLevel.readTN13(f), 'shLowLevel:readTN13:noData');
 end
 
 function testReadSINEXErrorIDs(testCase)
-verifyError(testCase, @() shx.readSINEX('/nonexistent/x.snx'), ...
-    'shx:readSINEX:fileNotFound');
+verifyError(testCase, @() shLowLevel.readSINEX('/nonexistent/x.snx'), ...
+    'shLowLevel:readSINEX:fileNotFound');
 f = [tempname '.snx'];
 fid = fopen(f, 'w'); fprintf(fid, '%%=SNX 2.02\n+SOME/BLOCK\n-SOME/BLOCK\n%%ENDSNX\n'); fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-verifyError(testCase, @() shx.readSINEX(f), 'shx:readSINEX:noData');
+verifyError(testCase, @() shLowLevel.readSINEX(f), 'shLowLevel:readSINEX:noData');
 end
 
 function testEvalGFCTEpochOutsideID(testCase)
@@ -290,33 +272,33 @@ fprintf(fid, ['product_type gravity_field\nmodelname T2\n' ...
     'gfct 2 0 -4.84e-4 0.0 0 0 20100101 20150101\n']);
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
-model = shx.shReadGFC(f);
-verifyError(testCase, @() shx.shEvalGFCT(model, 2020.0), ...
+model = shLowLevel.shReadGFC(f);
+verifyError(testCase, @() shLowLevel.shEvalGFCT(model, 2020.0), ...
     'shEvalGFCT:epochOutside');
 end
 
 function testTvANSBlocksUnavailableID(testCase)
-idx = shx.shIndex(4);
+idx = shLowLevel.shIndex(4);
 X = randn(idx.P, 12); t = 2002 + (0:11)'/12;
-verifyError(testCase, @() shx.tvANSFilter(X, t, idx, Blocks = 'on', ...
-    Constraints = ones(idx.P, 1)), 'shx:tvANSFilter:blocksUnavailable');
+verifyError(testCase, @() shLowLevel.tvANSFilter(X, t, idx, Blocks = 'on', ...
+    Constraints = ones(idx.P, 1)), 'shLowLevel:tvANSFilter:blocksUnavailable');
 end
 
 function testNoiseCovNotBlockDiagonalID(testCase)
 % external NoiseCov on Blocks='on' must be block-diagonal in the
 % (order, C/S, parity) partition; Blocks='auto' falls back quietly
 rng(30);
-idx = shx.shIndex(4);
+idx = shLowLevel.shIndex(4);
 X = randn(idx.P, 12); t = 2002 + (0:11)'/12;
 Nfull = eye(idx.P) + 0.3 * ones(idx.P);          % dense: NOT block-diag
-verifyError(testCase, @() shx.tvANSFilter(X, t, idx, Blocks = 'on', ...
-    NoiseCov = Nfull), 'shx:buildNoiseCov:notBlockDiagonal');
-[Xf, op] = shx.tvANSFilter(X, t, idx, Blocks = 'auto', NoiseCov = Nfull);
+verifyError(testCase, @() shLowLevel.tvANSFilter(X, t, idx, Blocks = 'on', ...
+    NoiseCov = Nfull), 'shLowLevel:buildNoiseCov:notBlockDiagonal');
+[Xf, op] = shLowLevel.tvANSFilter(X, t, idx, Blocks = 'auto', NoiseCov = Nfull);
 verifyTrue(testCase, all(isfinite(Xf(:))));
 verifyEqual(testCase, op.layout, 'full');        % fell back to full path
 % a DIAGONAL external N is block-diagonal under any partition: block
 % path engages
-[~, op2] = shx.tvANSFilter(X, t, idx, Blocks = 'on', NoiseCov = eye(idx.P));
+[~, op2] = shLowLevel.tvANSFilter(X, t, idx, Blocks = 'on', NoiseCov = eye(idx.P));
 verifyEqual(testCase, op2.layout, 'blocks');
 end
 
@@ -355,7 +337,7 @@ L = 8; n1 = L + 1;
 C = tril(ones(n1));                              % all valid cells nonzero
 S = tril(ones(n1)); S(:, 1) = 0;                 % incl. sectorals S_nn
 ax = axes('Parent', fig);
-shx.plotSHCoeffTriangle(C, S, 'RefC', 0*C, 'RefS', 0*S, 'ax', ax);
+shLowLevel.plotSHCoeffTriangle(C, S, 'RefC', 0*C, 'RefS', 0*S, 'ax', ax);
 im = findobj(ax, 'Type', 'image');
 verifyNotEmpty(testCase, im, 'no image object rendered');
 img = im(1).CData;                               % (L+1) x (2L+1)
@@ -382,34 +364,34 @@ fig = figure('Visible', 'off');
 cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
 L = 12; n1 = L + 1;
 C = tril(randn(n1)) * 1e-8; S = tril(randn(n1), -1) * 1e-8; S(:, 1) = 0;
-grid = shx.shSynthesis(C, S, 3.986004415e14, 6378136.3, ...
+grid = shLowLevel.shSynthesis(C, S, 3.986004415e14, 6378136.3, ...
     -85:5:85, 0:5:355, 'quantity', 'geoid');
 ax1 = axes('Parent', fig);
-h = shx.plotSHMap(grid, -85:5:85, 0:5:355, ax = ax1, Units = "m");
+h = shLowLevel.plotSHMap(grid, -85:5:85, 0:5:355, ax = ax1, Units = "m");
 verifyClass(testCase, h, 'matlab.graphics.axis.Axes');
 cla(ax1);
-h2 = shx.plotSHMap(grid, -85:5:85, 0:5:355, ax = ax1, ...
+h2 = shLowLevel.plotSHMap(grid, -85:5:85, 0:5:355, ax = ax1, ...
     Projection = "hammer");
 verifyClass(testCase, h2, 'matlab.graphics.axis.Axes');
 % basin series with gap + band
 t = [2010 + (0:40)/12, 2015 + (0:30)/12];
 c = sin(2*pi*t(:)) + 0.01*(t(:) - 2012);
 cla(ax1);
-h3 = shx.plotBasinSeries(t(:), c, 0.2 + 0*c, ax = ax1, Units = "cm");
+h3 = shLowLevel.plotBasinSeries(t(:), c, 0.2 + 0*c, ax = ax1, Units = "cm");
 verifyClass(testCase, h3, 'matlab.graphics.axis.Axes');
 % covariance plot
-idx = shx.shIndex(6, MinDegree = 2);
+idx = shLowLevel.shIndex(6, MinDegree = 2);
 A = randn(idx.P); M = A*A';
 cla(ax1);
-h4 = shx.plotCovariance(M, idx, ax = ax1);
+h4 = shLowLevel.plotCovariance(M, idx, ax = ax1);
 verifyClass(testCase, h4, 'matlab.graphics.axis.Axes');
 % triangle diff mode
 cla(ax1);
-h5 = shx.plotSHCoeffTriangle(C, S, 'RefC', 0.9*C, 'RefS', 0.9*S, 'ax', ax1);
+h5 = shLowLevel.plotSHCoeffTriangle(C, S, 'RefC', 0.9*C, 'RefS', 0.9*S, 'ax', ax1);
 verifyClass(testCase, h5, 'matlab.graphics.axis.Axes');
 verifyError(testCase, ...
-    @() shx.plotSHCoeffTriangle(C, S, 'RefC', C, 'ax', axes('Parent', fig)), ...
-    'shx:plotSHCoeffTriangle:needRefS');
+    @() shLowLevel.plotSHCoeffTriangle(C, S, 'RefC', C, 'ax', axes('Parent', fig)), ...
+    'shLowLevel:plotSHCoeffTriangle:needRefS');
 end
 
 function testSpectrumOverlays(testCase)
@@ -420,10 +402,10 @@ L = 30; n1 = L + 1;
 C = tril(randn(n1)) * 1e-9 ./ max(1, (0:L)').^2;
 S = tril(randn(n1), -1) * 1e-9 ./ max(1, (0:L)').^2; S(:, 1) = 0;
 sC = 1e-11 * max(1, (0:L)') / 10 .* ones(n1) .* tril(ones(n1));
-spec = shx.shDegreeRMS(C, S, 'R', 6378136.3, ...
+spec = shLowLevel.shDegreeRMS(C, S, 'R', 6378136.3, ...
     'sigmaC', sC, 'sigmaS', sC);
 ax = axes('Parent', fig);
-h = shx.plotSHSpectrum(spec, 'ax', ax, 'Kaula', 1e-5, 'MarkCrossover', true);
+h = shLowLevel.plotSHSpectrum(spec, 'ax', ax, 'Kaula', 1e-5, 'MarkCrossover', true);
 verifyClass(testCase, h(1), 'matlab.graphics.chart.primitive.Line');
 end
 
@@ -438,7 +420,7 @@ end
 ts = shSeries(Cs, Ss = Ss, Epochs = [2010.1 2010.2]);
 tmp = fullfile(tempdir, sprintf('shx_anim_%d.avi', randi(1e9)));  % CI-portable
 cleanup = onCleanup(@() deleteIfThere(tmp)); %#ok<NASGU>
-shx.writeAnimation(ts, tmp, quantity = "geoid", ...
+shLowLevel.writeAnimation(ts, tmp, quantity = "geoid", ...
     lat = -80:10:80, lon = 0:10:350, FrameRate = 2);
 verifyTrue(testCase, isfile(tmp));
 d = dir(tmp);
@@ -454,8 +436,8 @@ end
 function testBasinScalingRecoversFactor(testCase)
 rng(84);
 % operator: pure Gaussian attenuation as a tvANS-like op via matFilter
-L = 20; idx = shx.shIndex(L, MinDegree = 0);
-Wn = shx.shGaussianWeights(L, 500);
+L = 20; idx = shLowLevel.shIndex(L, MinDegree = 0);
+Wn = shLowLevel.shGaussianWeights(L, 500);
 W = diag(Wn(idx.n + 1));
 T = 10; ep = 2010 + (0:T-1)/12;
 % static matrix operator (Gaussian in idx ordering)
@@ -469,18 +451,18 @@ for t = 1:T
     Cs(:, :, t) = amp(t) * pat; Ss(:, :, t) = amp(t) * patS;
 end
 tsM = shSeries(Cs, Ss = Ss, Epochs = ep);
-b = shx.basinKernel(idx, [ -10 100; -10 140; 25 140; 25 100 ]);
-[k, info] = shx.basinScaling(W, b, tsM, idx = idx, tYears = ep);
+b = shLowLevel.basinKernel(idx, [ -10 100; -10 140; 25 140; 25 100 ]);
+[k, info] = shLowLevel.basinScaling(W, b, tsM, idx = idx, tYears = ep);
 % k must invert the operator's basin-average attenuation: with a FIXED
 % pattern, aTrue = k * aFilt exactly, so sigmaK ~ 0
-x1 = shx.vecFromCS(pat, patS, idx);
+x1 = shLowLevel.vecFromCS(pat, patS, idx);
 kExact = (b' * x1) / (b' * (W * x1));
 verifyEqual(testCase, k, kExact, 'RelTol', 1e-10);
 verifyLessThan(testCase, info.sigmaK, 1e-8 * abs(k));
 verifyEqual(testCase, info.nMatched, T);
 verifyError(testCase, ...
-    @() shx.basinScaling(W, b(1:3), tsM, idx = idx, tYears = ep), ...
-    'shx:basinScaling:badKernel');
+    @() shLowLevel.basinScaling(W, b(1:3), tsM, idx = idx, tYears = ep), ...
+    'shLowLevel:basinScaling:badKernel');
 end
 
 function testDemoRegistryAndSmoke(testCase)
@@ -559,8 +541,8 @@ ws.g = shCoefficients.read("ITSG-Grace2018_n60_2008-04.gfc", ...
     Epoch = 2008 + 3.5/12);
 ws.gF = ws.g.gaussian(350);
 ws.g10 = ws.g.truncate(10);
-ws.idx = shx.shIndex(10);
-ws.x = shx.vecFromCS(ws.g10.C, ws.g10.S, ws.idx);
+ws.idx = shLowLevel.shIndex(10);
+ws.x = shLowLevel.vecFromCS(ws.g10.C, ws.g10.S, ws.idx);
 ws.GM = ws.g.GM; ws.R = ws.g.R;
 ws.GMref = 3.986004415e14; ws.Rref = 6.3781363e6;
 nn = (0:120)';
@@ -569,16 +551,16 @@ ws.kn = -0.3 * nn ./ (nn + 6);
 lnRows = compose("%d %.6f %.6f %.6f", nn, -0.9 * nn ./ (nn + 4), ...
     0.1 * nn ./ (nn + 8), -0.3 * nn ./ (nn + 6));
 writelines(["# n h l k"; lnRows], "ln_table.txt");
-ws.LN = shx.readLoveNumbers("ln_table.txt", MaxDegree = 120);
+ws.LN = shLowLevel.readLoveNumbers("ln_table.txt", MaxDegree = 120);
 copyfile("ln_table.txt", "prem_load.txt");   % readLoveNumbers help example
 ws.lat = -88:8:88; ws.lon = 0:12:348;    % = the grid axes below
 ws.latPts = [10 20 30]; ws.lonPts = [40 50 60];
 ws.latGc = [10 20 30]; ws.latGd = [10.06 20.10 30.12];
 ws.theta = deg2rad(30:15:60);
 ws.grid = ws.g10.synthesis(-88:8:88, 0:12:348);
-ws.tn13 = shx.readTN13("TN-13_GEOC_CSR_RL06.3.txt");
-ws.tn14 = shx.readTN14("TN-14_C30_C20_SLR_GSFC.txt");
-ws.model = shx.shReadGFC("test_variable.gfct");   % struct incl. variableTerms
+ws.tn13 = shLowLevel.readTN13("TN-13_GEOC_CSR_RL06.3.txt");
+ws.tn14 = shLowLevel.readTN14("TN-14_C30_C20_SLR_GSFC.txt");
+ws.model = shLowLevel.shReadGFC("test_variable.gfct");   % struct incl. variableTerms
 % synthetic monthly series + tvANS chain
 rng(31);
 L = 10; T = 48; n1 = L + 1;              % same L as ws.idx = shIndex(10)
@@ -598,22 +580,22 @@ ws.w = ones(size(ws.g.C));               % times: per-coefficient weights
 ws.c20slr = ws.tn14.C20(1);              % setCoefficient
 ws.tsGAD = ws.ts;                        % restore: epoch-matched series
 [ws.clim, ws.resid] = ws.ts.climatology(Periods = 161/365.25);
-idxF = shx.shIndex(L);
+idxF = shLowLevel.shIndex(L);
 ws.Ac = exp(-idxF.n / 3) .* randn(idxF.P, 1);
 [ws.tsF, ws.op, ws.info] = ws.ts.filter("tvANS", Blocks = "off");
 ws.B = randn(idxF.P, 2);
 ws.b = ws.B(:, 1);
-[ws.avg, ws.out] = shx.basinDeconvolve(ws.B, ws.op);
+[ws.avg, ws.out] = shLowLevel.basinDeconvolve(ws.B, ws.op);
 ws.Y3 = [ws.avg(1, :)', ws.avg(1, :)' + 2e-4 * randn(T, 1), ...
     ws.avg(1, :)' + 5e-4 * randn(T, 1)];   % 3-center stack for TCH
 ws.tYears = tY;
 XV = zeros(ws.idx.P, T);                 % idx-ordered raw stack (L = 10)
 for t = 1:T
-    XV(:, t) = shx.vecFromCS(Cs(:,:,t), Ss(:,:,t), ws.idx);
+    XV(:, t) = shLowLevel.vecFromCS(Cs(:,:,t), Ss(:,:,t), ws.idx);
 end
 ws.X = XV;
-[~, ws.Xres] = shx.fitDeterministicModel(XV, tY);   % idx-ordered residuals
-ws.N = shx.buildNoiseCov(ws.Xres, ws.idx);
+[~, ws.Xres] = shLowLevel.fitDeterministicModel(XV, tY);   % idx-ordered residuals
+ws.N = shLowLevel.buildNoiseCov(ws.Xres, ws.idx);
 A0 = randn(ws.idx.P);
 ws.M = (A0 * A0' / ws.idx.P) * 1e-20;   % SPD "covariance" for errorMap
 % three 'centers' for combineCenters: identical series suffice for
@@ -675,21 +657,21 @@ old = get(0, 'DefaultFigureVisible');
 cl = onCleanup(@() set(0, 'DefaultFigureVisible', old)); %#ok<NASGU>
 set(0, 'DefaultFigureVisible', 'off');
 figure;
-h = shx.taylorDiagram(1.0, [0.8, 1.1], [0.9, 0.95], ...
+h = shLowLevel.taylorDiagram(1.0, [0.8, 1.1], [0.9, 0.95], ...
     Labels = ["a", "b"], Normalize = true);
 verifyTrue(testCase, isgraphics(h));
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 assumeTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
-[~, h1] = shx.compareSolutions(g, g.gaussian(500), Plot = true, ...
+[~, h1] = shLowLevel.compareSolutions(g, g.gaussian(500), Plot = true, ...
     LatDeg = -85:5:85, LonDeg = 0:9:351);
 verifyTrue(testCase, isgraphics(h1));
 rng(11); n1 = 7; T = 24;
 Cs = 1e-9 * randn(n1, n1, T); Ss = 1e-9 * randn(n1, n1, T);
 mk = @(s) shSeries(Cs + s * 1e-11 * randn(n1, n1, T), ...
     Ss = Ss + s * 1e-11 * randn(n1, n1, T), Epochs = 2019 + (0:T-1)'/12);
-[~, h2] = shx.compareSeries({mk(1), mk(2), mk(3)}, Plot = true, ...
+[~, h2] = shLowLevel.compareSeries({mk(1), mk(2), mk(3)}, Plot = true, ...
     LatDeg = -80:20:80, LonDeg = 0:30:330);
 verifyTrue(testCase, isgraphics(h2));
 close all
@@ -703,7 +685,7 @@ C = 1e-9 * randn(L+1); S = 1e-9 * randn(L+1); S(:, 1) = 0;
 tmp = tempname; mkdir(tmp);
 cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
 fg = fullfile(tmp, 'out.gfc');
-shx.writeGFC(fg, C, S, 3.986004415e14, 6378136.3);
+shLowLevel.writeGFC(fg, C, S, 3.986004415e14, 6378136.3);
 sj = [fg '.provenance.json'];
 verifyTrue(testCase, isfile(sj));
 p = jsondecode(fileread(sj));
@@ -712,27 +694,27 @@ verifyEqual(testCase, p.nmax, L);
 verifyTrue(testCase, isfield(p, 'matlab') && isfield(p, 'created'));
 % opt-out
 fg2 = fullfile(tmp, 'out2.gfc');
-shx.writeGFC(fg2, C, S, 3.986004415e14, 6378136.3, Sidecar = false);
+shLowLevel.writeGFC(fg2, C, S, 3.986004415e14, 6378136.3, Sidecar = false);
 verifyFalse(testCase, isfile([fg2 '.provenance.json']));
 % netCDF: CF-1.8 attributes + sidecar
 lat = -80:20:80; lon = 0:30:330;
 G = randn(numel(lat), numel(lon));
 fn = fullfile(tmp, 'grid.nc');
-shx.writeGrid(fn, G, lat, lon, Name = "ewh", Units = "m");
+shLowLevel.writeGrid(fn, G, lat, lon, Name = "ewh", Units = "m");
 verifyEqual(testCase, ncreadatt(fn, '/', 'Conventions'), 'CF-1.8');
 verifyEqual(testCase, ncreadatt(fn, 'lat', 'standard_name'), 'latitude');
 verifyEqual(testCase, ncreadatt(fn, 'lon', 'axis'), 'X');
 verifyEqual(testCase, ncreadatt(fn, 'ewh', 'coordinates'), 'lat lon');
 src = ncreadatt(fn, '/', 'source');
-v = shx.version();
+v = shLowLevel.version();
 verifyTrue(testCase, contains(src, char(v.Version)));   % no stale stamps
 verifyTrue(testCase, isfile([fn '.provenance.json']));
 end
 
 function testVersionMetadata(testCase)
-% shx.version reports toolbox metadata parsed from Contents.m - the
+% shLowLevel.version reports toolbox metadata parsed from Contents.m - the
 % single source of truth also honoured by MATLAB's ver().
-v = shx.version();
+v = shLowLevel.version();
 verifyEqual(testCase, v.Name, "shAnalysis");
 verifyTrue(testCase, ~isempty(regexp(v.Version, '^\d+\.\d+', 'once')));
 verifyTrue(testCase, isfolder(v.Root));
@@ -747,15 +729,15 @@ end
 
 function testFetchITSGInputIDs(testCase)
 % input validation only - no network in unit tests
-verifyError(testCase, @() shx.fetchITSG("2010-4"), 'shx:fetchITSG:badMonth');
-verifyError(testCase, @() shx.fetchITSG("April 2010"), 'shx:fetchITSG:badMonth');
-verifyError(testCase, @() shx.fetchITSG(1990), 'shx:fetchITSG:badMonth');
+verifyError(testCase, @() shLowLevel.fetchITSG("2010-4"), 'shLowLevel:fetchITSG:badMonth');
+verifyError(testCase, @() shLowLevel.fetchITSG("April 2010"), 'shLowLevel:fetchITSG:badMonth');
+verifyError(testCase, @() shLowLevel.fetchITSG(1990), 'shLowLevel:fetchITSG:badMonth');
 % daily product (v2.4.1): n40 only; monthly rejects n40
 verifyError(testCase, ...
-    @() shx.fetchITSG("2010-04", Product = "daily", Nmax = 96), ...
-    'shx:fetchITSG:badNmax');
-verifyError(testCase, @() shx.fetchITSG("2010-04", Nmax = 40), ...
-    'shx:fetchITSG:badNmax');
+    @() shLowLevel.fetchITSG("2010-04", Product = "daily", Nmax = 96), ...
+    'shLowLevel:fetchITSG:badNmax');
+verifyError(testCase, @() shLowLevel.fetchITSG("2010-04", Nmax = 40), ...
+    'shLowLevel:fetchITSG:badNmax');
 end
 
 function testSpectrumPlotOptionsAndAxes(testCase)
@@ -764,32 +746,32 @@ fig = figure('Visible', 'off');
 cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
 L = 15; n1 = L + 1;
 C = tril(randn(n1)) * 1e-9; S = tril(randn(n1), -1) * 1e-9; S(:, 1) = 0;
-sd = shx.shDegreeRMS(C, S, 'sigmaC', abs(C)*0.1, 'sigmaS', abs(S)*0.1);
-so = shx.shOrderRMS(C, S);
+sd = shLowLevel.shDegreeRMS(C, S, 'sigmaC', abs(C)*0.1, 'sigmaS', abs(S)*0.1);
+so = shLowLevel.shOrderRMS(C, S);
 ax = axes('Parent', fig);
 % linear x-axis contract (v2.4.1)
-shx.plotSHSpectrum(sd, 'ax', ax);
+shLowLevel.plotSHSpectrum(sd, 'ax', ax);
 verifyEqual(testCase, ax.XScale, 'linear');
 verifyEqual(testCase, ax.YScale, 'log');
 % every quantity renders, degree and order domain
 for q = ["amplitude", "rms", "variance", "cumamplitude", "cumrms", "cumvariance"]
-    cla(ax); shx.plotSHSpectrum(sd, 'ax', ax, 'Quantity', char(q));
-    cla(ax); shx.plotSHSpectrum(so, 'ax', ax, 'Quantity', char(q));
+    cla(ax); shLowLevel.plotSHSpectrum(sd, 'ax', ax, 'Quantity', char(q));
+    cla(ax); shLowLevel.plotSHSpectrum(so, 'ax', ax, 'Quantity', char(q));
 end
 % contracts
 verifyError(testCase, ...
-    @() shx.plotSHSpectrum({sd, so}, 'ax', axes('Parent', fig)), ...
-    'shx:plotSHSpectrum:mixedDomains');
+    @() shLowLevel.plotSHSpectrum({sd, so}, 'ax', axes('Parent', fig)), ...
+    'shLowLevel:plotSHSpectrum:mixedDomains');
 verifyError(testCase, ...
-    @() shx.plotSHSpectrum(sd, 'ax', axes('Parent', fig), ...
+    @() shLowLevel.plotSHSpectrum(sd, 'ax', axes('Parent', fig), ...
     'Quantity', 'variance', 'Kaula', 1e-5), ...
-    'shx:plotSHSpectrum:kaulaDomain');
+    'shLowLevel:plotSHSpectrum:kaulaDomain');
 verifyError(testCase, ...
-    @() shx.plotSHSpectrum(sd, 'ax', axes('Parent', fig), 'Quantity', 'xxx'), ...
-    'shx:plotSHSpectrum:badQuantity');
+    @() shLowLevel.plotSHSpectrum(sd, 'ax', axes('Parent', fig), 'Quantity', 'xxx'), ...
+    'shLowLevel:plotSHSpectrum:badQuantity');
 % triangle: no center line anymore (v2.4.1)
 ax2 = axes('Parent', fig);
-shx.plotSHCoeffTriangle(C, S, 'ax', ax2);
+shLowLevel.plotSHCoeffTriangle(C, S, 'ax', ax2);
 verifyEmpty(testCase, findobj(ax2, 'Type', 'constantline'));
 end
 
@@ -800,26 +782,26 @@ if had
     old = getpref('shAnalysis', 'dataFolder');
     restore = onCleanup(@() setpref('shAnalysis', 'dataFolder', old)); %#ok<NASGU>
 else
-    restore = onCleanup(@() shx.dataFolder("reset")); %#ok<NASGU>
+    restore = onCleanup(@() shLowLevel.dataFolder("reset")); %#ok<NASGU>
 end
 tmp = fullfile(tempdir, sprintf('shx_data_%d', randi(1e9)));
-f = shx.dataFolder(tmp);
+f = shLowLevel.dataFolder(tmp);
 verifyEqual(testCase, char(f), char(string(tmp)));
 verifyTrue(testCase, isfolder(f));
-verifyEqual(testCase, char(shx.dataFolder()), char(string(tmp)));
-f2 = shx.dataFolder("reset");
+verifyEqual(testCase, char(shLowLevel.dataFolder()), char(string(tmp)));
+f2 = shLowLevel.dataFolder("reset");
 verifyTrue(testCase, endsWith(f2, "data"));
 % DDK mapping: 8 unique released names, DDK3 matches the shipped file
-nm = shx.ddkNames();
+nm = shLowLevel.ddkNames();
 verifyEqual(testCase, numel(nm), 8);
 verifyEqual(testCase, numel(unique(nm)), 8);
 verifyEqual(testCase, nm(3), "Wbd_2-120.a_1d12p_4");
 % name resolution: DDK3 loads from shipped test data even with a fresh
 % (empty) data folder; an unfetched filter errors with the fetch hint
-shx.dataFolder(tmp);
-W = shx.readDDK("DDK3", Nmax = 30);
+shLowLevel.dataFolder(tmp);
+W = shLowLevel.readDDK("DDK3", Nmax = 30);
 verifyEqual(testCase, W.nmax, 30);
-verifyError(testCase, @() shx.readDDK("DDK7"), 'shx:readDDK:notFetched');
-verifyError(testCase, @() shx.fetchDDK(0), 'MATLAB:validators:mustBeInRange');
+verifyError(testCase, @() shLowLevel.readDDK("DDK7"), 'shLowLevel:readDDK:notFetched');
+verifyError(testCase, @() shLowLevel.fetchDDK(0), 'MATLAB:validators:mustBeInRange');
 end
 

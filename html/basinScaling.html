@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.basinScaling</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.basinScaling</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,11 +20,11 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Basin analysis</span>
-<h1>shx.basinScaling</h1>
+<h1>shLowLevel.basinScaling</h1>
 <p>Leakage/attenuation scaling factors by forward modelling.</p>
 <h2>Syntax</h2>
-<pre>[k, info] = shx.basinScaling(op, b, tsModel);            % tvANS op
-[k, info] = shx.basinScaling(W, b, tsModel, idx=idx, tYears=ep);  % matrix</pre>
+<pre>[k, info] = shLowLevel.basinScaling(op, b, tsModel);            % tvANS op
+[k, info] = shLowLevel.basinScaling(W, b, tsModel, idx=idx, tYears=ep);  % matrix</pre>
 <h2>Description</h2>
 <p>The classic gain-factor approach: push a model series through the SAME operator as the data and regress true against filtered basin averages, k = &Sigma;a<sub>true</sub>a<sub>filt</sub>/&Sigma;a<sub>filt</sub>&sup2;. Scaled series: k&middot;(b&prime;x<sub>filt</sub>)/(b&prime;b). Operators: tvANS struct, static P&times;P matrix (Gaussian/DDK/fan), or function handle. INFO carries sigmaK and per-month factors (PerMonth=true) so the model-dependence assumption is checkable. Complements <a href="basinDeconvolve.html">basinDeconvolve</a> (operator inversion on a kernel set) with the literature-standard scaling route.</p>
 <div class="note">k depends on the MODEL's spatial pattern inside and around the basin. Quote k with its model dependence, or use two models and report the spread.</div>

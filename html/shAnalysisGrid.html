@@ -24,11 +24,11 @@ th { background: #f5f7fa; }
 <h1>shAnalysisGrid</h1>
 <p>Spherical harmonic <b>analysis</b>: estimate Stokes coefficients from gridded or scattered
 data &mdash; the inverse of <a href="shSynthesis.html">shSynthesis</a>. User-facing entry point:
-<code class="inline">shCoefficients.analysis(...)</code>; the core is <code class="inline">shx.shAnalysisGrid</code>.</p>
+<code class="inline">shCoefficients.analysis(...)</code>; the core is <code class="inline">shLowLevel.shAnalysisGrid</code>.</p>
 
 <h2>Syntax</h2>
-<pre>[C, S, info] = shx.shAnalysisGrid(grid, latVec, lonVec, nmax)
-[C, S, info] = shx.shAnalysisGrid(..., Method="auto"|"rings"|"ls", quantity=..., ...
+<pre>[C, S, info] = shLowLevel.shAnalysisGrid(grid, latVec, lonVec, nmax)
+[C, S, info] = shLowLevel.shAnalysisGrid(..., Method="auto"|"rings"|"ls", quantity=..., ...
                                   Weights="none"|"coslat", Kaula=0, kn=..., GM=..., R=...)
 g = shCoefficients.analysis(grid, latVec, lonVec, nmax, ...)   % returns an shCoefficients</pre>
 
@@ -57,7 +57,7 @@ sufficient sampling (validated 6.4e-15).</td></tr>
 <tr><td><code class="inline">quantity</code></td><td><code class="inline">'geoid'</code> (default) |
 <code class="inline">'potential'</code> | <code class="inline">'gravity_anomaly'</code> |
 <code class="inline">'gravity_disturbance'</code> | <code class="inline">'ewh'</code>. The degree-dependent
-kernel (<code class="inline">shx.kernelFactors</code>, the same single source used by synthesis) is divided
+kernel (<code class="inline">shLowLevel.kernelFactors</code>, the same single source used by synthesis) is divided
 out so C, S are Stokes coefficients. Degrees with zero kernel (n = 0, 1 for gravity anomaly)
 are unobservable, returned as 0 and listed in <code class="inline">info.unobservedDegrees</code>.
 <code class="inline">'ewh'</code> requires user-supplied load Love numbers <code class="inline">kn</code>
@@ -68,7 +68,7 @@ noisy equiangular grids. For complete ring systems the solution is weight-indepe
 <tr><td><code class="inline">Kaula</code></td><td>&gt; 0 enables Tikhonov regularization toward 0 with
 per-degree sigma Kaula&middot;1e-5/n&sup2; (Kaula's rule; 1 = classic). <b>Required</b> when the sampling
 underdetermines the coefficients &mdash; without it, rank deficiency raises
-<code class="inline">shx:shAnalysisGrid:rankDeficient</code> instead of returning leakage-contaminated
+<code class="inline">shLowLevel:shAnalysisGrid:rankDeficient</code> instead of returning leakage-contaminated
 numbers silently.</td></tr>
 </table>
 

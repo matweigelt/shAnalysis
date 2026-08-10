@@ -22,26 +22,26 @@ th { background: #f5f7fa; }
 <span class="tag">Visualization</span>
 <h1>Visualization suite (v2.4)</h1>
 <p>Maps, basin series, triangle differences, covariance images, spectrum overlays, animations.</p>
-<h2>shx.plotSHMap / g.map</h2>
+<h2>shLowLevel.plotSHMap / g.map</h2>
 <pre>g.map(-89:89, 0:359, quantity="ewh", kn=kn, Units="m")
-shx.plotSHMap(grid, lat, lon, Projection="hammer", CLim=[-0.3 0.3])</pre>
+shLowLevel.plotSHMap(grid, lat, lon, Projection="hammer", CLim=[-0.3 0.3])</pre>
 <p>Divergent blue-white-red colormap symmetric about zero (built programmatically), robust 98th-percentile limits, coastline overlay from base-MATLAB <code class="inline">coastlines</code>, plate-carr&eacute;e or analytic Hammer equal-area projection &mdash; no Mapping Toolbox anywhere.</p>
-<h2>shx.plotBasinSeries</h2>
-<pre>[avg, out] = shx.basinDeconvolve(b, op);    % b: (P x K) kernel(s)
-shx.plotBasinSeries(op.tYears, avg(1,:)', out.sigma(1,:)', Units="cm")</pre>
+<h2>shLowLevel.plotBasinSeries</h2>
+<pre>[avg, out] = shLowLevel.basinDeconvolve(b, op);    % b: (P x K) kernel(s)
+shLowLevel.plotBasinSeries(op.tYears, avg(1,:)', out.sigma(1,:)', Units="cm")</pre>
 <p>1&sigma; band, grey patches over gaps &gt; 0.3 yr (the 2017&ndash;2018 mission gap), AR(1)-corrected trend annotation.</p>
 <h2>Triangle differences</h2>
 <pre>plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S)</pre>
 <p>Signed difference on a linear divergent scale &mdash; the before/after diagnostic for filter comparisons. Peak stays up, cells stay square (v2.3.1 contract).</p>
-<h2>shx.plotCovariance</h2>
-<pre>out = shx.readSINEX(f, Output="covariance");
-shx.plotCovariance(out.M, out.idx)   % Type="covariance" for log10</pre>
+<h2>shLowLevel.plotCovariance</h2>
+<pre>out = shLowLevel.readSINEX(f, Output="covariance");
+shLowLevel.plotCovariance(out.M, out.idx)   % Type="covariance" for log10</pre>
 <p>Correlation image in shIndex order with (order, C/S) block boundaries &mdash; one look shows how block-diagonal the matrix really is.</p>
 <h2>Spectrum overlays (v2.4)</h2>
 <pre>plotSHSpectrum({specSig, specErr}, 'names', {'signal','error'}, ...
     'Kaula', 1e-5, 'MarkCrossover', true)</pre>
-<h2>shx.writeAnimation</h2>
-<pre>shx.writeAnimation(tsF, 'ewh.mp4', quantity="ewh", kn=kn, Units="m")</pre>
+<h2>shLowLevel.writeAnimation</h2>
+<pre>shLowLevel.writeAnimation(tsF, 'ewh.mp4', quantity="ewh", kn=kn, Units="m")</pre>
 <p>MPEG-4 via VideoWriter, one frame per epoch, FIXED robust color scale across the whole stack.</p>
 <h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="basinDeconvolve.html">basinDeconvolve</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>

@@ -51,13 +51,13 @@ jobs:
         with:
           command: >
             fprintf('pwd: %s\n', pwd);
-            assert(isfolder('+shx'), 'repo layout: +shx missing in %s', pwd);
+            assert(isfolder('+shLowLevel'), 'repo layout: +shLowLevel missing in %s', pwd);
             assert(isfolder('tests'), 'repo layout: tests missing in %s', pwd);
-            d = dir(fullfile('+shx', '*.m'));
-            fprintf('files in +shx: %d (expect 78)\n', numel(d));
+            d = dir(fullfile('+shLowLevel', '*.m'));
+            fprintf('files in +shLowLevel: %d (expect 78)\n', numel(d));
             addpath(pwd);
-            fprintf('shx.legendreCached resolves to: %s\n', ...
-                which('shx.legendreCached'));
+            fprintf('shLowLevel.legendreCached resolves to: %s\n', ...
+                which('shLowLevel.legendreCached'));
             results = runtests('tests', IncludeSubfolders = false);
             disp(table(results));
             assertSuccess(results);

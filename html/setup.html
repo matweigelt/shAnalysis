@@ -39,14 +39,14 @@ s = setup_shAnalysis(DryRun = true, Download = "starter")   % plan only</pre>
 <table>
 <tr><th>level</th><th>adds</th><th>size</th><th>backend</th></tr>
 <tr><td><code class="inline">"none"</code></td><td>path only (default)</td><td>&mdash;</td><td>&mdash;</td></tr>
-<tr><td><code class="inline">"core"</code></td><td>GSFC TN-14 (C20/C30) + TN-13 geocenter files (GFZ/CSR/JPL) &mdash; the low-degree completion chain</td><td>~250 KB</td><td><code class="inline">shx.fetchTN</code></td></tr>
-<tr><td><code class="inline">"filters"</code></td><td>anisotropic DDK decorrelation matrices (subset via <code class="inline">DDK=</code>, default 3)</td><td>~10 MB each</td><td><code class="inline">shx.fetchDDK</code></td></tr>
-<tr><td><code class="inline">"starter"</code></td><td>ITSG monthly-solution starter set (default: the n96 companions of the shipped n60 fixture months, 2008-04 and 2025-12)</td><td>~1 MB/month</td><td><code class="inline">shx.fetchITSG</code></td></tr>
+<tr><td><code class="inline">"core"</code></td><td>GSFC TN-14 (C20/C30) + TN-13 geocenter files (GFZ/CSR/JPL) &mdash; the low-degree completion chain</td><td>~250 KB</td><td><code class="inline">shLowLevel.fetchTN</code></td></tr>
+<tr><td><code class="inline">"filters"</code></td><td>anisotropic DDK decorrelation matrices (subset via <code class="inline">DDK=</code>, default 3)</td><td>~10 MB each</td><td><code class="inline">shLowLevel.fetchDDK</code></td></tr>
+<tr><td><code class="inline">"starter"</code></td><td>ITSG monthly-solution starter set (default: the n96 companions of the shipped n60 fixture months, 2008-04 and 2025-12)</td><td>~1 MB/month</td><td><code class="inline">shLowLevel.fetchITSG</code></td></tr>
 </table>
-<p>Downloads land in <code class="inline">shx.dataFolder()</code> subfolders
+<p>Downloads land in <code class="inline">shLowLevel.dataFolder()</code> subfolders
 (<code class="inline">TN/</code>, <code class="inline">DDK/</code>,
 <code class="inline">itsg_series/</code>). Point
-<code class="inline">shx.dataFolder(PATH)</code> at a shared location first to
+<code class="inline">shLowLevel.dataFolder(PATH)</code> at a shared location first to
 reuse downloads across machines.</p>
 
 <h2>Path handling</h2>
@@ -58,8 +58,8 @@ session path stays set and a warning explains the
 <code class="inline">startup.m</code> alternative.</p>
 
 <h2>Verification &amp; failure handling</h2>
-<p><code class="inline">shx.fetchTN</code> parses every file with
-<code class="inline">shx.readTN13</code>/<code class="inline">readTN14</code>
+<p><code class="inline">shLowLevel.fetchTN</code> parses every file with
+<code class="inline">shLowLevel.readTN13</code>/<code class="inline">readTN14</code>
 before accepting it &mdash; a truncated download or an HTML error page never
 survives (deleted + reported). Each level runs in isolation: failures are
 collected in <code class="inline">summary.failed</code> and the remaining

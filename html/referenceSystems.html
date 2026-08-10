@@ -22,11 +22,11 @@ th { background: #f5f7fa; }
 <span class="tag">Reference systems</span>
 <h1>Normal field &amp; GM/R rescaling (v2.4)</h1>
 <p>Subtracting a WGS84/GRS80 normal field and converting between (GM, R) conventions.</p>
-<h2>shx.rescaleGMR / g.toReference</h2>
+<h2>shLowLevel.rescaleGMR / g.toReference</h2>
 <pre>g2 = g.toReference(GM=3.986004418e14, R=6378137.0);
 % C2_nm = C_nm (GM1/GM2)(R1/R2)^n - the physical field is invariant</pre>
 <p>Needed whenever conventions meet: the WGS84 GM (3.986004418e14) and a (6378137.0) DIFFER from the ICGEM values (3.986004415e14, 6378136.3); coefficient-wise mixing without rescaling costs millimetres. The arithmetic operators guard against it (<code class="inline">shCoefficients:constantsMismatch</code>).</p>
-<h2>shx.normalFieldCS / g.subtractNormalField</h2>
+<h2>shLowLevel.normalFieldCS / g.subtractNormalField</h2>
 <pre>T = g.subtractNormalField();          % WGS84 (default) | System="GRS80"
 T.map(quantity="geoid", Units="m")    % proper +-100 m undulations</pre>
 <p>The even zonals are COMPUTED from the defining constants (GM, a, f, &omega;) via the Heiskanen-Moritz closed form (q&#8320; series &rarr; J&#8322; &rarr; J&#8322;&#8342;) &mdash; no coefficient tables; validated against NIMA TR8350.2 to all published digits (J&#8322; = 1.082629821313e-3, Cbar&#8322;&#8320;/&#8324;&#8320;/&#8326;&#8320;/&#8328;&#8320;). subtractNormalField rescales the ellipsoid field to the model's (GM, R) automatically, including the degree-0 GM-ratio term.</p>

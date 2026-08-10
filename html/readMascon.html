@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.readMascon</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.readMascon</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,13 +20,13 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">I/O</span>
-<h1>shx.readMascon</h1>
+<h1>shLowLevel.readMascon</h1>
 <p>Read JPL / CSR / GSFC mascon netCDF grids for comparison against the SH chain.</p>
 <h2>Syntax</h2>
-<pre>mas = shx.readMascon('GRCTellus.JPL.200204_202512.GLO.RL06.1M.MSCNv03CRI.nc')</pre>
+<pre>mas = shLowLevel.readMascon('GRCTellus.JPL.200204_202512.GLO.RL06.1M.MSCNv03CRI.nc')</pre>
 <h2>Description</h2>
 <p>Base-MATLAB <code class="inline">ncread</code>-based reader with auto-detection of the common variable layouts (<code class="inline">lwe_thickness</code> / <code class="inline">lwe</code> / <code class="inline">water_thickness</code>; lat/latitude; lon/longitude; time with &ldquo;days since&rdquo; units &rarr; decimal years). Returns <code class="inline">lat (nlat,1)</code>, <code class="inline">lon (nlon,1, 0..360)</code>, <code class="inline">epoch (T,1)</code> decimal years, <code class="inline">ewh (nlat,nlon,T)</code> as stored (check <code class="inline">mas.units</code>), <code class="inline">units</code>, <code class="inline">name</code>.</p>
-<div class="note"><b>Latitude convention:</b> mascon grids are typically <i>geodetic</i>. Synthesize SH fields on the mascon grid with <code class="inline">LatType="geodetic"</code> (or convert via <code class="inline">shx.geodetic2geocentric</code>) before differencing &mdash; skipping this biases mid-latitudes by up to ~21&nbsp;km of latitude. Full comparison workflow: guide, &ldquo;Comparing against mascons&rdquo;.</div>
+<div class="note"><b>Latitude convention:</b> mascon grids are typically <i>geodetic</i>. Synthesize SH fields on the mascon grid with <code class="inline">LatType="geodetic"</code> (or convert via <code class="inline">shLowLevel.geodetic2geocentric</code>) before differencing &mdash; skipping this biases mid-latitudes by up to ~21&nbsp;km of latitude. Full comparison workflow: guide, &ldquo;Comparing against mascons&rdquo;.</div>
 <h2>See also</h2><p class="seealso"><a href="geodetic2geocentric.html">geodetic2geocentric</a> <a href="shSynthesis.html">shSynthesis</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>

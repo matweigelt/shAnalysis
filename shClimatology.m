@@ -249,7 +249,7 @@ end
 
 methods (Static)
     function obj = fromCoef(coef, t0, series, opts)
-        %FROMCOEF Build from shx.fitDeterministicModel output (internal).
+        %FROMCOEF Build from shLowLevel.fitDeterministicModel output (internal).
         %   OBJ = shClimatology.fromCoef(COEF, T0, SERIES, Periods=[],
         %   CoefSigma=[]) with COEF (6+2K) x (2*Nc) over the flattened
         %   [C(:); S(:)] stack of SERIES; rows 7:end are the cos/sin

@@ -20,15 +20,15 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Function</span><span class="tag">v2.5</span>
-<h1>shx.readLoveNumbers</h1>
+<h1>shLowLevel.readLoveNumbers</h1>
 <p>Read <b>load Love numbers</b> from a user-supplied table. The toolbox never
 hardcodes Love numbers &mdash; this reader turns YOUR loading-model table (PREM,
 Gutenberg-Bullen, ak135, ...) into the <code class="inline">kn</code>/<code class="inline">hn</code>/<code class="inline">ln</code>
 vectors that EWH synthesis and elastic deformation expect.</p>
 
 <h2>Syntax</h2>
-<pre>LN = shx.readLoveNumbers(file)
-[LN, info] = shx.readLoveNumbers(file, Columns="n h l k", ...
+<pre>LN = shLowLevel.readLoveNumbers(file)
+[LN, info] = shLowLevel.readLoveNumbers(file, Columns="n h l k", ...
         MaxDegree=96, Interp="pchip", InFrame="CE", OutFrame="CF")</pre>
 
 <h2>Recognized layouts</h2>
@@ -69,7 +69,7 @@ the frame to your GRACE degree-1 handling (TN-13 is CF) before comparing with
 GNSS loading series.</div>
 
 <h2>Example (G7 GNSS chain)</h2>
-<pre>LN = shx.readLoveNumbers("prem_load.txt", Columns="n h l k", ...
+<pre>LN = shLowLevel.readLoveNumbers("prem_load.txt", Columns="n h l k", ...
          MaxDegree=96, Interp="pchip", InFrame="CE", OutFrame="CF");
 [up, no, ea] = g.deformation(lat, lon, kn=LN.kn, hn=LN.hn, ...
          ln=LN.ln, Mode="points");</pre>
@@ -84,7 +84,7 @@ GNSS loading series.</div>
 </table>
 
 <h2>Error identifiers</h2>
-<p><code class="inline">shx:readLoveNumbers:fileNotFound</code>,
+<p><code class="inline">shLowLevel:readLoveNumbers:fileNotFound</code>,
 <code class="inline">:noData</code>, <code class="inline">:ambiguousColumns</code>,
 <code class="inline">:badColumns</code>, <code class="inline">:degreeGap</code>,
 <code class="inline">:needsDegree1</code>, <code class="inline">:frameNotRecoverable</code>,
