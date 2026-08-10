@@ -211,7 +211,7 @@
  },
  {
   "name": "shx.readDDK",
-  "example": "W = shx.readDDK(\"DDK5\");              % resolves dataFolder/DDK",
+  "example": "W = shx.readDDK(\"DDK3\");   % DDK3 ships with the toolbox; others via shx.fetchDDK",
   "run": true
  },
  {
@@ -371,7 +371,7 @@
  },
  {
   "name": "shx.writeAnimation",
-  "example": "shx.writeAnimation(ts, \"ewh_2002_2026.gif\", quantity = \"ewh\", kn = kn, FrameRate = 6);",
+  "example": "shx.writeAnimation(ts, \"ewh_2019_2022.avi\", quantity = \"ewh\", kn = kn);   % .avi portable, .mp4 on Windows/macOS",
   "run": false
  },
  {

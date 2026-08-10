@@ -85,7 +85,9 @@ if ~isempty(failList)
     fprintf(', %d FAILED (%s)', numel(failList), strjoin(failList, ', '));
 end
 fprintf(' ----\n');
-fprintf('Provenance: shAnalysis v2.5, Claude (Fable 5), 2026-08-07.\n');
+v = shx.version();
+fprintf('Provenance: %s v%s, Claude (Fable 5), %s.\n', ...
+    v.Name, v.Version, v.Date);
 if ~isempty(failList) && nargout == 0
     warning('demo:casesFailed', 'Failed cases: %s. Rerun individually or with StopOnError=true for debugging.', ...
         strjoin(failList, ', '));

@@ -238,7 +238,7 @@ if opts.Plot
     for k = 2:N
         gd = trendDiffFields{k};
         sp = shx.shDegreeRMS(gd.C, gd.S);
-        semilogy(sp.n, sp.amp, '.-', 'Color', cols(k, :));
+        semilogy(sp.degree, sp.degAmplitude, '.-', 'Color', cols(k, :));
     end
     hold off; grid on; set(gca, 'YScale', 'log');
     xlabel('degree n'); ylabel('trend diff amplitude');

@@ -429,7 +429,7 @@ for t = 1:T
     Ss(:, :, t) = tril(Ss(:, :, t), -1); Ss(:, 1, t) = 0;
 end
 ts = shSeries(Cs, Ss = Ss, Epochs = [2010.1 2010.2]);
-tmp = fullfile(tempdir, sprintf('shx_anim_%d.mp4', randi(1e9)));
+tmp = fullfile(tempdir, sprintf('shx_anim_%d.avi', randi(1e9)));  % CI-portable
 cleanup = onCleanup(@() deleteIfThere(tmp)); %#ok<NASGU>
 shx.writeAnimation(ts, tmp, quantity = "geoid", ...
     lat = -80:10:80, lon = 0:10:350, FrameRate = 2);

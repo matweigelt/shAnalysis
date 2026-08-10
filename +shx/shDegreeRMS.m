@@ -21,7 +21,10 @@ function spec = shDegreeRMS(C, S, varargin)
 %
 %   Claude (Sonnet 4.6), 2026-07-11; merged into +shx: Claude (Fable 5), 2026-08-07.
 %   Outputs
-%     spec       struct: n (nmax+1 x 1), amp/rms/var (nmax+1 x 1) per Quantity, err (nmax+1 x 1) when sigmas present
+%     spec       struct: degree (nmax+1 x 1), degVariance/degRMS/
+%                degAmplitude, cumVariance/cumRMS/cumAmplitude, R,
+%                domain; errVariance/errRMS/errAmplitude when sigmas
+%                are supplied
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 

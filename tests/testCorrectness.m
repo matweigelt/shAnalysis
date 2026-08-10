@@ -1337,7 +1337,7 @@ function testDiffSpectrumIdentities(testCase)
 % half the signal amplitude as difference; identical fields have zero
 % difference and no crossover (Python-validated identities)
 rng(5); L = 16;
-g = randomField(L, 2020);
+g = randomField(L);
 spec = shx.diffSpectrum(g.C, g.S, 0.5 * g.C, 0.5 * g.S);
 verifyEqual(testCase, spec.degCorr(3:end), ones(L - 1, 1), 'AbsTol', 1e-12);
 verifyEqual(testCase, spec.diffAmp, 0.5 * spec.amp1, 'RelTol', 1e-12);
@@ -1417,7 +1417,10 @@ assumeTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
 rep = shx.compareSolutions(g, g.gaussian(350), Names = ["raw", "G350"]);
 verifyEqual(testCase, rep.nmax, 60);
-verifyTrue(testCase, isfinite(rep.spectral.ncross));   % filter diverges
+% a pure smoothing difference is (1-w_n)*amp <= amp at every degree,
+% so it NEVER crosses the signal: ncross = NaN is the correct result
+% (finite-ncross behavior is covered in testDiffSpectrumIdentities)
+verifyTrue(testCase, isnan(rep.spectral.ncross));
 verifyTrue(testCase, isfinite(rep.chi2dof) && rep.chi2dof > 0);
 verifyTrue(testCase, rep.spatial.corr > 0.5 && rep.spatial.corr <= 1);
 verifyFalse(testCase, rep.rescaled);

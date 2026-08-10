@@ -9,7 +9,7 @@ function writeAnimation(ts, filename, opts)
 %
 %   Inputs
 %     ts        (1,1) shSeries
-%     filename  char/string  .mp4 target
+%     filename  char/string  .mp4 (Windows/macOS) or .avi (all platforms) target
 %   Options
 %     quantity ("ewh"), kn, hn        as in synthesis
 %     lat (-89:2:89), lon (0:2:358)   grid [deg]
@@ -49,7 +49,25 @@ if isempty(cl)
     if a == 0, a = 1; end
     cl = [-a, a];
 end
-vw = VideoWriter(char(filename), 'MPEG-4');
+% v2.6.0: profile by extension; MPEG-4 is unavailable in Linux
+% VideoWriter, so .avi (Motion JPEG, all platforms) is the portable
+% choice and CI-safe format
+[~, ~, ext] = fileparts(char(filename));
+switch lower(ext)
+    case '.mp4'
+        profs = VideoWriter.getProfiles;
+        if ~any(strcmp({profs.Name}, 'MPEG-4'))
+            error('shx:writeAnimation:mp4Unsupported', ...
+                ['MPEG-4 is not available on this platform (Linux). ', ...
+                 'Use an .avi filename instead.']);
+        end
+        vw = VideoWriter(char(filename), 'MPEG-4');
+    case '.avi'
+        vw = VideoWriter(char(filename), 'Motion JPEG AVI');
+    otherwise
+        error('shx:writeAnimation:badExtension', ...
+            'Use an .mp4 or .avi filename (got %s).', ext);
+end
 vw.FrameRate = opts.FrameRate;
 open(vw);
 closer = onCleanup(@() close(vw));
