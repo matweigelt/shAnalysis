@@ -33,8 +33,11 @@ arguments
 end
 
 root = fileparts(mfilename('fullpath'));
-addpath(root, fullfile(root, 'compat'), fullfile(root, 'tests'), ...
-    fullfile(root, 'tests', 'legacy'));
+cdir = fullfile(root, 'compat');            % private, optional
+if isfolder(cdir), addpath(cdir); end
+addpath(root, fullfile(root, 'tests'));
+ldir = fullfile(root, 'tests', 'legacy');   % private, optional
+if isfolder(ldir), addpath(ldir); end
 
 logFile = char(opts.LogFile);
 if isempty(logFile)
@@ -43,12 +46,15 @@ end
 if isfile(logFile), delete(logFile); end
 diary(logFile);
 cleanupDiary = onCleanup(@() diary('off'));
-fprintf('shAnalysis v2.5 test run - %s\n', char(datetime('now', ...
+v = shx.version();
+fprintf('%s v%s test run - %s\n', v.Name, v.Version, char(datetime('now', ...
     Format = 'yyyy-MM-dd HH:mm:ss')));
 fprintf('MATLAB %s on %s\n', version, computer);
 
-suites = {'testCorrectness', 'testContract', 'testRobustness', ...
-          'test_shAnalysis'};
+suites = {'testCorrectness', 'testContract', 'testRobustness'};
+if isfolder(ldir)                            % v1 suite needs compat/
+    suites{end+1} = 'test_shAnalysis';
+end
 if ~opts.SkipPerformance
     suites{end+1} = 'testPerformance';
 end

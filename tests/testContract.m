@@ -19,7 +19,9 @@ end
 function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
-addpath(root, fullfile(root, 'compat'));
+addpath(root);
+cdir = fullfile(root, 'compat');            % private, optional
+if isfolder(cdir), addpath(cdir); end
 tc.TestData.root = root;
 tc.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
@@ -199,6 +201,11 @@ end
 
 % ------------------------------------------------- compat wrapper contract
 function testCompatWrappersDelegate(tc)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(tc, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 g = randomField(12, 2020);
 [c1, s1] = shDestripe(g.C, g.S, 'minOrder', 4);        % compat
 [c2, s2] = shx.shDestripe(g.C, g.S, 'minOrder', 4);    % internal
@@ -348,7 +355,7 @@ L = 8; n1 = L + 1;
 C = tril(ones(n1));                              % all valid cells nonzero
 S = tril(ones(n1)); S(:, 1) = 0;                 % incl. sectorals S_nn
 ax = axes('Parent', fig);
-plotSHCoeffTriangle(C, S, 'RefC', 0*C, 'RefS', 0*S, 'ax', ax);
+shx.plotSHCoeffTriangle(C, S, 'RefC', 0*C, 'RefS', 0*S, 'ax', ax);
 im = findobj(ax, 'Type', 'image');
 verifyNotEmpty(testCase, im, 'no image object rendered');
 img = im(1).CData;                               % (L+1) x (2L+1)
@@ -398,10 +405,10 @@ h4 = shx.plotCovariance(M, idx, ax = ax1);
 verifyClass(testCase, h4, 'matlab.graphics.axis.Axes');
 % triangle diff mode
 cla(ax1);
-h5 = plotSHCoeffTriangle(C, S, 'RefC', 0.9*C, 'RefS', 0.9*S, 'ax', ax1);
+h5 = shx.plotSHCoeffTriangle(C, S, 'RefC', 0.9*C, 'RefS', 0.9*S, 'ax', ax1);
 verifyClass(testCase, h5, 'matlab.graphics.axis.Axes');
 verifyError(testCase, ...
-    @() plotSHCoeffTriangle(C, S, 'RefC', C, 'ax', axes('Parent', fig)), ...
+    @() shx.plotSHCoeffTriangle(C, S, 'RefC', C, 'ax', axes('Parent', fig)), ...
     'shx:plotSHCoeffTriangle:needRefS');
 end
 
@@ -416,7 +423,7 @@ sC = 1e-11 * max(1, (0:L)') / 10 .* ones(n1) .* tril(ones(n1));
 spec = shx.shDegreeRMS(C, S, 'R', 6378136.3, ...
     'sigmaC', sC, 'sigmaS', sC);
 ax = axes('Parent', fig);
-h = plotSHSpectrum(spec, 'ax', ax, 'Kaula', 1e-5, 'MarkCrossover', true);
+h = shx.plotSHSpectrum(spec, 'ax', ax, 'Kaula', 1e-5, 'MarkCrossover', true);
 verifyClass(testCase, h(1), 'matlab.graphics.chart.primitive.Line');
 end
 
@@ -721,28 +728,28 @@ sd = shx.shDegreeRMS(C, S, 'sigmaC', abs(C)*0.1, 'sigmaS', abs(S)*0.1);
 so = shx.shOrderRMS(C, S);
 ax = axes('Parent', fig);
 % linear x-axis contract (v2.4.1)
-plotSHSpectrum(sd, 'ax', ax);
+shx.plotSHSpectrum(sd, 'ax', ax);
 verifyEqual(testCase, ax.XScale, 'linear');
 verifyEqual(testCase, ax.YScale, 'log');
 % every quantity renders, degree and order domain
 for q = ["amplitude", "rms", "variance", "cumamplitude", "cumrms", "cumvariance"]
-    cla(ax); plotSHSpectrum(sd, 'ax', ax, 'Quantity', char(q));
-    cla(ax); plotSHSpectrum(so, 'ax', ax, 'Quantity', char(q));
+    cla(ax); shx.plotSHSpectrum(sd, 'ax', ax, 'Quantity', char(q));
+    cla(ax); shx.plotSHSpectrum(so, 'ax', ax, 'Quantity', char(q));
 end
 % contracts
 verifyError(testCase, ...
-    @() plotSHSpectrum({sd, so}, 'ax', axes('Parent', fig)), ...
+    @() shx.plotSHSpectrum({sd, so}, 'ax', axes('Parent', fig)), ...
     'shx:plotSHSpectrum:mixedDomains');
 verifyError(testCase, ...
-    @() plotSHSpectrum(sd, 'ax', axes('Parent', fig), ...
+    @() shx.plotSHSpectrum(sd, 'ax', axes('Parent', fig), ...
     'Quantity', 'variance', 'Kaula', 1e-5), ...
     'shx:plotSHSpectrum:kaulaDomain');
 verifyError(testCase, ...
-    @() plotSHSpectrum(sd, 'ax', axes('Parent', fig), 'Quantity', 'xxx'), ...
+    @() shx.plotSHSpectrum(sd, 'ax', axes('Parent', fig), 'Quantity', 'xxx'), ...
     'shx:plotSHSpectrum:badQuantity');
 % triangle: no center line anymore (v2.4.1)
 ax2 = axes('Parent', fig);
-plotSHCoeffTriangle(C, S, 'ax', ax2);
+shx.plotSHCoeffTriangle(C, S, 'ax', ax2);
 verifyEmpty(testCase, findobj(ax2, 'Type', 'constantline'));
 end
 

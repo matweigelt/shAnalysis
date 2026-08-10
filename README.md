@@ -15,6 +15,14 @@ filter into three user-facing classes.
 
 Requires MATLAB R2021a or newer (`arguments` name=value syntax).
 
+## Documentation
+
+The complete **[workflow & theory guide (PDF, 75 pages)](docs/shAnalysis_workflow_guide.pdf)**
+covers the processing chain, filter theory, uncertainty propagation, and the
+generated API reference (Part IV) with typed inputs/outputs and executable
+examples for every public function. HTML help for MATLAB's `doc` browser
+ships in `html/`.
+
 ## Layout
 
 ```
