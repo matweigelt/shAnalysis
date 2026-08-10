@@ -31,6 +31,7 @@ arguments
     which (1,:) double {mustBeInteger, mustBeInRange(which, 1, 8)}
     opts.Dest (1,1) string = ""
     opts.Timeout (1,1) double = 120
+    opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
 end
@@ -57,7 +58,7 @@ for k = unique(which(:)')
     end
     tmpf = fp + ".part";
     try
-        websave(tmpf, base + "/" + fn, wo);
+        webFetch(base + "/" + fn, tmpf, opts.Timeout, opts.Proxy);
         shx.readDDK(tmpf);                      % verify BEFORE swap
     catch err
         if isfile(tmpf), delete(tmpf); end

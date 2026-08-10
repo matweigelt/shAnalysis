@@ -48,6 +48,7 @@ arguments
     opts.Product (1,1) string ...
         {mustBeMember(opts.Product, ["monthly", "daily"])} = "monthly"
     opts.Timeout (1,1) double = 60
+    opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
 end
@@ -128,7 +129,7 @@ for m = mm
         end
         tmpf = fp + ".part";
         try
-            websave(tmpf, url, wo);
+            webFetch(url, tmpf, opts.Timeout, opts.Proxy);
             shx.shReadGFC(tmpf);                % verify BEFORE swap
             movefile(tmpf, fp, 'f');
             files(end+1) = string(fp); %#ok<AGROW>

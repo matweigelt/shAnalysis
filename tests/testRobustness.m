@@ -477,6 +477,33 @@ verifyEqual(tc, i3.fetched, string(nmC));
 verifyTrue(tc, isempty(i3.updated));
 end
 
+function testFetchProxyPlumbing(tc)
+% v2.7.0: Proxy= routes downloads through matlab.net.http with an
+% explicit ProxyURI. Offline-deterministic: 127.0.0.1 refuses instantly
+% on both paths; the mirror mode copies files and ignores Proxy.
+dst = tempname; mkdir(dst);
+c1 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+% websave path (no proxy): unreachable base -> clean failure report
+[~, i0] = shx.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
+    Providers = "CSR", TN14 = false, Timeout = 2, Quiet = true);
+verifyEqual(tc, numel(i0.failed), 1);
+% webFetch path (proxy set): unreachable proxy -> clean failure report
+[~, i1] = shx.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
+    Providers = "CSR", TN14 = false, Timeout = 2, Quiet = true, ...
+    Proxy = "http://127.0.0.1:9");
+verifyEqual(tc, numel(i1.failed), 1);
+% mirror mode: local copy, Proxy irrelevant, succeeds
+d = tc.TestData.dataDir;
+mir = tempname; mkdir(mir);
+c2 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+nmC = 'TN-13_GEOC_CSR_RL06.3.txt';
+copyfile(fullfile(d, nmC), fullfile(mir, nmC));
+[f2, i2] = shx.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
+    TN14 = false, Quiet = true, Proxy = "http://127.0.0.1:9");
+verifyEqual(tc, numel(f2), 1);
+verifyEqual(tc, i2.fetched, string(nmC));
+end
+
 function testRealTN14GSFC(tc)
 % REAL GSFC TN-14 C20/C30 file (v.3, snapshot retrieved from GFZ ISDC
 % 2026-08-07): 258 solution windows, starts 2002.2548 .. 2026.4137,
