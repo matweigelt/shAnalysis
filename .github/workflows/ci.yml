@@ -36,7 +36,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    cache: true
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -45,7 +44,8 @@ jobs:
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2026a
-
+          cache: true
+ 
       - name: Run test suite
         uses: matlab-actions/run-command@v3
         with:
