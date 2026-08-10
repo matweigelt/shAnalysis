@@ -1551,8 +1551,8 @@ fprintf(fid, '%s%s', head, body);
 fprintf(fid, 'trnd     2     0 %19.12e %19.12e 20080101.0000 20090101.0000\n', ...
     1e-12, 0);
 fclose(fid);
-g1 = shLowLevel.shReadGFC(f1);                 % fast path
-g2 = shLowLevel.shReadGFC(f2);                 % legacy path
+g1 = shLowLevel.shReadGFC(f1);                 % bulk, static
+g2 = shLowLevel.shReadGFC(f2);                 % bulk, variable (v3.1.1)
 verifyEqual(testCase, g2.C, g1.C, 'AbsTol', 0);
 verifyEqual(testCase, g2.S, g1.S, 'AbsTol', 0);
 verifyEqual(testCase, g2.sigmaC, g1.sigmaC, 'AbsTol', 0);
@@ -1562,6 +1562,18 @@ verifyTrue(testCase, isempty(g1.variableTerms) || ...
     size(g1.variableTerms, 1) == 0);
 % header semantics identical between the two parsers
 verifyEqual(testCase, g2.header, g1.header);
+% v3.1.1: FORCE the legacy line parser with a dirty record (bulk
+% rejects the file, legacy skips/NaNs it harmlessly at n=m=0) and
+% require bit-for-bit agreement with the bulk-parsed variable file
+f5 = fullfile(tmp, 'variable_dirty.gfc');
+copyfile(f2, f5); fid = fopen(f5, 'a');
+fprintf(fid, 'gfc 0 0 0.0 0.0 x y\n');
+fclose(fid);
+g5 = shLowLevel.shReadGFC(f5);                 % legacy path
+verifyEqual(testCase, g5.C, g2.C, 'AbsTol', 0);
+verifyEqual(testCase, g5.S, g2.S, 'AbsTol', 0);
+verifyEqual(testCase, g5.sigmaC, g2.sigmaC, 'AbsTol', 0);
+verifyEqual(testCase, g5.variableTerms, g2.variableTerms);
 % FORTRAN D-exponents mid-file (the EIGEN-6C4 case): fast path must
 % accept and match str2double semantics exactly
 f3 = fullfile(tmp, 'dexp.gfc');

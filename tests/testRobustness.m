@@ -270,7 +270,7 @@ fprintf(fid, 'gfc  2 1  1.0e-06 2.0e-06 0 0\n');
 fprintf(fid, 'gfct 2 0 -4.0e-04 0.0 0 0 20100101 20150101\n');
 fprintf(fid, 'gfct 2 0 -5.0e-04 0.0 0 0 20150101 20200101\n');
 fprintf(fid, 'trnd 2 0  1.0e-11 0.0 0 0 20150101 20200101\n');
-fprintf(fid, 'acos 2 0  2.0e-11 0.0 0 0 1.0 20100101 20200101\n');
+fprintf(fid, 'acos 2 0  2.0e-11 0.0 0 0 20100101 20200101 1.0\n'); % 2.0: t0 t1 per
 fclose(fid);
 cleanup = onCleanup(@() delete(f)); %#ok<NASGU>
 model = shLowLevel.shReadGFC(f);

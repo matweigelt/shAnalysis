@@ -31,8 +31,13 @@ day  = mod(di, 1e2);
 frac = dd - di;                                % .hhmm
 hh   = floor(frac * 1e2);
 mins = round(mod(frac * 1e4, 1e2));
-t = datetime(yyyy, mm, day, hh, mins, zeros(size(hh)));
-y0 = dateshift(t, 'start', 'year');
-y1 = y0 + calyears(1);
-y(isDate) = yyyy + days(t - y0) ./ days(y1 - y0);
+% pure arithmetic (v3.1.1): the previous datetime/calendarDuration
+% construction cost ~1 ms per call - fatal inside shReadGFC's line
+% parser, where variable-term files (GRGS mean fields) call this for
+% every record (tens of minutes for a 73 MB model). Same values.
+cumdays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+leap = (mod(yyyy, 4) == 0 & mod(yyyy, 100) ~= 0) | mod(yyyy, 400) == 0;
+doy = reshape(cumdays(mm), size(mm)) + day - 1 + (mm > 2) .* leap ...
+    + (hh + mins / 60) / 24;
+y(isDate) = yyyy + doy ./ (365 + leap);
 end
