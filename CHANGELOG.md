@@ -3,6 +3,24 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shx.version` and MATLAB's `ver`) is the single source of truth.
 
+## [2.7.0] - Unreleased
+
+### Added
+- `shx.poleTideConvert`: C21/S21 conversion between the IERS2010 and
+  IERS2018 (secular pole) mean-pole conventions, solid + ocean pole
+  tide, overridable coefficients; raw (C, S, epoch) and object forms.
+  Python-validated (identities exact, dS21 trend to < 1% of the
+  dominant term).
+- `Proxy=` option in all four fetchers and `setup_shAnalysis`:
+  per-call proxy via matlab.net.http (base MATLAB) for institutional
+  networks; websave path continues to honour MATLAB Web Preferences.
+- Provenance JSON sidecars (`<file>.provenance.json`: tool version,
+  MATLAB release, metadata) on `writeGFC`, `writeGrid`,
+  `writeAnimation`; `Sidecar = false` disables.
+- `writeGrid` netCDF output is CF-1.8 complete (standard_name, axis,
+  coordinates, long_name, Conventions/title/source/history globals);
+  the source stamp is dynamic (was hardcoded "v2.4").
+
 ## [2.6.0] - 2026-08-10 - DOI: 10.5281/zenodo.21871299
 
 ### Added
