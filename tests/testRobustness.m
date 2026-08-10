@@ -1163,6 +1163,11 @@ fx = fullfile(d, 'icgem_list_fixture.html');
 assumeTrue(testCase, isfile(fx));
 T = shx.listICGEM(Source = fx);
 verifyGreaterThan(testCase, height(T), 30);
+% v3.0.0: numbered catalogue + numeric selection contract (offline)
+verifyTrue(testCase, ismember('idx', T.Properties.VariableNames));
+verifyEqual(testCase, T.idx, (1:height(T))');
+verifyError(testCase, @() shx.fetchICGEM(height(T) + 7, List = T), ...
+    'shx:fetchICGEM:badIdx');
 verifyTrue(testCase, any(T.name == "Tongji-GMMG2025S"));
 verifyTrue(testCase, all(startsWith(T.url, "https://icgem.gfz.de/getmodel/gfc/")));
 verifyTrue(testCase, all(isfinite(T.year)));
