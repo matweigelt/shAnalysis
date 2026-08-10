@@ -25,17 +25,9 @@ name: shAnalysis CI
 
 on:
   push:
-    paths:
-      - 'shAnalysis/**'
-      - '.github/workflows/shanalysis-ci.yml'
   pull_request:
-    paths:
-      - 'shAnalysis/**'
   workflow_dispatch: {}
 
-env:
-  WORKDIR: shAnalysis
-  
 jobs:
   test:
     name: runAllTests (${{ matrix.os }})
