@@ -796,14 +796,14 @@ methods
         %   (from info.sigmaXfres; degrees below MinDegree are NaN).
         %
         %   Inputs
-        %     method  (1,1) string  "gaussian" | "fan" | "destripe" | "ddk" - dispatches to the matching filter
+        %     method  (1,1) string  filter chain to run; currently "tvANS"
+        %             (the simple filters are their own methods:
+        %             gaussian / fan / destripe / applyDDK)
         %   Outputs
         %     out        (1 x 1) shSeries   tvANS-filtered series with sigmaCs/Ss posterior stacks (exact incl. constraints, v2.5)
         %     op         struct   stored linear operator (V/Ut/lam/s or blocks, model, detLeverage/detResVar) for deconvolution and resolution maps
         %     info       struct: sigmaXfres (P x T), sigmaNote, VCE diagnostics
         %
-        %   Outputs
-        %     out  (1,1) shSeries  filtered series; history appended (immutable pattern)
         arguments
             obj
             method (1,1) string {mustBeMember(method, "tvANS")} %#ok<INUSA>

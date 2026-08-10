@@ -3,6 +3,22 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.1.0] - Unreleased
+
+### Added
+- `shLowLevel.standardChain`: the canonical GRACE post-processing chain
+  (read folder -> TN-14 C20/C30 -> degree-1 -> optional GIA trend ->
+  Gaussian/DDK/custom-W filter) as one correctly ordered call with a
+  step-by-step provenance report; explicit-file overrides for
+  reproducible pipelines.
+- `shLowLevel.designFilter`: DDK-class anisotropic filter
+  W = (N + Alpha*inv(S))^-1 N per order block, from formal sigmas +
+  Kaula rule or full covariances (buildNoiseCov/buildSignalCov);
+  output in the readDDK block format (drops into applyDDK and the
+  class methods unchanged). Python-validated with pinned references.
+- Workflow guide version stamp is generated from Contents.m (the PDF
+  title claimed v2.5 since the beginning).
+
 ## [3.0.1] - Unreleased
 
 ### Added

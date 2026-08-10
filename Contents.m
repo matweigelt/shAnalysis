@@ -1,5 +1,5 @@
-% shAnalysis v3.0.1 - Spherical harmonic (Stokes coefficient) analysis for
-% Version 3.0.1 (R2026a-compatible) 10-Aug-2026
+% shAnalysis v3.1.0 - Spherical harmonic (Stokes coefficient) analysis for
+% Version 3.1.0 (R2026a-compatible) 10-Aug-2026
 % GRACE/GRACE-FO, GOCE, and static gravity field models: class-based,
 % with time-series support, GAX background handling, climatology, and
 % the tvANS time-variable anisotropic Wiener filter.
@@ -163,6 +163,12 @@
 %   shLowLevel.version - toolbox metadata (name, version, date, root) from
 %   Contents.m; shLowLevel.fetch* now take Update=true for a safe, parse-verified
 %   refresh of existing files (TN-13/TN-14 grow monthly upstream).
+%   New in v3.1.0: shLowLevel.standardChain - the canonical pipeline
+%   (read -> TN-14 -> degree-1 -> optional GIA -> filter) as a single,
+%   correctly ordered entry point with a provenance report; and
+%   shLowLevel.designFilter - DDK-class anisotropic filters
+%   W = (N + a*inv(S))^-1 N built from YOUR sigmas/covariances, in the
+%   readDDK block format so they drop into applyDDK unchanged.
 %   v3.0.0 - BREAKING: the function namespace is renamed +shx ->
 %   +shLowLevel (all calls shLowLevel.*; error identifiers
 %   'shLowLevel:*'); compat/ and the v1 legacy suite are gone for good.

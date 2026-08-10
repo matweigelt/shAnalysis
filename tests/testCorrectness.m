@@ -1483,6 +1483,44 @@ verifyError(testCase, @() shLowLevel.synthesisPoints(C, S, GM, R, la, lo(1), r),
     'shLowLevel:synthesisPoints:sizeMismatch');
 end
 
+function testDesignFilter(testCase)
+% v3.1.0: W = (N + a*inv(S))^-1 N per order block. Diagonal gains and
+% the full-covariance 2x2 block are pinned against the Python reference
+% (validate_designfilter.py); format is readDDK-compatible.
+L = 60;
+sc = 3e-11 * ones(L+1); ss = sc;
+[W, inf1] = shLowLevel.designFilter(sc, ss, Alpha = 1, Kaula = 1e-6);
+gain = @(n) 1 ./ (1 + (3e-11 * n.^2 / 1e-6).^2);
+b0 = W.blocks(strcmp({W.blocks.cs}, 'c') & [W.blocks.m] == 0);
+d = diag(b0.M);
+verifyEqual(testCase, d(b0.n == 10), gain(10), 'RelTol', 1e-12);
+verifyEqual(testCase, d(b0.n == 30), gain(30), 'RelTol', 1e-12);
+verifyEqual(testCase, d(b0.n == 60), gain(60), 'RelTol', 1e-12);
+verifyTrue(testCase, inf1.gainRange(1) > 0 && inf1.gainRange(2) <= 1 + 1e-12);
+% readDDK-compatible: applies through the standard machinery and damps
+rng(41); g = randomField(L);
+[Cf, Sf] = shLowLevel.applyDDK(g.C, g.S, W);
+sp0 = shLowLevel.shDegreeRMS(g.C, g.S);
+spF = shLowLevel.shDegreeRMS(Cf, Sf);
+verifyLessThan(testCase, spF.degRMS(61), sp0.degRMS(61));
+verifyEqual(testCase, spF.degRMS(4) / sp0.degRMS(4), 1, 'AbsTol', 1e-4);
+% full-covariance block: pinned W2 from Python
+idx = shLowLevel.shIndex(3);
+P = idx.P;
+Nn = eye(P); Ss2 = eye(P);
+sel = [find(idx.n == 2 & idx.m == 2 & idx.cs == 0), ...
+       find(idx.n == 3 & idx.m == 2 & idx.cs == 0)];
+Nn(sel, sel) = [4, 1; 1, 3];
+Ss2(sel, sel) = [2, 0.5; 0.5, 1];
+Wf = shLowLevel.designFilter(zeros(4), zeros(4), Alpha = 0.5, ...
+    Noise = Nn, Signal = Ss2, Idx = idx);
+bm = Wf.blocks(strcmp({Wf.blocks.cs}, 'c') & [Wf.blocks.m] == 2);
+verifyEqual(testCase, bm.M, [0.92156862745098, 0.068627450980392; ...
+    0.058823529411765, 0.823529411764706], 'RelTol', 1e-12);
+verifyError(testCase, @() shLowLevel.designFilter(zeros(4), zeros(4), ...
+    Noise = Nn), 'shLowLevel:designFilter:needIdx');
+end
+
 function testSpectralFamilyIdentities(testCase)
 rng(101);
 L = 20; n1 = L + 1;

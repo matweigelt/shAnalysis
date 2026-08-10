@@ -84,14 +84,13 @@ def audit(entry, label, examples):
     # options with defaults
     for a in entry["args"]:
         if not a["nv"]: continue
-        mm = re.search(r"^.*\b" + re.escape(a["name"]) + r"\b.*$", H, re.M)
-        if not mm:
+        segs = re.findall(r"^.*\b" + re.escape(a["name"]) + r"\b.*$", H, re.M)
+        if not segs:
             probs.append(label + ": option '%s' undocumented" % a["name"])
             continue
-        seg = mm.group(0)
         dn = norm(a["default"])
-        ok = ("(" in seg) and (dn == "" or dn[:18] in norm(seg) or
-                               "default" in seg.lower())
+        ok = any(("(" in seg) and (dn == "" or dn[:18] in norm(seg) or
+                                   "default" in seg.lower()) for seg in segs)
         if not ok:
             probs.append(label + ": option '%s' documented without its "
                          "default (%s)" % (a["name"], a["default"] or "?"))
