@@ -9,7 +9,9 @@ end
 function setupOnce(testCase)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
-addpath(root, fullfile(root, 'compat'));
+addpath(root);
+cdir = fullfile(root, 'compat');            % private, optional
+if isfolder(cdir), addpath(cdir); end
 testCase.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
 end
@@ -71,6 +73,11 @@ end
 
 % -------------------------------------------------- filtering vs v1 cores
 function testDestripeMatchesCompat(testCase)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(testCase, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 rng(3); L = 40;
 g = randomField(L);
 g2 = g.destripe(minOrder = 5, polyOrder = 2);
@@ -83,6 +90,11 @@ verifyEqual(testCase, g3.C, Cw, 'AbsTol', 0);
 end
 
 function testGaussianMatchesCompatAndSigmas(testCase)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(testCase, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 rng(4); L = 30;
 g = randomField(L);
 g2 = g.gaussian(300);
@@ -94,6 +106,11 @@ end
 
 % -------------------------------------------------------------- synthesis
 function testSynthesisCacheAndCompat(testCase)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(testCase, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 rng(5); L = 20;
 g = randomField(L);
 lat = -88:4:88; lon = 0:6:354;
@@ -273,6 +290,11 @@ verifyEqual(testCase, g2.GM, g.GM, 'RelTol', 1e-10);
 end
 
 function testEvalAtMatchesCompat(testCase)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(testCase, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 f = fullfile(testCase.TestData.dataDir, 'test_variable.gfct');
 g = shCoefficients.read(f);
 ge = g.evalAt(2010.5);

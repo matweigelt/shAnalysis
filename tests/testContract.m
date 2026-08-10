@@ -19,7 +19,9 @@ end
 function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
-addpath(root, fullfile(root, 'compat'));
+addpath(root);
+cdir = fullfile(root, 'compat');            % private, optional
+if isfolder(cdir), addpath(cdir); end
 tc.TestData.root = root;
 tc.TestData.dataDir = fullfile(here, 'test_data');
 shx.legendreCached('clear');
@@ -199,6 +201,11 @@ end
 
 % ------------------------------------------------- compat wrapper contract
 function testCompatWrappersDelegate(tc)
+% cross-validation against the PRIVATE v1 reference implementations
+% (compat/ is not published); runs locally, filtered on CI
+assumeTrue(tc, isfolder(fullfile(fileparts( ...
+    fileparts(mfilename('fullpath'))), 'compat')), ...
+    'compat reference implementations not present (unpublished)');
 g = randomField(12, 2020);
 [c1, s1] = shDestripe(g.C, g.S, 'minOrder', 4);        % compat
 [c2, s2] = shx.shDestripe(g.C, g.S, 'minOrder', 4);    % internal

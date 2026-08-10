@@ -7,3 +7,7 @@ tests/perf_log.csv
 # OS noise
 Thumbs.db
 Desktop.ini
+
+# private, unpublished (v1 reference implementations + legacy suite)
+compat/
+tests/legacy/
