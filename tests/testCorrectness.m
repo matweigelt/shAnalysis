@@ -1510,7 +1510,10 @@ P = idx.P;
 Nn = eye(P); Ss2 = eye(P);
 sel = [find(idx.n == 2 & idx.m == 2 & idx.cs == 0), ...
        find(idx.n == 3 & idx.m == 2 & idx.cs == 0)];
-Nn(sel, sel) = [4, 1; 1, 3];
+% Noise= carries the noise COVARIANCE; the implementation inverts it
+% per block (N = inv(Cov)), so feed inv() of the Python reference's
+% normal matrix here to reproduce the pinned W2
+Nn(sel, sel) = inv([4, 1; 1, 3]);
 Ss2(sel, sel) = [2, 0.5; 0.5, 1];
 Wf = shLowLevel.designFilter(zeros(4), zeros(4), Alpha = 0.5, ...
     Noise = Nn, Signal = Ss2, Idx = idx);
