@@ -1474,6 +1474,49 @@ x1 = shx.vecFromCS(g1.C, g1.S, idx);
 verifyEqual(testCase, repB.y(1, 1), x1(1), 'AbsTol', 1e-15);
 end
 
+function testPoleTideConvert(testCase)
+% v2.7.0: mean-pole convention conversion. Values pinned from the
+% Python reference (validate_poletide.py): IERS2010 -> IERS2018,
+% solid + ocean, at 2005.0 (cubic branch) and 2015.0 (linear branch).
+rng(21); L = 8;
+g0 = randomField(L);
+C = g0.C; S = g0.S;
+[C2, S2] = shx.poleTideConvert(C, S, 2015.0);
+verifyEqual(testCase, C2(3, 2) - C(3, 2), 8.954315329855e-11, ...
+    'AbsTol', 1e-22);
+verifyEqual(testCase, S2(3, 2) - S(3, 2), 3.511349255389e-11, ...
+    'AbsTol', 1e-22);
+[C5, S5] = shx.poleTideConvert(C, S, 2005.0);
+verifyEqual(testCase, C5(3, 2) - C(3, 2), 1.098269022104e-11, ...
+    'AbsTol', 1e-22);
+verifyEqual(testCase, S5(3, 2) - S(3, 2), -2.285129478668e-11, ...
+    'AbsTol', 1e-22);
+% solid-only subset
+[Cs, ~] = shx.poleTideConvert(C, S, 2005.0, Mode = "solid");
+verifyEqual(testCase, Cs(3, 2) - C(3, 2), 9.361285926625e-12, ...
+    'AbsTol', 1e-22);
+% ONLY (3,2) changes
+D = C2; D(3, 2) = C(3, 2);
+verifyEqual(testCase, D, C, 'AbsTol', 0);
+% identities: A->A = 0 and A->B->A roundtrip
+[Ca, Sa] = shx.poleTideConvert(C, S, 2015.0, To = "IERS2010");
+verifyEqual(testCase, Ca, C, 'AbsTol', 0);
+verifyEqual(testCase, Sa, S, 'AbsTol', 0);
+[Cb, Sb] = shx.poleTideConvert(C2, S2, 2015.0, ...
+    From = "IERS2018", To = "IERS2010");
+verifyEqual(testCase, Cb(3, 2), C(3, 2), 'AbsTol', 1e-24);
+verifyEqual(testCase, Sb(3, 2), S(3, 2), 'AbsTol', 1e-24);
+% object form: epoch from the object, history through setCoefficient
+d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
+assumeTrue(testCase, isfile(fG));
+g = shCoefficients.read(fG, Epoch = 2008.29);
+g18 = shx.poleTideConvert(g);
+verifyNotEqual(testCase, g18.C(3, 2), g.C(3, 2));
+verifyEqual(testCase, g18.C(4:end, :), g.C(4:end, :), 'AbsTol', 0);
+verifyGreaterThan(testCase, numel(g18.history), numel(g.history));
+end
+
 function testSpectralFamilyIdentities(testCase)
 rng(101);
 L = 20; n1 = L + 1;
