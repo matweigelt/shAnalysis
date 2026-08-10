@@ -1163,6 +1163,20 @@ fx = fullfile(d, 'icgem_list_fixture.html');
 assumeTrue(testCase, isfile(fx));
 T = shLowLevel.listICGEM(Source = fx);
 verifyGreaterThan(testCase, height(T), 30);
+% v3.1.0: bulk fetch is fail-and-continue - one broken model must not
+% abort the run; Quiet= silences everything (offline: bogus URLs)
+Tb = T(1:2, :);
+Tb.url = ["https://invalid.invalid/a.gfc"; "https://invalid.invalid/b.gfc"];
+out = evalc(['[fB, iB] = shLowLevel.fetchICGEM([1 2], List = Tb, ' ...
+    'Dest = tempname, Timeout = 3);']);
+verifyEqual(testCase, numel(fB), 0);           % nothing fetched
+verifyEqual(testCase, numel(iB), 2);
+verifyTrue(testCase, all([iB.failed]));        % both captured, no throw
+verifyTrue(testCase, contains(out, 'FAILED') && contains(out, '2 failed'));
+outQ = evalc(['[~, iQ] = shLowLevel.fetchICGEM([1 2], List = Tb, ' ...
+    'Dest = tempname, Timeout = 3, Quiet = true);']);
+verifyEqual(testCase, strtrim(outQ), '');      % Quiet is quiet
+verifyTrue(testCase, all([iQ.failed]));
 % v3.0.0: numbered catalogue + numeric selection contract (offline)
 verifyTrue(testCase, ismember('idx', T.Properties.VariableNames));
 verifyEqual(testCase, T.idx, (1:height(T))');

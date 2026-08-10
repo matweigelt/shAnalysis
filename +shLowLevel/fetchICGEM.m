@@ -14,6 +14,8 @@ function [file, info] = fetchICGEM(model, opts)
 %     List (table()) ([])   pass a pre-fetched listICGEM table (avoids re-listing
 %                 in loops / enables the offline fixture in tests)
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
+%     Quiet (false)       suppress progress output (sizes, [k/K]
+%                         counter, per-file timing, failure summary)
 %     Update (false)  refresh existing files (safe swap: verified before replacing)
 %   Outputs
 %     file  string   local path
@@ -31,6 +33,7 @@ arguments
     opts.List table = table()
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
+    opts.Quiet (1,1) logical = false
 end
 % ---- v3.0.0: numeric idx vector (rows of shLowLevel.listICGEM), "all", or a
 % list of names fetch multiple models in one call
@@ -57,13 +60,41 @@ if isnumeric(model) || ...
         end
         rows = T(idxs, :);
     end
-    file = strings(1, height(rows)); infos = cell(1, height(rows));
-    for k = 1:height(rows)
-        [file(k), infos{k}] = shLowLevel.fetchICGEM(rows(k, :), Dest = opts.Dest, ...
-            Timeout = opts.Timeout, Proxy = opts.Proxy, ...
-            Update = opts.Update, List = T);
+    K = height(rows);
+    if ~opts.Quiet
+        fprintf(['fetching %d ICGEM models (large fields exceed 100 MB ' ...
+            'each;\npresent files are skipped, so an interrupted run ' ...
+            'simply resumes)\n'], K);
+    end
+    file = strings(1, K); infos = cell(1, K); failed = strings(1, 0);
+    for k = 1:K
+        if ~opts.Quiet, fprintf('[%d/%d] ', k, K); end
+        try
+            [file(k), infos{k}] = shLowLevel.fetchICGEM(rows(k, :), ...
+                Dest = opts.Dest, Timeout = opts.Timeout, ...
+                Proxy = opts.Proxy, Update = opts.Update, ...
+                Quiet = opts.Quiet, List = T);
+        catch err
+            if ismember('name', rows.Properties.VariableNames)
+                nm = rows.name(k);
+            else
+                nm = rows.url(k);
+            end
+            failed(end+1) = nm + ": " + err.message; %#ok<AGROW>
+            infos{k} = struct('url', rows.url(k), 'skipped', false, ...
+                'updated', false, 'failed', true);
+            if ~opts.Quiet
+                fprintf('  FAILED %s (%s)\n', nm, err.message);
+            end
+        end
     end
     info = [infos{:}];
+    keep = strlength(file) > 0;
+    file = file(keep);
+    if ~opts.Quiet
+        fprintf('done: %d ok, %d failed.\n', nnz(keep), numel(failed));
+        if ~isempty(failed), fprintf('  %s\n', failed); end
+    end
     return
 end
 if istable(model)
@@ -97,12 +128,18 @@ if ~isfolder(dest), mkdir(dest); end
 file = string(fullfile(dest, [base, ext]));
 present = isfile(file);
 info = struct('url', row.url, 'skipped', present && ~opts.Update, ...
-    'updated', false);
+    'updated', false, 'failed', false);
 if present && ~opts.Update
     return
 end
-fprintf('  %s %s from ICGEM...\n', ...
-    ternary(present, 'updating', 'fetching'), string([base, ext]));
+if ~opts.Quiet
+    nb = headBytes(row.url, min(opts.Timeout, 15), opts.Proxy);
+    sz = '';
+    if isfinite(nb), sz = sprintf(' (%.1f MB)', nb / 1e6); end
+    fprintf('  %s %s%s from ICGEM...\n', ...
+        ternary(present, 'updating', 'fetching'), string([base, ext]), sz);
+end
+tDl = tic;
 tmpf = file + ".part";
 try
     webFetch(row.url, tmpf, opts.Timeout, opts.Proxy);
@@ -124,6 +161,11 @@ catch err
 end
 movefile(tmpf, file, 'f');
 info.updated = present;
+info.failed = false;
+if ~opts.Quiet
+    d = dir(char(file));
+    fprintf('  done: %.1f MB in %.0f s\n', d.bytes / 1e6, toc(tDl));
+end
 end
 
 function s = ternary(tf, a, b)
