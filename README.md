@@ -5,8 +5,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux-lightgrey)
 ![Latest tag](https://img.shields.io/github/v/tag/matweigelt/shAnalysis?label=version)
 ![License](https://img.shields.io/github/license/matweigelt/shAnalysis)
-<!-- After the first Zenodo-linked release, activate the DOI badge:
-![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg) -->
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21871298.svg)](https://doi.org/10.5281/zenodo.21871298)
 
 Class-based MATLAB toolbox for spherical harmonic (Stokes coefficient)
 analysis of GRACE/GRACE-FO, GOCE, and static gravity field models.
