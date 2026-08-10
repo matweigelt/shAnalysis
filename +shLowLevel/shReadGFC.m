@@ -145,6 +145,11 @@ while ischar(line)
         if ~isempty(tok) && ~startsWith(tok, '#')
             parts = strsplit(tok);
             key = lower(parts{1});
+            % FORTRAN D-exponents: str2double returns NaN for them (CI-
+            % verified), which silently corrupted D-files to NaN above
+            % the switch degree. Normalize numeric parts only (the key
+            % 'dot' must survive).
+            parts(2:end) = strrep(strrep(parts(2:end), 'D', 'E'), 'd', 'e');
             isV2 = isfield(header, 'format') && ischar(header.format) ...
                 && contains(lower(header.format), 'icgem2.0');
             if strcmp(key, 'gfc') || (strcmp(key, 'gfct') && ~isV2)

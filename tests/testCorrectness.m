@@ -1572,11 +1572,23 @@ fprintf(fid, 'gfc 3 0 0.983749337450D-11 0.000000000000D+00 0.7218D-12 0.0000D+0
 fprintf(fid, 'gfc 3 1 -.574259122710D-10 0.2D+00 0.7187D-12 0.1d-01\n');
 fclose(fid);
 g3 = shLowLevel.shReadGFC(f3);
-verifyEqual(testCase, g3.C(4, 1), str2double('0.983749337450D-11'), 'AbsTol', 0);
-verifyEqual(testCase, g3.C(4, 2), str2double('-.574259122710D-10'), 'AbsTol', 0);
+% NOTE: str2double returns NaN for D-exponents (CI finding) - the
+% legacy parser silently NaN'd such files before this fix. Pins are
+% the true literal values; BOTH paths must produce them.
+verifyEqual(testCase, g3.C(4, 1), 9.83749337450e-12, 'RelTol', 1e-15);
+verifyEqual(testCase, g3.C(4, 2), -5.74259122710e-11, 'RelTol', 1e-15);
 verifyEqual(testCase, g3.S(4, 2), 0.2, 'AbsTol', 0);
 verifyEqual(testCase, g3.sigmaS(4, 2), 0.01, 'RelTol', 1e-15);
 verifyEqual(testCase, g3.C(3, 1), -4.84165217061e-04, 'AbsTol', 0);
+% same records + a trnd line = legacy branch must match on D-lines too
+f4 = fullfile(tmp, 'dexp_var.gfc');
+copyfile(f3, f4); fid = fopen(f4, 'a');
+fprintf(fid, 'trnd 2 0 1.0e-12 0.0 20080101.0000 20090101.0000\n');
+fclose(fid);
+g4 = shLowLevel.shReadGFC(f4);
+verifyEqual(testCase, g4.C(4, 1), 9.83749337450e-12, 'RelTol', 1e-15);
+verifyEqual(testCase, g4.C(4, 2), -5.74259122710e-11, 'RelTol', 1e-15);
+verifyEqual(testCase, g4.C(3:4, 1:2), g3.C(3:4, 1:2), 'AbsTol', 0);
 end
 
 function testSpectralFamilyIdentities(testCase)
