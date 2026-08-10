@@ -1,0 +1,22 @@
+Third-party data redistributed with shAnalysis (test fixtures)
+================================================================
+
+tests/test_data/Wbd_2-120.a_1d12p_4 (DDK3 decorrelation filter)
+  Redistributed under its own MIT license from
+  github.com/strawpants/GRACE-filter (R. Rietbroek).
+
+tests/test_data/ITSG-Grace2018_* (monthly, daily Kalman, GRACE-FO files)
+  ITSG-Grace2018/ITSG-Grace_operational gravity field solutions,
+  Institute of Geodesy, Graz University of Technology (TU Graz).
+  Included as test fixtures only; data remain the property of TU Graz.
+
+tests/test_data/TN-13_GEOC_{GFZ,CSR,JPL}_RL06.3.txt and
+tests/test_data/TN-14_C30_C20_SLR_GSFC.txt
+  GRACE/GRACE-FO Technical Notes (geocenter and SLR C20/C30), publicly
+  distributed by the providers (GFZ, CSR, JPL, NASA GSFC) via the GFZ
+  ISDC. Included as test fixtures only.
+
+tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx
+  Truncated head of an ITSG SINEX file (TU Graz), test fixture only.
+
+The shAnalysis source code itself is MIT-licensed; see LICENSE.

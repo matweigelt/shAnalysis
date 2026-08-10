@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use shAnalysis in your research, please cite it as below."
+type: software
+title: "shAnalysis: spherical harmonic analysis for GRACE/GRACE-FO in MATLAB"
+authors:
+  - family-names: "Weigelt"
+    given-names: "Matthias"
+version: "2.6.0"
+date-released: "2026-08-10"
+doi: "10.5281/zenodo.21871298"
+repository-code: "https://github.com/matweigelt/shAnalysis"
+license: MIT
+keywords:
+  - GRACE
+  - GRACE-FO
+  - spherical harmonics
+  - Stokes coefficients
+  - satellite gravimetry
+  - time-variable gravity
+  - MATLAB
