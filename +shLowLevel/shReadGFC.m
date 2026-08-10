@@ -55,6 +55,53 @@ rows = [];  % n m Cnm Snm sigC sigS  (gfc/gfct constant term)
 varRows = {}; % {type, n, m, C, S, t0, t1, period}
 gfctT0 = zeros(0, 3);  % ICGEM 1.0: [n m t0] reference epochs from gfct lines
 
+% ---- v3.1.1 fast path: static files (the overwhelming majority, and
+% the only ones that get LARGE - EGM2008-class bodies have millions of
+% lines) are parsed in bulk. The per-line fgetl/str2double loop below
+% costs ~30 s at n720 and minutes at n2190; the bulk path is ~100x
+% faster and produces the identical rows matrix. Files with variable
+% terms (gfct/trnd/dot/acos/asin) keep the proven line-by-line parser.
+txtAll = fread(fid, inf, '*char')';
+frewind(fid);
+eoh = regexp(txtAll, 'end_of_head[^\n]*\n', 'end', 'once');
+fastPath = ~isempty(eoh) && isempty(regexp(txtAll(eoh:end), ...
+    '^\s*(gfct|trnd|dot|acos|asin)\s', 'lineanchors', 'once'));
+if fastPath
+    % header: identical key/value semantics to the loop below
+    hLines = strsplit(txtAll(1:eoh), '\n');
+    for hk = 1:numel(hLines)
+        tokH = strtrim(hLines{hk});
+        if isempty(tokH) || startsWith(tokH, '#') || ...
+                startsWith(tokH, 'end_of_head')
+            continue
+        end
+        partsH = strsplit(tokH);
+        if numel(partsH) >= 2
+            keyH = matlab.lang.makeValidName(partsH{1});
+            numvalH = str2double(partsH{2});
+            if ~isnan(numvalH)
+                header.(keyH) = numvalH;
+            else
+                header.(keyH) = partsH{2};
+            end
+        end
+    end
+    % body: strip comment lines, count columns from the first record,
+    % then one bulk sscanf ('gfc' cannot occur inside a number)
+    body = txtAll(eoh+1:end);
+    body = regexprep(body, '^\s*#[^\n]*\n', '', 'lineanchors');
+    m1 = regexp(body, '^\s*gfc\s+([^\n]*)', 'tokens', 'once', 'lineanchors');
+    if isempty(m1)
+        error('shReadGFC:noData', ...
+            'No gfc/gfct data records found in %s', filename);
+    end
+    ncol = numel(sscanf(m1{1}, '%f'));
+    vals = sscanf(strrep(body, 'gfc', ''), '%f', [ncol, Inf])';
+    nmax = max(vals(:, 1));
+    rows = nan(size(vals, 1), 6);
+    rows(:, 1:min(ncol, 6)) = vals(:, 1:min(ncol, 6));
+    fclose(fid);
+else
 line = fgetl(fid);
 inHeader = true;
 while ischar(line)
@@ -147,6 +194,7 @@ while ischar(line)
     line = fgetl(fid);
 end
 fclose(fid);
+end                                             % fastPath / legacy
 
 if isempty(rows) && isempty(varRows)
     error('shReadGFC:noData', 'No gfc/gfct data records found in %s', filename);
