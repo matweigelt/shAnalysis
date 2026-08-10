@@ -5,6 +5,15 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 
 ## [3.1.0] - Unreleased
 
+### Fixed
+- `fetchICGEM` bulk mode ("all", index vectors) no longer stalls after
+  the first file: the ICGEM server rate-limits rapid requests (HTTP
+  429 / tarpit). Bulk fetching now throttles between models (`Pause=`,
+  3 s), retries 429/timeouts with 30/60/120 s backoff (`Retries=`),
+  prints a [k/K] counter with per-file size and timing, continues past
+  failed models with a summary instead of aborting, and honours
+  `Quiet=`. Interrupted runs resume (present files are skipped).
+
 ### Changed
 - `shReadGFC` is ~100x faster on large static files: bulk parsing
   replaces the per-line fgetl/str2double loop (28.6 s -> 0.21 s at
