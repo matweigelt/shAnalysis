@@ -27,9 +27,9 @@ matrices and normal equations &mdash; e.g. to feed a released full covariance in
 filter via <code class="inline">opts.NoiseCov</code>.</p>
 
 <h2>Syntax</h2>
-<pre>snx = shx.readSINEX(filename)                          % .snx or .gz
-snx = shx.readSINEX(f, Output="covariance")            % invert an NEQ (Cholesky)
-snx = shx.readSINEX(f, Index=shx.shIndex(60))          % reorder to idx, row for row
+<pre>snx = shLowLevel.readSINEX(filename)                          % .snx or .gz
+snx = shLowLevel.readSINEX(f, Output="covariance")            % invert an NEQ (Cholesky)
+snx = shLowLevel.readSINEX(f, Index=shLowLevel.shIndex(60))          % reorder to idx, row for row
 [tsF, op] = ts.filter("tvANS", NoiseCov = snx.M);      % downstream use</pre>
 
 <h2>Parsed blocks</h2>
@@ -41,7 +41,7 @@ order, value, formal sigma</td></tr>
 (lower/upper triangle, up to 3 values per line, symmetrized)</td></tr>
 <tr><td><code class="inline">+SOLUTION/NORMAL_EQUATION_MATRIX L|U</code></td><td>normal-equation
 matrix; inverted to a covariance with <code class="inline">Output="covariance"</code>
-(errors <code class="inline">shx:readSINEX:neqNotPD</code> if not positive definite)</td></tr>
+(errors <code class="inline">shLowLevel:readSINEX:neqNotPD</code> if not positive definite)</td></tr>
 </table>
 
 <h2>Outputs</h2>
@@ -62,7 +62,7 @@ integer token after CN/SN and the next integer &le; degree, which also covers pl
 12&times;12 NEQ principal submatrix, values verbatim) ships in
 <code class="inline">tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx</code> and is covered by
 the robustness suite incl. Cholesky inversion against independently computed sigmas. Matrix
-indices beyond the parameter list error with <code class="inline">shx:readSINEX:badMatrixIndex</code>.
+indices beyond the parameter list error with <code class="inline">shLowLevel:readSINEX:badMatrixIndex</code>.
 The reader loads the whole file into memory &mdash; fine for monthly solutions to Lmax ~ 120, not
 tuned for the full 440-MB n96 NEQ archives.</div>
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.eofAnalysis</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.eofAnalysis</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,11 +20,11 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Time series</span>
-<h1>shx.eofAnalysis</h1>
+<h1>shLowLevel.eofAnalysis</h1>
 <p>Empirical orthogonal functions of a coefficient series.</p>
 <h2>Syntax</h2>
 <pre>[~, resid] = ts.climatology();
-[modes, pcs, ve] = shx.eofAnalysis(resid, NModes=4);
+[modes, pcs, ve] = shLowLevel.eofAnalysis(resid, NModes=4);
 modes{1}.map(quantity="ewh", kn=kn)   % spatial pattern of mode 1
 plot(resid.epochs, pcs(:,1))          % its temporal amplitude</pre>
 <h2>Description</h2>

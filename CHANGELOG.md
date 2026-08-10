@@ -1,12 +1,37 @@
 # Changelog
 
 All notable changes to shAnalysis. The version line in `Contents.m`
-(read by `shx.version` and MATLAB's `ver`) is the single source of truth.
+(read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
+
+## [3.0.0] - Unreleased
+
+### BREAKING
+- Namespace renamed `+shx` -> `+shLowLevel`: every call site changes
+  from `shx.fun` to `shLowLevel.fun`; error identifiers from `shx:*`
+  to `shLowLevel:*`. Mechanical migration: replace `shx.` and `shx:`.
+- `compat/` (v1 wrappers) and the legacy v1 suite are removed for good.
+
+### Added
+- `shLowLevel.listITSG`: numbered catalogue of the TU Graz server
+  (releases x monthly n60/n96/n120 x daily), local-mirror mode.
+- `fetchITSG`: `Release=` override (no more silent 2018/operational
+  mixing), `months = "all"`, `Catalog=` selection by catalogue row,
+  `BaseURL=` mirror, n120.
+- `listICGEM` numbered; `fetchICGEM` accepts row indices, name vectors,
+  and `"all"`.
+- `setup_shAnalysis`: `DataFolder=` (applied before any fetcher) and
+  `FetchITSG = "all"`.
+- `shLowLevel.fetchLoveNumbers`: load/deformation Love numbers from the
+  GROOPS collection (TU Graz), safe-swap + parser.
+- `shLowLevel.synthesisPoints`: pointwise potential/disturbance/anomaly
+  at arbitrary (lat, lon, r) incl. upward continuation; Python-pinned.
+- Generated API reference page `html/apiReference.html` (inputs,
+  options with defaults, outputs for every public function/method).
 
 ## [2.7.0] - Unreleased
 
 ### Added
-- `shx.poleTideConvert`: C21/S21 conversion between the IERS2010 and
+- `shLowLevel.poleTideConvert`: C21/S21 conversion between the IERS2010 and
   IERS2018 (secular pole) mean-pole conventions, solid + ocean pole
   tide, overridable coefficients; raw (C, S, epoch) and object forms.
   Python-validated (identities exact, dS21 trend to < 1% of the
@@ -24,11 +49,11 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 ## [2.6.0] - 2026-08-10 - DOI: 10.5281/zenodo.21871299
 
 ### Added
-- Comparison suite: `shx.compareSolutions` / `shx.compareSeries`
+- Comparison suite: `shLowLevel.compareSolutions` / `shLowLevel.compareSeries`
   aggregators (also `g.compare` / `ts.compare`) over new standalone
   metrics `diffSpectrum`, `spatialStats`, `nashSutcliffe`,
   `effectiveCorr` (AR(1)-corrected significance), `threeCorneredHat`
-  (N >= 3), and `shx.taylorDiagram`. All numerics Python-validated.
+  (N >= 3), and `shLowLevel.taylorDiagram`. All numerics Python-validated.
 - GitHub Actions CI (`ci/shanalysis-ci.yml`); full suite green on
   Linux and Windows.
 
@@ -37,7 +62,7 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   MPEG-4 unavailable on Linux now errors clearly).
 - `shDegreeRMS` help documented fields that did not exist
   (`n`/`amp` -> `degree`/`degAmplitude`/...).
-- Demo provenance line now generated from `shx.version`.
+- Demo provenance line now generated from `shLowLevel.version`.
 
 ## [2.5.1] - 2026-08-08
 
@@ -45,12 +70,12 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 - `Update=` option in all four fetchers (safe, parse-verified swap;
   TN-13/TN-14 grow monthly upstream); `BaseURL=` mirror-folder mode in
   `fetchTN`; forwarded through `setup_shAnalysis(Update=true)`.
-- `shx.version`: toolbox metadata parsed from `Contents.m`.
+- `shLowLevel.version`: toolbox metadata parsed from `Contents.m`.
 
 ### Fixed
 - `applyDDK` truncates Lmax-120 filter blocks to the field nmax
   (standard n60/n96 use; previously errored).
-- `shx.pctile` accepts vector percentiles.
+- `shLowLevel.pctile` accepts vector percentiles.
 - `setCoefficient` initializes both sigma stacks (pairing invariant);
   a lone sigmaC used to break shSeries stacking.
 
@@ -61,8 +86,8 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   UNDERESTIMATED; documented); basin sigmas include the deterministic
   model contribution.
 - Kendall AR(1) correction in `fitDeterministicModel`.
-- `shx.readLoveNumbers` (layouts, frames CE/CF/CM, pchip in log(1+n)).
-- `setup_shAnalysis` one-call setup; `shx.fetchTN`.
+- `shLowLevel.readLoveNumbers` (layouts, frames CE/CF/CM, pchip in log(1+n)).
+- `setup_shAnalysis` one-call setup; `shLowLevel.fetchTN`.
 - Generated 69-page API reference (Part IV) with executable examples
   (`docs/apiExamples.json`, `testAPIExamplesRun`).
 - Real-file validation: CSR/JPL/GFZ TN-13, GSFC TN-14, DDK Wbd

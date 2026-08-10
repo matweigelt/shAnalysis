@@ -24,7 +24,7 @@ th { background: #f5f7fa; }
 <h1>shAnalysis v2 &mdash; overview</h1>
 <p>Spherical harmonic (Stokes coefficient) analysis for GRACE/GRACE-FO, GOCE, and static gravity
 field models. Three user-facing classes cover the whole chain; numerical internals live in the
-<code class="inline">+shx</code> package; the v1 function API remains available in
+<code class="inline">+shLowLevel</code> package; the v1 function API remains available in
 <code class="inline">compat/</code>.</p>
 
 <h2>The three classes</h2>
@@ -53,12 +53,12 @@ avg = tsF.basinAverage(B, Deconvolve=true, Op=op);</pre>
 <a href="shGaussianWeights.html">shGaussianWeights</a> <a href="shGaussianFilter.html">shGaussianFilter</a>
 <a href="shSynthesis.html">shSynthesis</a></p>
 <p>These signatures still work unchanged from <code class="inline">compat/</code> and delegate to the
-same <code class="inline">+shx</code> internals the classes use.</p>
+same <code class="inline">+shLowLevel</code> internals the classes use.</p>
 
 <h2>New in v2.1</h2>
 <table>
 <tr><th>Area</th><th>What</th></tr>
-<tr><td>SH analysis</td><td><a href="shAnalysisGrid.html">shCoefficients.analysis / shx.shAnalysisGrid</a>:
+<tr><td>SH analysis</td><td><a href="shAnalysisGrid.html">shCoefficients.analysis / shLowLevel.shAnalysisGrid</a>:
 grid or scattered points &rarr; Stokes coefficients. Exact fast per-order solver for ring grids,
 chunked least squares with Kaula regularization for scattered data, quantity kernels inverted.</td></tr>
 <tr><td>Degree 1</td><td><a href="readTN13.html">readTN13</a> + <code class="inline">addDegree1</code>:

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.shSynthesisGradientTensor</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.shSynthesisGradientTensor</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,10 +20,10 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Spatial</span>
-<h1>shx.shSynthesisGradientTensor</h1>
+<h1>shLowLevel.shSynthesisGradientTensor</h1>
 <p>Full gravity gradient tensor in the local north-east-up frame.</p>
 <h2>Syntax</h2>
-<pre>[G, info] = shx.shSynthesisGradientTensor(C, S, GM, R, lat, lon, ...
+<pre>[G, info] = shLowLevel.shSynthesisGradientTensor(C, S, GM, R, lat, lon, ...
     Height=250e3);      % G.uu G.nn G.ee G.un G.ue G.ne  [1/s^2]</pre>
 <h2>Description</h2>
 <p>All six independent components at satellite altitude (GOCE diagnostics; 1 E&ouml;tv&ouml;s = 1e-9 s&#8315;&sup2;). Second latitude derivatives of the Legendre functions come from the frozen first-derivative stencil applied twice (<a href="shSynthesisDeformation.html">legendreALFDeriv</a>, exact; validated vs numerical second differences at the FD floor). Validation invariants: Laplace trace(G) = 0 at 7e-16 of max|G| (built in as info.maxTraceResidual), G<sub>uu</sub> identical to the 'gravity_gradient_rr' kernel route. East-involving components are NaN at the poles.</p>

@@ -33,7 +33,7 @@ methods (TestClassSetup)
         here = fileparts(mfilename('fullpath'));
         root = fileparts(here);
         tc.applyFixture(matlab.unittest.fixtures.PathFixture(root));
-        shx.legendreCached('clear');
+        shLowLevel.legendreCached('clear');
     end
 end
 
@@ -41,7 +41,7 @@ methods (Test)
     function benchLegendre(tc, nmaxP)
         lat = deg2rad(-90:1:90);
         while tc.keepMeasuring
-            P = shx.legendreALF(nmaxP, lat); %#ok<NASGU>
+            P = shLowLevel.legendreALF(nmaxP, lat); %#ok<NASGU>
         end
     end
 
@@ -49,7 +49,7 @@ methods (Test)
         g = tc.randomField(60);
         lat = -90:1:90; lon = 0:1:359;
         while tc.keepMeasuring
-            shx.legendreCached('clear');            % force recursion
+            shLowLevel.legendreCached('clear');            % force recursion
             grid = g.synthesis(lat, lon); %#ok<NASGU>
         end
     end
@@ -78,14 +78,14 @@ methods (Test)
         rel = version('-release');
         g = tc.randomField(60);
         lat = -90:1:90; lon = 0:1:359;
-        shx.legendreCached('clear');
+        shLowLevel.legendreCached('clear');
         tt = tic; g.synthesis(lat, lon); sec = toc(tt);
         fprintf(fid, '%s,%s,synthesis_n60_1deg_cold,%.3f\n', stamp, rel, sec);
         tt = tic; g.synthesis(lat, lon); sec = toc(tt);
         fprintf(fid, '%s,%s,synthesis_n60_1deg_warm,%.3f\n', stamp, rel, sec);
-        idx = shx.shIndex(20);
+        idx = shLowLevel.shIndex(20);
         X = randn(idx.P, 60); ty = 2002 + (0:59)'/12;
-        tt = tic; shx.tvANSFilter(X, ty, idx); sec = toc(tt);
+        tt = tic; shLowLevel.tvANSFilter(X, ty, idx); sec = toc(tt);
         fprintf(fid, '%s,%s,tvans_L20_T60,%.3f\n', stamp, rel, sec);
         fprintf('  perf_log.csv updated (%s)\n', stamp);
     end
@@ -101,7 +101,7 @@ methods (Test)
         lat = -90:0.5:90; lon = 0:1:359;
         nRep = 3; tCold = zeros(nRep,1); tWarm = zeros(nRep,1);
         for k = 1:nRep
-            shx.legendreCached('clear');
+            shLowLevel.legendreCached('clear');
             t0 = tic; g.synthesis(lat, lon); tCold(k) = toc(t0);
         end
         g.synthesis(lat, lon);                      % prime
@@ -153,9 +153,9 @@ methods (Test)
         L = 60;
         C = tril(randn(L+1)) * 1e-9; S = tril(randn(L+1), -1) * 1e-9;
         lat = linspace(-89, 89, 140); lon = (0:239) * 1.5;
-        g = shx.shSynthesis(C, S, 3.986004415e14, 6378136.3, lat, lon);
+        g = shLowLevel.shSynthesis(C, S, 3.986004415e14, 6378136.3, lat, lon);
         while tc.keepMeasuring
-            [Ce, Se] = shx.shAnalysisGrid(g, lat, lon, L); %#ok<NASGU>
+            [Ce, Se] = shLowLevel.shAnalysisGrid(g, lat, lon, L); %#ok<NASGU>
         end
     end
 end

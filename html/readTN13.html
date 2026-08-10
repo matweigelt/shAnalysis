@@ -28,7 +28,7 @@ processing chain: GSM coefficients + <code class="inline">applyTN14</code> (C20/
 systematically biased.</p>
 
 <h2>Syntax</h2>
-<pre>tn = shx.readTN13(filename)              % .txt or .gz
+<pre>tn = shLowLevel.readTN13(filename)              % .txt or .gz
 g1 = g.addDegree1(tn)                    % nearest epoch within Tolerance=0.05 yr
 g1 = g.addDegree1("TN-13_GEOC_CSR_RL06.txt")</pre>
 
@@ -37,7 +37,7 @@ g1 = g.addDegree1("TN-13_GEOC_CSR_RL06.txt")</pre>
 <pre>GRCOF2  n  m  Clm  Slm  Clm_sig  Slm_sig  begin  end</pre>
 <p>n = 1, m = 0/1, epochs yyyymmdd.hhmm. Line pairs sharing an interval are combined into one
 monthly record with the interval mid-point as epoch (decimal years via
-<code class="inline">shx.icgemDate2Year</code>).</p>
+<code class="inline">shLowLevel.icgemDate2Year</code>).</p>
 
 <h2>Outputs</h2>
 <table>

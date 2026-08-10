@@ -1,397 +1,412 @@
 [
  {
-  "name": "shx.applyDDK",
-  "example": "W = shx.readDDK(\"DDK3\", Nmax = 60);\n[Cf, Sf] = shx.applyDDK(g.C, g.S, W);",
+  "name": "shLowLevel.applyDDK",
+  "example": "W = shLowLevel.readDDK(\"DDK3\", Nmax = 60);\n[Cf, Sf] = shLowLevel.applyDDK(g.C, g.S, W);",
   "run": true
  },
  {
-  "name": "shx.basinDeconvolve",
-  "example": "[avg, out] = shx.basinDeconvolve(B, op);   % op from ts.filter(\"tvANS\")\nerrorbar(op.tYears, avg(1,:), out.sigma(1,:))",
+  "name": "shLowLevel.basinDeconvolve",
+  "example": "[avg, out] = shLowLevel.basinDeconvolve(B, op);   % op from ts.filter(\"tvANS\")\nerrorbar(op.tYears, avg(1,:), out.sigma(1,:))",
   "run": true
  },
  {
-  "name": "shx.basinKernel",
-  "example": "b = shx.basinKernel(idx, maskAmazon, TaperKm = 200);",
+  "name": "shLowLevel.basinKernel",
+  "example": "b = shLowLevel.basinKernel(idx, maskAmazon, TaperKm = 200);",
   "run": false
  },
  {
-  "name": "shx.basinScaling",
-  "example": "k = shx.basinScaling(op, b, tsHydModel);   % scale factor vs a model series",
+  "name": "shLowLevel.basinScaling",
+  "example": "k = shLowLevel.basinScaling(op, b, tsHydModel);   % scale factor vs a model series",
   "run": false
  },
  {
-  "name": "shx.buildNoiseCov",
-  "example": "N = shx.buildNoiseCov(Xres, idx);          % empirical order/parity blocks",
+  "name": "shLowLevel.buildNoiseCov",
+  "example": "N = shLowLevel.buildNoiseCov(Xres, idx);          % empirical order/parity blocks",
   "run": true
  },
  {
-  "name": "shx.buildSignalCov",
-  "example": "S = shx.buildSignalCov(Xres, N, idx, Mode = \"isotropic\");",
+  "name": "shLowLevel.buildSignalCov",
+  "example": "S = shLowLevel.buildSignalCov(Xres, N, idx, Mode = \"isotropic\");",
   "run": true
  },
  {
-  "name": "shx.combineCenters",
-  "example": "tsC = shx.combineCenters({tsCSR, tsGFZ, tsJPL});   % VCE-weighted",
+  "name": "shLowLevel.combineCenters",
+  "example": "tsC = shLowLevel.combineCenters({tsCSR, tsGFZ, tsJPL});   % VCE-weighted",
   "run": true
  },
  {
-  "name": "shx.compareSeries",
-  "example": "    rep = shx.compareSeries({tsCSR, tsGFZ, tsJPL}, ...\n        Names = [\"CSR\", \"GFZ\", \"JPL\"]);\n    fprintf(\"TCH noise: %s\\n\", sprintf(\"%.3g \", rep.tch.sigma))",
+  "name": "shLowLevel.compareSeries",
+  "example": "    rep = shLowLevel.compareSeries({tsCSR, tsGFZ, tsJPL}, ...\n        Names = [\"CSR\", \"GFZ\", \"JPL\"]);\n    fprintf(\"TCH noise: %s\\n\", sprintf(\"%.3g \", rep.tch.sigma))",
   "run": true
  },
  {
-  "name": "shx.compareSolutions",
-  "example": "    rep = shx.compareSolutions(g, g.gaussian(350), Names = [\"raw\", \"G350\"]);\n    fprintf(\"crossover n = %d, spatial corr = %.3f\\n\", ...\n        rep.spectral.ncross, rep.spatial.corr)",
+  "name": "shLowLevel.compareSolutions",
+  "example": "    rep = shLowLevel.compareSolutions(g, g.gaussian(350), Names = [\"raw\", \"G350\"]);\n    fprintf(\"crossover n = %d, spatial corr = %.3f\\n\", ...\n        rep.spectral.ncross, rep.spatial.corr)",
   "run": true
  },
  {
-  "name": "shx.csFromVec",
-  "example": "[C, S] = shx.csFromVec(x, idx);           % vector -> triangle matrices",
+  "name": "shLowLevel.csFromVec",
+  "example": "[C, S] = shLowLevel.csFromVec(x, idx);           % vector -> triangle matrices",
   "run": true
  },
  {
-  "name": "shx.dataFolder",
-  "example": "shx.dataFolder(\"D:/grace_data\")      % shared download location",
+  "name": "shLowLevel.dataFolder",
+  "example": "shLowLevel.dataFolder(\"D:/grace_data\")      % shared download location",
   "run": false
  },
  {
-  "name": "shx.ddkNames",
-  "example": "names = shx.ddkNames();               % Wbd file names DDK1..8",
+  "name": "shLowLevel.ddkNames",
+  "example": "names = shLowLevel.ddkNames();               % Wbd file names DDK1..8",
   "run": true
  },
  {
-  "name": "shx.diffSpectrum",
-  "example": "    gF = g.gaussian(350);\n    spec = shx.diffSpectrum(g.C, g.S, gF.C, gF.S);\n    semilogy(spec.n, [spec.amp1, spec.diffAmp]); grid on",
+  "name": "shLowLevel.diffSpectrum",
+  "example": "    gF = g.gaussian(350);\n    spec = shLowLevel.diffSpectrum(g.C, g.S, gF.C, gF.S);\n    semilogy(spec.n, [spec.amp1, spec.diffAmp]); grid on",
   "run": true
  },
  {
-  "name": "shx.effectiveCorr",
-  "example": "    ec = shx.effectiveCorr(avg(1,:)', avg(2,:)');   % two basin series\n    fprintf(\"r = %.3f (p = %.3g, Neff = %.0f)\\n\", ec.r, ec.p, ec.neff)",
+  "name": "shLowLevel.effectiveCorr",
+  "example": "    ec = shLowLevel.effectiveCorr(avg(1,:)', avg(2,:)');   % two basin series\n    fprintf(\"r = %.3f (p = %.3g, Neff = %.0f)\\n\", ec.r, ec.p, ec.neff)",
   "run": true
  },
  {
-  "name": "shx.eofAnalysis",
-  "example": "[modes, pcs, ve] = shx.eofAnalysis(resid);\nplot(resid.epochs, pcs(:, 1))         % leading principal component",
+  "name": "shLowLevel.eofAnalysis",
+  "example": "[modes, pcs, ve] = shLowLevel.eofAnalysis(resid);\nplot(resid.epochs, pcs(:, 1))         % leading principal component",
   "run": true
  },
  {
-  "name": "shx.errorMap",
-  "example": "sig = shx.errorMap(M, idx, -89:4:89, 0:4:356, quantity = \"ewh\", kn = kn);",
+  "name": "shLowLevel.errorMap",
+  "example": "sig = shLowLevel.errorMap(M, idx, -89:4:89, 0:4:356, quantity = \"ewh\", kn = kn);",
   "run": true
  },
  {
-  "name": "shx.evalMask",
-  "example": "[mask, area] = shx.evalMask(idx, capSpec);   % quadrature-grid mask",
+  "name": "shLowLevel.evalMask",
+  "example": "[mask, area] = shLowLevel.evalMask(idx, capSpec);   % quadrature-grid mask",
   "run": false
  },
  {
-  "name": "shx.fetchDDK",
-  "example": "shx.fetchDDK(1:8);                    % ~80 MB, skips existing",
+  "name": "shLowLevel.fetchDDK",
+  "example": "shLowLevel.fetchDDK(1:8);                    % ~80 MB, skips existing",
   "run": false
  },
  {
-  "name": "shx.fetchICGEM",
-  "example": "f = shx.fetchICGEM(\"GOCO06s\");        % static model by name",
+  "name": "shLowLevel.fetchICGEM",
+  "example": "f = shLowLevel.fetchICGEM(\"GOCO06s\");        % static model by name",
   "run": false
  },
  {
-  "name": "shx.fetchITSG",
-  "example": "shx.fetchITSG([\"2008-04\", \"2025-12\"], Nmax = 96);",
+  "name": "shLowLevel.fetchITSG",
+  "example": "shLowLevel.fetchITSG([\"2008-04\", \"2025-12\"], Nmax = 96);",
   "run": false
  },
  {
-  "name": "shx.fetchTN",
-  "example": "    shx.fetchTN(Update = true);            % monthly refresh, safe swap\n    tn13 = shx.readTN13(fullfile(shx.dataFolder(), \"TN\", ...\n               \"TN-13_GEOC_CSR_RL06.3.txt\"));\n    g1 = g.applyTN14(tn14).addDegree1(tn13);",
+  "name": "shLowLevel.fetchLoveNumbers",
+  "example": "    [f, inf] = shLowLevel.fetchLoveNumbers();\n    kn = inf.parsed(1).kn(1:61);        % degrees 0..60 for an n60 field",
+  "run": true
+ },
+ {
+  "name": "shLowLevel.fetchTN",
+  "example": "    shLowLevel.fetchTN(Update = true);            % monthly refresh, safe swap\n    tn13 = shLowLevel.readTN13(fullfile(shLowLevel.dataFolder(), \"TN\", ...\n               \"TN-13_GEOC_CSR_RL06.3.txt\"));\n    g1 = g.applyTN14(tn14).addDegree1(tn13);",
   "run": false
  },
  {
-  "name": "shx.fitDeterministicModel",
-  "example": "[model, Xres, coef, A, sig] = shx.fitDeterministicModel(X, tYears, ARCorrect = true);",
+  "name": "shLowLevel.fitDeterministicModel",
+  "example": "[model, Xres, coef, A, sig] = shLowLevel.fitDeterministicModel(X, tYears, ARCorrect = true);",
   "run": true
  },
  {
-  "name": "shx.gaussLegendre",
-  "example": "[xNodes, w] = shx.gaussLegendre(61);   % quadrature nodes/weights",
+  "name": "shLowLevel.gaussLegendre",
+  "example": "[xNodes, w] = shLowLevel.gaussLegendre(61);   % quadrature nodes/weights",
   "run": true
  },
  {
-  "name": "shx.geocentric2geodetic",
-  "example": "latGd = shx.geocentric2geodetic(latGc);   % WGS84",
+  "name": "shLowLevel.geocentric2geodetic",
+  "example": "latGd = shLowLevel.geocentric2geodetic(latGc);   % WGS84",
   "run": true
  },
  {
-  "name": "shx.geodetic2geocentric",
-  "example": "latGc = shx.geodetic2geocentric(latGd);   % before synthesis",
+  "name": "shLowLevel.geodetic2geocentric",
+  "example": "latGc = shLowLevel.geodetic2geocentric(latGd);   % before synthesis",
   "run": true
  },
  {
-  "name": "shx.icgemDate2Year",
-  "example": "t = shx.icgemDate2Year(20080415.0000);   % -> 2008.29",
+  "name": "shLowLevel.icgemDate2Year",
+  "example": "t = shLowLevel.icgemDate2Year(20080415.0000);   % -> 2008.29",
   "run": true
  },
  {
-  "name": "shx.kernelFactors",
-  "example": "kf = shx.kernelFactors(\"ewh\", 60, GM, R, kn = kn);",
+  "name": "shLowLevel.kernelFactors",
+  "example": "kf = shLowLevel.kernelFactors(\"ewh\", 60, GM, R, kn = kn);",
   "run": true
  },
  {
-  "name": "shx.legendreALF",
-  "example": "P = shx.legendreALF(96, deg2rad(-89:89));   % stable to n=2190",
+  "name": "shLowLevel.legendreALF",
+  "example": "P = shLowLevel.legendreALF(96, deg2rad(-89:89));   % stable to n=2190",
   "run": true
  },
  {
-  "name": "shx.legendreALFDeriv",
-  "example": "[P, dP] = shx.legendreALFDeriv(60, theta);   % for deformation/tensor",
+  "name": "shLowLevel.legendreALFDeriv",
+  "example": "[P, dP] = shLowLevel.legendreALFDeriv(60, theta);   % for deformation/tensor",
   "run": true
  },
  {
-  "name": "shx.legendreCached",
-  "example": "shx.legendreCached(\"clear\")           % drop the synthesis cache",
+  "name": "shLowLevel.legendreCached",
+  "example": "shLowLevel.legendreCached(\"clear\")           % drop the synthesis cache",
   "run": true
  },
  {
-  "name": "shx.listICGEM",
-  "example": "T = shx.listICGEM(Type = \"temporal\", Series = \"ITSG-Grace2018\");",
+  "name": "shLowLevel.listICGEM",
+  "example": "T = shLowLevel.listICGEM(Type = \"temporal\", Series = \"ITSG-Grace2018\");",
   "run": false
  },
  {
-  "name": "shx.mcPropagate",
-  "example": "out = shx.mcPropagate(@(gs) gs.C(3, 1), g, N = 200);   % any functional of g",
+  "name": "shLowLevel.listITSG",
+  "example": "    T = shLowLevel.listITSG();\n    disp(T)     % pick rows, then fetch via Catalog= in fetchITSG",
   "run": true
  },
  {
-  "name": "shx.nashSutcliffe",
-  "example": "    nse = shx.nashSutcliffe(avg(1,:), avg(2,:));   % e.g. SH vs mascon basin",
+  "name": "shLowLevel.mcPropagate",
+  "example": "out = shLowLevel.mcPropagate(@(gs) gs.C(3, 1), g, N = 200);   % any functional of g",
   "run": true
  },
  {
-  "name": "shx.normalFieldCS",
-  "example": "[Cn, info] = shx.normalFieldCS(96, System = \"WGS84\");",
+  "name": "shLowLevel.nashSutcliffe",
+  "example": "    nse = shLowLevel.nashSutcliffe(avg(1,:), avg(2,:));   % e.g. SH vs mascon basin",
   "run": true
  },
  {
-  "name": "shx.opApply",
-  "example": "xf = shx.opApply(op, op.Xres(:, 1), 1);   % W_1 * x without the P x P matrix",
+  "name": "shLowLevel.normalFieldCS",
+  "example": "[Cn, info] = shLowLevel.normalFieldCS(96, System = \"WGS84\");",
   "run": true
  },
  {
-  "name": "shx.parseGraceFilename",
-  "example": "meta = shx.parseGraceFilename(\"GSM-2_2008095-2008120_...gz\");",
+  "name": "shLowLevel.opApply",
+  "example": "xf = shLowLevel.opApply(op, op.Xres(:, 1), 1);   % W_1 * x without the P x P matrix",
   "run": true
  },
  {
-  "name": "shx.pctile",
-  "example": "q = shx.pctile(res, [16 50 84]);      % base-MATLAB percentiles",
+  "name": "shLowLevel.parseGraceFilename",
+  "example": "meta = shLowLevel.parseGraceFilename(\"GSM-2_2008095-2008120_...gz\");",
   "run": true
  },
  {
-  "name": "shx.plotBasinSeries",
-  "example": "shx.plotBasinSeries(op.tYears, avg(1,:).', out.sigma(1,:).', Units = \"m EWH\");",
+  "name": "shLowLevel.pctile",
+  "example": "q = shLowLevel.pctile(res, [16 50 84]);      % base-MATLAB percentiles",
   "run": true
  },
  {
-  "name": "shx.plotCovariance",
-  "example": "shx.plotCovariance(snx.M, idx);       % SINEX covariance structure",
+  "name": "shLowLevel.plotBasinSeries",
+  "example": "shLowLevel.plotBasinSeries(op.tYears, avg(1,:).', out.sigma(1,:).', Units = \"m EWH\");",
+  "run": true
+ },
+ {
+  "name": "shLowLevel.plotCovariance",
+  "example": "shLowLevel.plotCovariance(snx.M, idx);       % SINEX covariance structure",
   "run": false
  },
  {
-  "name": "shx.plotSHCoeffTriangle",
-  "example": "shx.plotSHCoeffTriangle(g.C, g.S);\nshx.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed diff",
+  "name": "shLowLevel.plotSHCoeffTriangle",
+  "example": "shLowLevel.plotSHCoeffTriangle(g.C, g.S);\nshLowLevel.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed diff",
   "run": true
  },
  {
-  "name": "shx.plotSHMap",
-  "example": "shx.plotSHMap(grid, lat, lon, Title = \"EWH 2008-04 [m]\");",
+  "name": "shLowLevel.plotSHMap",
+  "example": "shLowLevel.plotSHMap(grid, lat, lon, Title = \"EWH 2008-04 [m]\");",
   "run": true
  },
  {
-  "name": "shx.plotSHSpectrum",
-  "example": "spec = shx.shDegreeRMS(g.C, g.S);\nshx.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);",
+  "name": "shLowLevel.plotSHSpectrum",
+  "example": "spec = shLowLevel.shDegreeRMS(g.C, g.S);\nshLowLevel.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);",
   "run": true
  },
  {
-  "name": "shx.poleTideConvert",
-  "example": "    g18 = shx.poleTideConvert(g, From = \"IERS2010\", To = \"IERS2018\");\n    dC21 = g18.C(3, 2) - g.C(3, 2)     % ~1e-10 level, trend-like in t",
+  "name": "shLowLevel.poleTideConvert",
+  "example": "    g18 = shLowLevel.poleTideConvert(g, From = \"IERS2010\", To = \"IERS2018\");\n    dC21 = g18.C(3, 2) - g.C(3, 2)     % ~1e-10 level, trend-like in t",
   "run": true
  },
  {
-  "name": "shx.readDDK",
-  "example": "W = shx.readDDK(\"DDK3\");   % DDK3 ships with the toolbox; others via shx.fetchDDK",
+  "name": "shLowLevel.readDDK",
+  "example": "W = shLowLevel.readDDK(\"DDK3\");   % DDK3 ships with the toolbox; others via shLowLevel.fetchDDK",
   "run": true
  },
  {
-  "name": "shx.readLoveNumbers",
-  "example": "    LN = shx.readLoveNumbers(\"prem_load.txt\", Columns=\"n h l k\", ...\n             MaxDegree=96, Interp=\"pchip\", InFrame=\"CE\", OutFrame=\"CF\");\n    [up, no, ea] = g.deformation(latPts, lonPts, kn=LN.kn, hn=LN.hn, ...\n             ln=LN.ln, Mode=\"points\");",
+  "name": "shLowLevel.readLoveNumbers",
+  "example": "    LN = shLowLevel.readLoveNumbers(\"prem_load.txt\", Columns=\"n h l k\", ...\n             MaxDegree=96, Interp=\"pchip\", InFrame=\"CE\", OutFrame=\"CF\");\n    [up, no, ea] = g.deformation(latPts, lonPts, kn=LN.kn, hn=LN.hn, ...\n             ln=LN.ln, Mode=\"points\");",
   "run": true
  },
  {
-  "name": "shx.readMascon",
-  "example": "M = shx.readMascon(\"CSR_..._Mascons.nc\");   % lat/lon/time EWH stack",
+  "name": "shLowLevel.readMascon",
+  "example": "M = shLowLevel.readMascon(\"CSR_..._Mascons.nc\");   % lat/lon/time EWH stack",
   "run": false
  },
  {
-  "name": "shx.readSINEX",
-  "example": "snx = shx.readSINEX(\"ITSG-Grace2018_n96_2008-04_head12.snx\");\nfprintf(\"%s with %d params\\n\", snx.kind, numel(snx.x))",
+  "name": "shLowLevel.readSINEX",
+  "example": "snx = shLowLevel.readSINEX(\"ITSG-Grace2018_n96_2008-04_head12.snx\");\nfprintf(\"%s with %d params\\n\", snx.kind, numel(snx.x))",
   "run": true
  },
  {
-  "name": "shx.readTN13",
-  "example": "tn13 = shx.readTN13(\"TN-13_GEOC_CSR_RL06.3.txt\");",
+  "name": "shLowLevel.readTN13",
+  "example": "tn13 = shLowLevel.readTN13(\"TN-13_GEOC_CSR_RL06.3.txt\");",
   "run": true
  },
  {
-  "name": "shx.readTN14",
-  "example": "tn14 = shx.readTN14(\"TN-14_C30_C20_SLR_GSFC.txt\");",
+  "name": "shLowLevel.readTN14",
+  "example": "tn14 = shLowLevel.readTN14(\"TN-14_C30_C20_SLR_GSFC.txt\");",
   "run": true
  },
  {
-  "name": "shx.rescaleGMR",
-  "example": "[C2, S2] = shx.rescaleGMR(g.C, g.S, g.GM, g.R, GMref, Rref);",
+  "name": "shLowLevel.rescaleGMR",
+  "example": "[C2, S2] = shLowLevel.rescaleGMR(g.C, g.S, g.GM, g.R, GMref, Rref);",
   "run": true
  },
  {
-  "name": "shx.resolutionMap",
-  "example": "res = shx.resolutionMap(op, 1, -60:30:60, 0:60:300);   % epoch 1",
+  "name": "shLowLevel.resolutionMap",
+  "example": "res = shLowLevel.resolutionMap(op, 1, -60:30:60, 0:60:300);   % epoch 1",
   "run": true
  },
  {
-  "name": "shx.seaLevelFingerprint",
-  "example": "S = shx.seaLevelFingerprint(gLoad, oceanMask, idx, kn = LN.kn, hn = LN.hn);",
+  "name": "shLowLevel.seaLevelFingerprint",
+  "example": "S = shLowLevel.seaLevelFingerprint(gLoad, oceanMask, idx, kn = LN.kn, hn = LN.hn);",
   "run": false
  },
  {
-  "name": "shx.shAnalysisGrid",
-  "example": "g2 = shx.shAnalysisGrid(grid, lat, lon, 10);   % exact on ring grids",
+  "name": "shLowLevel.shAnalysisGrid",
+  "example": "g2 = shLowLevel.shAnalysisGrid(grid, lat, lon, 10);   % exact on ring grids",
   "run": true
  },
  {
-  "name": "shx.shDegreeRMS",
-  "example": "spec = shx.shDegreeRMS(g.C, g.S);          % degree-amplitude spectrum struct",
+  "name": "shLowLevel.shDegreeRMS",
+  "example": "spec = shLowLevel.shDegreeRMS(g.C, g.S);          % degree-amplitude spectrum struct",
   "run": true
  },
  {
-  "name": "shx.shDestripe",
-  "example": "[Cf, Sf] = shx.shDestripe(g.C, g.S, minOrder = 6);",
+  "name": "shLowLevel.shDestripe",
+  "example": "[Cf, Sf] = shLowLevel.shDestripe(g.C, g.S, minOrder = 6);",
   "run": true
  },
  {
-  "name": "shx.shEvalGFCT",
-  "example": "[C, S] = shx.shEvalGFCT(model, 2015.5);   % piecewise gfct at an epoch",
+  "name": "shLowLevel.shEvalGFCT",
+  "example": "[C, S] = shLowLevel.shEvalGFCT(model, 2015.5);   % piecewise gfct at an epoch",
   "run": true
  },
  {
-  "name": "shx.shFanFilter",
-  "example": "[C2, S2] = shx.shFanFilter(g.C, g.S, 350, 200);",
+  "name": "shLowLevel.shFanFilter",
+  "example": "[C2, S2] = shLowLevel.shFanFilter(g.C, g.S, 350, 200);",
   "run": true
  },
  {
-  "name": "shx.shGaussianFilter",
-  "example": "[Cf, Sf] = shx.shGaussianFilter(g.C, g.S, 350);",
+  "name": "shLowLevel.shGaussianFilter",
+  "example": "[Cf, Sf] = shLowLevel.shGaussianFilter(g.C, g.S, 350);",
   "run": true
  },
  {
-  "name": "shx.shGaussianWeights",
-  "example": "w = shx.shGaussianWeights(60, 350);   % Jekeli recursion",
+  "name": "shLowLevel.shGaussianWeights",
+  "example": "w = shLowLevel.shGaussianWeights(60, 350);   % Jekeli recursion",
   "run": true
  },
  {
-  "name": "shx.shIndex",
-  "example": "idx = shx.shIndex(60);                % MinDegree = 2 default",
+  "name": "shLowLevel.shIndex",
+  "example": "idx = shLowLevel.shIndex(60);                % MinDegree = 2 default",
   "run": true
  },
  {
-  "name": "shx.shOrderRMS",
-  "example": "spec = shx.shOrderRMS(g.C, g.S);           % stripes live at high orders",
+  "name": "shLowLevel.shOrderRMS",
+  "example": "spec = shLowLevel.shOrderRMS(g.C, g.S);           % stripes live at high orders",
   "run": true
  },
  {
-  "name": "shx.shReadGFC",
-  "example": "g = shx.shReadGFC(\"ITSG-Grace2018_n60_2008-04.gfc\");",
+  "name": "shLowLevel.shReadGFC",
+  "example": "g = shLowLevel.shReadGFC(\"ITSG-Grace2018_n60_2008-04.gfc\");",
   "run": true
  },
  {
-  "name": "shx.shSpectralCrossover",
-  "example": "spec = shx.shDegreeRMS(g.C, g.S, 'sigmaC', g.sigmaC, 'sigmaS', g.sigmaS);\nnc = shx.shSpectralCrossover(spec);   % signal/error crossover degree",
+  "name": "shLowLevel.shSpectralCrossover",
+  "example": "spec = shLowLevel.shDegreeRMS(g.C, g.S, 'sigmaC', g.sigmaC, 'sigmaS', g.sigmaS);\nnc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree",
   "run": true
  },
  {
-  "name": "shx.shSynthesis",
-  "example": "grid = shx.shSynthesis(g.C, g.S, g.GM, g.R, -89:89, 0:359);",
+  "name": "shLowLevel.shSynthesis",
+  "example": "grid = shLowLevel.shSynthesis(g.C, g.S, g.GM, g.R, -89:89, 0:359);",
   "run": true
  },
  {
-  "name": "shx.shSynthesisDeformation",
-  "example": "[up, no, ea] = shx.shSynthesisDeformation(g.C, g.S, g.R, latPts, lonPts, kn = LN.kn, hn = LN.hn, ln = LN.ln, Mode = \"points\");",
+  "name": "shLowLevel.shSynthesisDeformation",
+  "example": "[up, no, ea] = shLowLevel.shSynthesisDeformation(g.C, g.S, g.R, latPts, lonPts, kn = LN.kn, hn = LN.hn, ln = LN.ln, Mode = \"points\");",
   "run": true
  },
  {
-  "name": "shx.shSynthesisGradientTensor",
-  "example": "T = shx.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, Height = 450e3);",
+  "name": "shLowLevel.shSynthesisGradientTensor",
+  "example": "T = shLowLevel.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, Height = 450e3);",
   "run": true
  },
  {
-  "name": "shx.slepianBasis",
-  "example": "[G, lam] = shx.slepianBasis(idx, capSpec);   % concentration basis",
+  "name": "shLowLevel.slepianBasis",
+  "example": "[G, lam] = shLowLevel.slepianBasis(idx, capSpec);   % concentration basis",
   "run": false
  },
  {
-  "name": "shx.spatialStats",
-  "example": "    A1 = g.synthesis(lat, lon); A2 = gF.synthesis(lat, lon);\n    st = shx.spatialStats(A1, A2, lat, lon);\n    fprintf(\"rmsd %.3g, corr %.3f\\n\", st.rmsd, st.corr)",
+  "name": "shLowLevel.spatialStats",
+  "example": "    A1 = g.synthesis(lat, lon); A2 = gF.synthesis(lat, lon);\n    st = shLowLevel.spatialStats(A1, A2, lat, lon);\n    fprintf(\"rmsd %.3g, corr %.3f\\n\", st.rmsd, st.corr)",
   "run": true
  },
  {
-  "name": "shx.synthesisMatrix",
-  "example": "[Y, w] = shx.synthesisMatrix(idx);    % quadrature-consistent pair",
+  "name": "shLowLevel.synthesisMatrix",
+  "example": "[Y, w] = shLowLevel.synthesisMatrix(idx);    % quadrature-consistent pair",
   "run": true
  },
  {
-  "name": "shx.taylorDiagram",
-  "example": "    st = shx.spatialStats(grid, 0.8 * grid, lat, lon);\n    shx.taylorDiagram(st.stdA, st.stdB, st.corr, Labels = \"damped\");",
+  "name": "shLowLevel.synthesisPoints",
+  "example": "    dg = shLowLevel.synthesisPoints(g.C, g.S, g.GM, g.R, ...\n        [10; 12], [100; 101], (g.R + 450e3) * [1; 1], ...\n        Quantity = \"disturbance\") * 1e5;   % mGal at 450 km",
   "run": true
  },
  {
-  "name": "shx.threeCorneredHat",
-  "example": "    out = shx.threeCorneredHat(Y3);   % T x 3 basin series (CSR/GFZ/JPL)\n    fprintf(\"noise levels: %s\\n\", sprintf(\"%.3g \", out.sigma))",
+  "name": "shLowLevel.taylorDiagram",
+  "example": "    st = shLowLevel.spatialStats(grid, 0.8 * grid, lat, lon);\n    shLowLevel.taylorDiagram(st.stdA, st.stdB, st.corr, Labels = \"damped\");",
   "run": true
  },
  {
-  "name": "shx.tvANSFilter",
-  "example": "[Xf, op, info] = shx.tvANSFilter(X, tYears, idx);\nsigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)",
+  "name": "shLowLevel.threeCorneredHat",
+  "example": "    out = shLowLevel.threeCorneredHat(Y3);   % T x 3 basin series (CSR/GFZ/JPL)\n    fprintf(\"noise levels: %s\\n\", sprintf(\"%.3g \", out.sigma))",
   "run": true
  },
  {
-  "name": "shx.vceRescale",
-  "example": "s = shx.vceRescale(N, Xres, idx);          % monthly noise factors",
+  "name": "shLowLevel.tvANSFilter",
+  "example": "[Xf, op, info] = shLowLevel.tvANSFilter(X, tYears, idx);\nsigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)",
   "run": true
  },
  {
-  "name": "shx.vecFromCS",
-  "example": "x = shx.vecFromCS(g10.C, g10.S, idx);     % triangle -> idx-ordered vector",
+  "name": "shLowLevel.vceRescale",
+  "example": "s = shLowLevel.vceRescale(N, Xres, idx);          % monthly noise factors",
   "run": true
  },
  {
-  "name": "shx.version",
-  "example": "    v = shx.version();\n    fprintf(\"%s %s (%s)\\n\", v.Name, v.Version, v.Date)",
+  "name": "shLowLevel.vecFromCS",
+  "example": "x = shLowLevel.vecFromCS(g10.C, g10.S, idx);     % triangle -> idx-ordered vector",
   "run": true
  },
  {
-  "name": "shx.writeAnimation",
-  "example": "shx.writeAnimation(ts, \"ewh_2019_2022.avi\", quantity = \"ewh\", kn = kn);   % .avi portable, .mp4 on Windows/macOS",
+  "name": "shLowLevel.version",
+  "example": "    v = shLowLevel.version();\n    fprintf(\"%s %s (%s)\\n\", v.Name, v.Version, v.Date)",
+  "run": true
+ },
+ {
+  "name": "shLowLevel.writeAnimation",
+  "example": "shLowLevel.writeAnimation(ts, \"ewh_2019_2022.avi\", quantity = \"ewh\", kn = kn);   % .avi portable, .mp4 on Windows/macOS",
   "run": false
  },
  {
-  "name": "shx.writeGFC",
-  "example": "shx.writeGFC(\"out.gfc\", g.C, g.S, g.GM, g.R, Comment = \"DDK3 filtered\");",
+  "name": "shLowLevel.writeGFC",
+  "example": "shLowLevel.writeGFC(\"out.gfc\", g.C, g.S, g.GM, g.R, Comment = \"DDK3 filtered\");",
   "run": true
  },
  {
-  "name": "shx.writeGrid",
-  "example": "shx.writeGrid(\"ewh.nc\", grid, lat, lon);   % netCDF/geotiff/ascii",
+  "name": "shLowLevel.writeGrid",
+  "example": "shLowLevel.writeGrid(\"ewh.nc\", grid, lat, lon);   % netCDF/geotiff/ascii",
   "run": true
  },
  {
-  "name": "shx.ylm",
-  "example": "Y = shx.ylm(deg2rad(latPts), deg2rad(lonPts), idx);   % design rows, idx order",
+  "name": "shLowLevel.ylm",
+  "example": "Y = shLowLevel.ylm(deg2rad(latPts), deg2rad(lonPts), idx);   % design rows, idx order",
   "run": true
  },
  {
@@ -676,7 +691,7 @@
  },
  {
   "name": "shSeries.fromFolder",
-  "example": "ts = shSeries.fromFolder(shx.dataFolder() + \"/itsg_series\");",
+  "example": "ts = shSeries.fromFolder(shLowLevel.dataFolder() + \"/itsg_series\");",
   "run": false
  },
  {

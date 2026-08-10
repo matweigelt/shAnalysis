@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.seaLevelFingerprint</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.seaLevelFingerprint</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,14 +20,14 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Sea level</span>
-<h1>shx.seaLevelFingerprint</h1>
+<h1>shLowLevel.seaLevelFingerprint</h1>
 <p>Elastic sea-level fingerprint: the sea-level equation, iterated.</p>
 <h2>Syntax</h2>
-<pre>idx = shx.shIndex(96, MinDegree=0);
+<pre>idx = shLowLevel.shIndex(96, MinDegree=0);
 loadF = @(la,lo) -sigmaIce(la,lo);        % kg/m^2, negative = loss
-[S, grid, info] = shx.seaLevelFingerprint(loadF, oceanMask, idx, ...
+[S, grid, info] = shLowLevel.seaLevelFingerprint(loadF, oceanMask, idx, ...
     kn=kn, hn=hn);
-shx.plotSHMap(info.S2D, grid.latDeg, grid.lonDeg, Units="m")</pre>
+shLowLevel.plotSHMap(info.S2D, grid.latDeg, grid.lonDeg, Units="m")</pre>
 <h2>Description</h2>
 <p>The ocean does not rise uniformly: S = O(N &minus; U + &kappa;) with geoid change N and uplift U from the TOTAL load and &kappa; enforcing global mass conservation (Farrell &amp; Clark 1976, elastic limit), iterated on the exact Gauss-Legendre quadrature pair of the toolbox. Python-validated: mass conserved to machine precision, ~11 iterations, and the classic pattern &mdash; sea level FALLS in the near field of a melting mass (lost self-attraction + rebound) and exceeds eustatic in the far field (validation: near &minus;0.3 mm vs far +0.8 mm about eustatic +0.6 mm per unit load).</p>
 <div class="note"><b>Limitations (by design, documented):</b> elastic only (no viscous GIA), no rotational feedback, fixed coastlines, band-limited masks (Gibbs at coasts &mdash; OverSample and Lmax control it).</div>

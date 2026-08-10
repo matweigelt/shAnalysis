@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.slepianBasis</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.slepianBasis</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,25 +20,25 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Regional</span>
-<h1>shx.slepianBasis</h1>
+<h1>shLowLevel.slepianBasis</h1>
 <p>Spatially concentrated (Slepian) bases: the well-posed route to regional analysis.</p>
 <h2>Syntax</h2>
-<pre>[G, lam, info] = shx.slepianBasis(idx, region)
-[G, lam, info] = shx.slepianBasis(idx, region, NKeep=25)</pre>
+<pre>[G, lam, info] = shLowLevel.slepianBasis(idx, region)
+[G, lam, info] = shLowLevel.slepianBasis(idx, region, NKeep=25)</pre>
 <h2>Description</h2>
 <p>Solves the spherical concentration problem (Simons et&nbsp;al. 2006): eigenvectors of the localization kernel <code class="inline">K = Y' diag(w.*mask) Y</code> maximize the energy fraction &lambda; inside the region. Columns of <code class="inline">G</code> (orthonormal, &lambda; descending in [0,1]) span the region-concentrated subspace; the Shannon number <code class="inline">N = sum(lam) = areaFraction * P</code> counts the usefully concentrated tapers. Estimating only ~N Slepian coefficients replaces ill-posed regional least squares &mdash; the clean alternative to Kaula-regularized fits on regional grids.</p>
 <h2>Inputs / Outputs</h2>
 <table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
-<tr><td>idx</td><td>struct</td><td><code class="inline">shx.shIndex</code>; P&times;P eigendecomposition &mdash; practical to Lmax &asymp; 60&ndash;96</td></tr>
-<tr><td>region</td><td>handle | polygon | mask</td><td>as in <code class="inline">shx.basinKernel</code></td></tr>
+<tr><td>idx</td><td>struct</td><td><code class="inline">shLowLevel.shIndex</code>; P&times;P eigendecomposition &mdash; practical to Lmax &asymp; 60&ndash;96</td></tr>
+<tr><td>region</td><td>handle | polygon | mask</td><td>as in <code class="inline">shLowLevel.basinKernel</code></td></tr>
 <tr><td>NKeep</td><td>(1,1) double, round(Shannon)</td><td>number of tapers returned</td></tr>
 <tr><td>G</td><td>(P,NKeep) double</td><td>taper coefficient vectors, G'G = I</td></tr>
 <tr><td>lam</td><td>(NKeep,1) double</td><td>concentrations, descending</td></tr>
 <tr><td>info</td><td>struct</td><td>shannon, areaFraction, lamAll</td></tr></table>
 <h2>Example</h2>
-<pre>idx = shx.shIndex(60, MinDegree=0);
-[G, lam] = shx.slepianBasis(idx, @(la,lo) double(la&gt;60));
-a  = G' * shx.vecFromCS(g.C, g.S, idx);   % Slepian-domain coefficients
+<pre>idx = shLowLevel.shIndex(60, MinDegree=0);
+[G, lam] = shLowLevel.slepianBasis(idx, @(la,lo) double(la&gt;60));
+a  = G' * shLowLevel.vecFromCS(g.C, g.S, idx);   % Slepian-domain coefficients
 xR = G * a;                               % regional reconstruction</pre>
 <div class="note">Validated: &lambda;&isin;[0,1] to 4e-16, G'G&minus;I &asymp; 3e-15, trace identity exact (addition theorem). Step-by-step regional workflow: guide, &ldquo;Regional analysis with Slepian functions&rdquo;.</div>
 <h2>See also</h2><p class="seealso"><a href="basinKernel.html">basinKernel</a> <a href="shAnalysisGrid.html">shAnalysisGrid</a></p>

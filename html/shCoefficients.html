@@ -29,7 +29,7 @@ The single point of access for per-field work; see <a href="shSeries.html">shSer
 <h2>Construction</h2>
 <pre>g = shCoefficients.read("GSM-2_2024032-2024060_GRFO_UTCSR_BA01_0600.gfc");
 g = shCoefficients(C, S, GM=3.986004415e14, R=6.3781363e6, Epoch=2024.12);
-g = shCoefficients.fromVec(x, idx, gLike);      % from a shx.shIndex vector</pre>
+g = shCoefficients.fromVec(x, idx, gLike);      % from a shLowLevel.shIndex vector</pre>
 <p><code class="inline">read</code> handles <code class="inline">.gfc</code>, <code class="inline">.gfct</code> and gzip-compressed files, parses GM/R/tide system
 from the header, and product type (GSM/GAA&ndash;GAD) plus mid-span epoch from standard GRACE L2 filenames.</p>
 

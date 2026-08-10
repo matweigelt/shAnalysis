@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.geodetic2geocentric / geocentric2geodetic</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.geodetic2geocentric / geocentric2geodetic</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,11 +20,11 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Utilities</span>
-<h1>shx.geodetic2geocentric / geocentric2geodetic</h1>
+<h1>shLowLevel.geodetic2geocentric / geocentric2geodetic</h1>
 <p>Latitude conversions between the reference ellipsoid and the sphere.</p>
 <h2>Syntax</h2>
-<pre>latGC = shx.geodetic2geocentric(latGD)                  % WGS84 default
-latGD = shx.geocentric2geodetic(latGC, Flattening=1/298.257222101)</pre>
+<pre>latGC = shLowLevel.geodetic2geocentric(latGD)                  % WGS84 default
+latGD = shLowLevel.geocentric2geodetic(latGC, Flattening=1/298.257222101)</pre>
 <h2>Description</h2>
 <p><code class="inline">tan(latGC) = (1&minus;f)&sup2; tan(latGD)</code>. All SH routines here operate in <b>geocentric</b> latitude; map/GIS/mascon grids are almost always <b>geodetic</b>. The difference peaks at ~0.19&deg; (~21&nbsp;km) at 45&deg; &mdash; a classic silent error. The synthesis/analysis entry points accept <code class="inline">LatType="geodetic"</code> and convert internally. The flattening is an overridable default (WGS84), not baked-in physics.</p>
 <h2>Inputs / Outputs</h2>

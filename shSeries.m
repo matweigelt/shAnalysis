@@ -241,7 +241,7 @@ methods
         t0 = opts.T0;
         if isnan(t0), t0 = mean(obj.epochs); end
         X = obj.flatten();                             % (2*Nc) x T
-        [~, XresX, coef, ~, coefSigma] = shx.fitDeterministicModel( ...
+        [~, XresX, coef, ~, coefSigma] = shLowLevel.fitDeterministicModel( ...
             X, obj.epochs, Robust = opts.Robust, T0 = t0, ...
             Periods = opts.Periods, Weights = opts.Weights, ...
             ARCorrect = opts.ARCorrect);
@@ -294,9 +294,9 @@ methods
         X = [reshape(obj.Cs, Nc, T); reshape(obj.Ss, Nc, T)];
         K = numel(opts.Breaks);
         nP = numel(opts.Periods);
-        [~, Xr1, c1, ~, cs1] = shx.fitDeterministicModel(X, obj.epochs, ...
+        [~, Xr1, c1, ~, cs1] = shLowLevel.fitDeterministicModel(X, obj.epochs, ...
             T0 = t0, Periods = opts.Periods, ARCorrect = opts.ARCorrect);
-        [~, XrB, cB, ~, csB] = shx.fitDeterministicModel(X, obj.epochs, ...
+        [~, XrB, cB, ~, csB] = shLowLevel.fitDeterministicModel(X, obj.epochs, ...
             T0 = t0, Periods = opts.Periods, Breaks = opts.Breaks, ...
             ARCorrect = opts.ARCorrect);
         ss0 = sum(Xr1.^2, 2); ss1 = sum(XrB.^2, 2);
@@ -329,7 +329,7 @@ methods
 
     function out = fan(obj, rDegKm, rOrdKm)
         %FAN Han fan filter on every epoch (degree x order Gaussian).
-        %   OUT = ts.fan(RDEG, RORD)  - see shx.shFanFilter.
+        %   OUT = ts.fan(RDEG, RORD)  - see shLowLevel.shFanFilter.
         %   Outputs
         %     out        (1 x 1) shSeries   fan-filtered per month
         arguments
@@ -339,12 +339,12 @@ methods
         end
         out = obj;
         for k = 1:obj.nEpochs
-            [out.Cs(:,:,k), out.Ss(:,:,k)] = shx.shFanFilter( ...
+            [out.Cs(:,:,k), out.Ss(:,:,k)] = shLowLevel.shFanFilter( ...
                 obj.Cs(:,:,k), obj.Ss(:,:,k), rDegKm, rOrdKm, R = obj.R);
         end
         if ~isempty(out.sigmaCs)
-            Wn = shx.shGaussianWeights(obj.nmax, rDegKm, R = obj.R/1e3);
-            Wm = shx.shGaussianWeights(obj.nmax, rOrdKm, R = obj.R/1e3);
+            Wn = shLowLevel.shGaussianWeights(obj.nmax, rDegKm, R = obj.R/1e3);
+            Wm = shLowLevel.shGaussianWeights(obj.nmax, rOrdKm, R = obj.R/1e3);
             Wmat = Wn(:) .* Wm(:)';
             for k = 1:obj.nEpochs
                 out.sigmaCs(:,:,k) = obj.sigmaCs(:,:,k) .* Wmat;
@@ -440,7 +440,7 @@ methods
 
     function out = applyDDK(obj, W)
         %APPLYDDK Apply a DDK decorrelation filter to every epoch.
-        %   OUT = ts.applyDDK(W), W from shx.readDDK. Sigma stacks are
+        %   OUT = ts.applyDDK(W), W from shLowLevel.readDDK. Sigma stacks are
         %   invalidated (NaN) - the filter correlates coefficients.
         %   Outputs
         %     out        (1 x 1) shSeries   DDK-decorrelated per month
@@ -448,11 +448,11 @@ methods
             obj
             W
         end
-        W = shx.readDDK(W);
+        W = shLowLevel.readDDK(W);
         out = obj;
         for k = 1:obj.nEpochs
             [out.Cs(:, :, k), out.Ss(:, :, k)] = ...
-                shx.applyDDK(obj.Cs(:, :, k), obj.Ss(:, :, k), W);
+                shLowLevel.applyDDK(obj.Cs(:, :, k), obj.Ss(:, :, k), W);
         end
         out.sigmaCs = []; out.sigmaSs = [];
         out.history(end+1) = sprintf("DDK filter applied (%s)", W.name);
@@ -462,13 +462,13 @@ methods
     function [rep, h] = compare(obj, others, varargin)
         %COMPARE Temporal comparison against other series (v2.6.0).
         %   REP = ts.compare(TS2) or ts.compare({TS2, TS3, ...})
-        %   delegates to shx.compareSeries with OBJ as the reference;
+        %   delegates to shLowLevel.compareSeries with OBJ as the reference;
         %   all options pass through (Basin=, Names=, Plot=, ...).
         %   Outputs
-        %     rep        (1 x 1) struct   shx.compareSeries report
+        %     rep        (1 x 1) struct   shLowLevel.compareSeries report
         %     h          (1 x 1) graphics handle   figure (Plot = true)
         if ~iscell(others), others = {others}; end
-        [rep, h] = shx.compareSeries([{obj}, others], varargin{:});
+        [rep, h] = shLowLevel.compareSeries([{obj}, others], varargin{:});
     end
 
     function out = restore(obj, gax, opts)
@@ -554,7 +554,7 @@ methods
         obj.assertClean('destripe');
         out = obj;
         for k = 1:obj.nEpochs
-            [out.Cs(:,:,k), out.Ss(:,:,k)] = shx.shDestripe( ...
+            [out.Cs(:,:,k), out.Ss(:,:,k)] = shLowLevel.shDestripe( ...
                 obj.Cs(:,:,k), obj.Ss(:,:,k), 'minOrder', opts.minOrder, ...
                 'polyOrder', opts.polyOrder, 'windowLength', opts.windowLength);
         end
@@ -571,7 +571,7 @@ methods
             radiusKm (1,1) double {mustBePositive}
         end
         obj.assertClean('gaussian');
-        Wn = shx.shGaussianWeights(obj.nmax, radiusKm);
+        Wn = shLowLevel.shGaussianWeights(obj.nmax, radiusKm);
         out = obj;
         out.Cs = obj.Cs .* Wn(:);
         out.Ss = obj.Ss .* Wn(:);
@@ -674,12 +674,12 @@ methods
         %   [TSF, OP, INFO] = ts.filter("tvANS", Constraints=..., NoiseCov=...,
         %   SignalMode="isotropic"|"inhomogeneous", NIterSignal=3,
         %   Robust=false, MinDegree=2)
-        %   runs the tvANS chain (see shx.tvANSFilter): deterministic-model
+        %   runs the tvANS chain (see shLowLevel.tvANSFilter): deterministic-model
         %   separation, empirical or supplied noise covariance, monthly VCE
         %   scaling, data-driven signal covariance, per-month anisotropic
         %   Wiener filter, optional hard constraints. OP is the stored
         %   linear operator - required for basinAverage(...,
-        %   Deconvolve=true) and shx.resolutionMap.
+        %   Deconvolve=true) and shLowLevel.resolutionMap.
         %   v2.1: Blocks="auto"|"on"|"off" engages the block-diagonal
         %   fast path (isotropic + empirical N + no constraints; identical
         %   results, tractable to Lmax ~ 120). The filtered series carries
@@ -706,12 +706,12 @@ methods
             error('shSeries:noEpoch', ...
                 'filter requires finite epochs for every entry.');
         end
-        idx = shx.shIndex(obj.nmax, MinDegree = opts.MinDegree);
+        idx = shLowLevel.shIndex(obj.nmax, MinDegree = opts.MinDegree);
         X = zeros(idx.P, obj.nEpochs);
         for k = 1:obj.nEpochs
-            X(:,k) = shx.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
+            X(:,k) = shLowLevel.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
         end
-        [Xf, op, info] = shx.tvANSFilter(X, obj.epochs, idx, ...
+        [Xf, op, info] = shLowLevel.tvANSFilter(X, obj.epochs, idx, ...
             NoiseCov = opts.NoiseCov, Constraints = opts.Constraints, ...
             SignalMode = char(opts.SignalMode), ...
             NIterSignal = opts.NIterSignal, Robust = opts.Robust, ...
@@ -720,8 +720,8 @@ methods
         out.sigmaCs = nan(size(obj.Cs));
         out.sigmaSs = nan(size(obj.Ss));
         for k = 1:obj.nEpochs
-            [cf, sf] = shx.csFromVec(Xf(:,k), idx);
-            [sc, ss] = shx.csFromVec(info.sigmaXfres(:,k), idx);
+            [cf, sf] = shLowLevel.csFromVec(Xf(:,k), idx);
+            [sc, ss] = shLowLevel.csFromVec(info.sigmaXfres(:,k), idx);
             % degrees below MinDegree pass through unfiltered
             out.Cs(:,:,k) = obj.Cs(:,:,k);
             out.Ss(:,:,k) = obj.Ss(:,:,k);
@@ -739,12 +739,12 @@ methods
     function [avg, out] = basinAverage(obj, B, opts)
         %BASINAVERAGE Basin averages, naive or exactly deconvolved.
         %   AVG = ts.basinAverage(B) - naive averages B'*x ./ diag(B'*B),
-        %   K x T, with B (P x K) basin kernels in shx.shIndex ordering
-        %   (build from a grid mask via shx.synthesisMatrix:
+        %   K x T, with B (P x K) basin kernels in shLowLevel.shIndex ordering
+        %   (build from a grid mask via shLowLevel.synthesisMatrix:
         %   b = Y' * (w .* mask)).
         %   [AVG, OUT] = ts.basinAverage(B, Deconvolve=true, Op=op) removes
         %   filter attenuation and inter-basin leakage exactly using the
-        %   stored operator from ts.filter (see shx.basinDeconvolve).
+        %   stored operator from ts.filter (see shLowLevel.basinDeconvolve).
         %   OUT.sigma (K x T) is the 1-sigma noise uncertainty of AVG
         %   propagated through the deconvolution (v2.1).
         %   Outputs
@@ -755,24 +755,24 @@ methods
             B double
             opts.Deconvolve (1,1) logical = false
             opts.Op struct = struct()
-            opts.Ridge (1,1) double {mustBeNonnegative} = 0   % relative, see shx.basinDeconvolve
+            opts.Ridge (1,1) double {mustBeNonnegative} = 0   % relative, see shLowLevel.basinDeconvolve
         end
         if opts.Deconvolve
             if isempty(fieldnames(opts.Op))
                 error('shSeries:missingOp', ...
                     'Deconvolve=true requires Op=op from ts.filter("tvANS", ...).');
             end
-            [avg, out] = shx.basinDeconvolve(B, opts.Op, Ridge = opts.Ridge);
+            [avg, out] = shLowLevel.basinDeconvolve(B, opts.Op, Ridge = opts.Ridge);
         else
-            idx = shx.shIndex(obj.nmax);
+            idx = shLowLevel.shIndex(obj.nmax);
             if size(B,1) ~= idx.P
                 error('shSeries:badBasis', ...
-                    'B must be P x K in shx.shIndex(nmax=%d) ordering (P=%d).', ...
+                    'B must be P x K in shLowLevel.shIndex(nmax=%d) ordering (P=%d).', ...
                     obj.nmax, idx.P);
             end
             X = zeros(idx.P, obj.nEpochs);
             for k = 1:obj.nEpochs
-                X(:,k) = shx.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
+                X(:,k) = shLowLevel.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
             end
             avg = (B' * X) ./ diag(B' * B);
             out = struct();
@@ -823,7 +823,7 @@ methods (Static)
         %   TS = shSeries.fromFolder("itsg_series")
         %   TS = shSeries.fromFolder(dest, Pattern="*n96*.gfc*", Truncate=60)
         %   Convenience wrapper around shSeries.read (sorted by epoch);
-        %   pairs with shx.fetchITSG, which downloads ITSG monthly
+        %   pairs with shLowLevel.fetchITSG, which downloads ITSG monthly
         %   solutions into tests/test_data/itsg_series on demand.
         %   Outputs
         %     obj        (1 x 1) shSeries   all gfc(.gz) files of a folder, epoch-sorted

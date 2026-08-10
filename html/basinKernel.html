@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.basinKernel</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.basinKernel</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,16 +20,16 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Regional</span>
-<h1>shx.basinKernel</h1>
+<h1>shLowLevel.basinKernel</h1>
 <p>Band-limited basin kernels from polygons, masks, or functions &mdash; with great-circle buffering and spectral tapering.</p>
 <h2>Syntax</h2>
-<pre>[b, info] = shx.basinKernel(idx, region)
-[b, info] = shx.basinKernel(idx, region, BufferKm=300, TaperKm=350)</pre>
+<pre>[b, info] = shLowLevel.basinKernel(idx, region)
+[b, info] = shLowLevel.basinKernel(idx, region, BufferKm=300, TaperKm=350)</pre>
 <h2>Description</h2>
-<p>Builds the spherical-harmonic coefficient vector of the (band-limited) indicator function of a region by exact Gauss&ndash;Legendre quadrature, <code class="inline">b = Y' * (w .* mask)</code>, in the ordering of <code class="inline">idx = shx.shIndex(...)</code>. The result feeds <code class="inline">ts.basinAverage(b)</code> and <code class="inline">shx.basinDeconvolve</code>.</p>
+<p>Builds the spherical-harmonic coefficient vector of the (band-limited) indicator function of a region by exact Gauss&ndash;Legendre quadrature, <code class="inline">b = Y' * (w .* mask)</code>, in the ordering of <code class="inline">idx = shLowLevel.shIndex(...)</code>. The result feeds <code class="inline">ts.basinAverage(b)</code> and <code class="inline">shLowLevel.basinDeconvolve</code>.</p>
 <h2>Inputs</h2>
 <table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
-<tr><td>idx</td><td>struct</td><td>from <code class="inline">shx.shIndex</code></td></tr>
+<tr><td>idx</td><td>struct</td><td>from <code class="inline">shLowLevel.shIndex</code></td></tr>
 <tr><td>region</td><td>handle | Kx2 double | Ngrid x 1</td><td>vectorized <code class="inline">f(latDeg,lonDeg)</code> in [0,1]; polygon vertices [lat lon]; or a mask on the quadrature grid</td></tr>
 <tr><td>BufferKm</td><td>(1,1) double, 0</td><td>&gt;0 grows / &lt;0 shrinks the region by exact great-circle distance before quadrature</td></tr>
 <tr><td>TaperKm</td><td>(1,1) double, 0</td><td>spectral Jekeli-Gaussian taper of the kernel (soft edges, less ringing/leakage)</td></tr>

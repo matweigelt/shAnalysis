@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>shx.mcPropagate</title>
+<html><head><meta charset="utf-8"><title>shLowLevel.mcPropagate</title>
 <style>
 body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
 .content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
@@ -20,14 +20,14 @@ th { background: #f5f7fa; }
 </head>
 <body><div class="content">
 <span class="tag">Statistics</span>
-<h1>shx.mcPropagate</h1>
+<h1>shLowLevel.mcPropagate</h1>
 <p>Monte-Carlo uncertainty propagation through arbitrary processing chains.</p>
 <h2>Syntax</h2>
-<pre>out = shx.mcPropagate(fun, g)                          % from sigmaC/S
-out = shx.mcPropagate(fun, g, N=2000, Seed=1)
-out = shx.mcPropagate(fun, g, Cov=M, Idx=idx)          % full covariance</pre>
+<pre>out = shLowLevel.mcPropagate(fun, g)                          % from sigmaC/S
+out = shLowLevel.mcPropagate(fun, g, N=2000, Seed=1)
+out = shLowLevel.mcPropagate(fun, g, Cov=M, Idx=idx)          % full covariance</pre>
 <h2>Description</h2>
-<p>Draws coefficient samples consistent with the formal errors of <code class="inline">g</code> (independent per-coefficient Gaussians from sigmaC/S, or correlated via a full P&times;P covariance, e.g. from <code class="inline">shx.readSINEX(..., Output="covariance", Index=idx)</code>), pushes each sample through <code class="inline">fun(gs)</code>, and returns the empirical mean and 1-sigma of any output &mdash; filtered grids, basin averages, amplitude maps. The standard cross-check for every analytic sigma in this toolbox.</p>
+<p>Draws coefficient samples consistent with the formal errors of <code class="inline">g</code> (independent per-coefficient Gaussians from sigmaC/S, or correlated via a full P&times;P covariance, e.g. from <code class="inline">shLowLevel.readSINEX(..., Output="covariance", Index=idx)</code>), pushes each sample through <code class="inline">fun(gs)</code>, and returns the empirical mean and 1-sigma of any output &mdash; filtered grids, basin averages, amplitude maps. The standard cross-check for every analytic sigma in this toolbox.</p>
 <h2>Inputs / Outputs</h2>
 <table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
 <tr><td>fun</td><td>function handle</td><td><code class="inline">y = fun(gs)</code>, gs an shCoefficients sample, y numeric</td></tr>

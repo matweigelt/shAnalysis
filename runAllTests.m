@@ -41,7 +41,7 @@ end
 if isfile(logFile), delete(logFile); end
 diary(logFile);
 cleanupDiary = onCleanup(@() diary('off'));
-v = shx.version();
+v = shLowLevel.version();
 fprintf('%s v%s test run - %s\n', v.Name, v.Version, char(datetime('now', ...
     Format = 'yyyy-MM-dd HH:mm:ss')));
 fprintf('MATLAB %s on %s\n', version, computer);

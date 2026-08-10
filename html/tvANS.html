@@ -72,7 +72,7 @@ reported; documented).</td></tr>
 % info.vce   per-month VCE factors s_t
 % op         the stored linear operator: needed for deconvolution
 avg = tsF.basinAverage(B, Deconvolve=true, Op=op);   % removes attenuation
-res = shx.resolutionMap(op, t, latq, lonq);          % kernel half-widths</pre>
+res = shLowLevel.resolutionMap(op, t, latq, lonq);          % kernel half-widths</pre>
 
 <p>Degrees below <code class="inline">MinDegree</code> (default 2) pass through unfiltered.
 Basin deconvolution solves (B' W<sub>t</sub> B) c = B' x&#770;<sub>f</sub> exactly &mdash; unbiased
