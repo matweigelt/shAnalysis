@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shClimatology</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Class</span>
+<h1>shClimatology</h1>
+<p>The deterministic seasonal model of a series &mdash; per-coefficient bias, trend, annual and
+semi-annual harmonics about reference epoch t0 &mdash; as returned by
+<code class="inline">shSeries.climatology</code>. The same model the tvANS filter separates internally,
+exposed as a first-class object.</p>
+
+<h2>Model</h2>
+<pre>x(t) = bias + trend (t-t0) + cA cos 2&pi;(t-t0) + sA sin 2&pi;(t-t0)
+            + cS cos 4&pi;(t-t0) + sS sin 4&pi;(t-t0)</pre>
+
+<h2>Methods</h2>
+<table>
+<tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+<tr><td><code class="inline">eval(epoch)</code></td><td>shCoefficients</td><td>full model evaluated at an epoch</td></tr>
+<tr><td><code class="inline">bias, trend, cosAnnual, sinAnnual, cosSemiannual, sinSemiannual</code></td><td>shCoefficients</td><td>individual components (trend in /yr)</td></tr>
+<tr><td><code class="inline">[A, lat, lon, phase] = amplitudeMap(which, latVec, lonVec, quantity="geoid", kn=...)</code></td><td>grids</td><td>pointwise amplitude sqrt(fc&sup2;+fs&sup2;) and phase atan2(fs,fc) &mdash; formed in the space domain, since amplitude is not linear in the coefficients. <code class="inline">which</code>: <code class="inline">"annual"</code>, <code class="inline">"semiannual"</code>, or an extra-period index k <span class="tag">v2.1</span></td></tr>
+<tr><td><code class="inline">[gc, gs] = periodic(k)</code> <span class="tag">v2.1</span></td><td>shCoefficients</td><td>cos/sin components of the k-th extra period (<code class="inline">clim.periods(k)</code> [yr]) &mdash; e.g. the S2/K2/K1 tidal alias terms fitted via <code class="inline">ts.climatology(Periods=[161/365.25, 3.66, 7.48])</code></td></tr>
+</table>
+
+<h2>Significance <span class="tag">v2.1</span></h2>
+<p>The fit's per-coefficient 1-sigma uncertainties (OLS formula
+<code class="inline">sqrt(resVar &middot; diag(inv(A'WA)))</code>, Monte-Carlo validated to ratios
+0.99&ndash;1.02) are stored in <code class="inline">clim.coefSigma</code> and attached to every component
+accessor's output: <code class="inline">clim.trend().sigmaC</code> etc. Typical use &mdash; a significance-masked
+trend map: synthesize the trend and its sigma separately and blank grid cells where
+|trend| &lt; 2&sigma;.</p>
+
+<h2>Example</h2>
+<pre>[clim, resid] = dts.climatology(Robust=true);
+tr = clim.trend;                          % shCoefficients, per year
+[gridTr, lat, lon] = tr.synthesis(-89:89, 0:359, quantity="ewh", kn=kn);
+[A, ~, ~, ph] = clim.amplitudeMap("annual", -89:89, 0:359, quantity="ewh", kn=kn);</pre>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="shSeries.html">shSeries</a> <a href="shCoefficients.html">shCoefficients</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><div class="note"><b>v2.5:</b> ARCorrect now applies the Kendall first-order bias correction r&#8321;' = r&#8321; + (1+3r&#8321;)/T before the sqrt((1+r)/(1&minus;r)) inflation - Monte-Carlo: the empirical/claimed trend-sigma ratio improves from 1.065 to 1.028 (&phi;=0.6, T=120), from 1.152 to 1.079 (T=60); still first-order and slightly conservative.</div>
+<p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

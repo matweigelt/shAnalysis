@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.geodetic2geocentric / geocentric2geodetic</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Utilities</span>
+<h1>shx.geodetic2geocentric / geocentric2geodetic</h1>
+<p>Latitude conversions between the reference ellipsoid and the sphere.</p>
+<h2>Syntax</h2>
+<pre>latGC = shx.geodetic2geocentric(latGD)                  % WGS84 default
+latGD = shx.geocentric2geodetic(latGC, Flattening=1/298.257222101)</pre>
+<h2>Description</h2>
+<p><code class="inline">tan(latGC) = (1&minus;f)&sup2; tan(latGD)</code>. All SH routines here operate in <b>geocentric</b> latitude; map/GIS/mascon grids are almost always <b>geodetic</b>. The difference peaks at ~0.19&deg; (~21&nbsp;km) at 45&deg; &mdash; a classic silent error. The synthesis/analysis entry points accept <code class="inline">LatType="geodetic"</code> and convert internally. The flattening is an overridable default (WGS84), not baked-in physics.</p>
+<h2>Inputs / Outputs</h2>
+<table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>latGD / latGC</td><td>double array</td><td>latitudes [deg]; poles and equator map exactly</td></tr>
+<tr><td>Flattening</td><td>(1,1) double, 1/298.257223563</td><td>reference-ellipsoid flattening</td></tr></table>
+<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="readMascon.html">readMascon</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

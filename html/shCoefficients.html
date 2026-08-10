@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shCoefficients</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Class</span>
+<h1>shCoefficients</h1>
+<p>One spherical harmonic coefficient set (Stokes coefficients) as an immutable value class:
+I/O, arithmetic, standard corrections, filtering, spectral diagnostics, and spatial synthesis.
+The single point of access for per-field work; see <a href="shSeries.html">shSeries</a> for the time dimension.</p>
+
+<h2>Construction</h2>
+<pre>g = shCoefficients.read("GSM-2_2024032-2024060_GRFO_UTCSR_BA01_0600.gfc");
+g = shCoefficients(C, S, GM=3.986004415e14, R=6.3781363e6, Epoch=2024.12);
+g = shCoefficients.fromVec(x, idx, gLike);      % from a shx.shIndex vector</pre>
+<p><code class="inline">read</code> handles <code class="inline">.gfc</code>, <code class="inline">.gfct</code> and gzip-compressed files, parses GM/R/tide system
+from the header, and product type (GSM/GAA&ndash;GAD) plus mid-span epoch from standard GRACE L2 filenames.</p>
+
+<h2>Properties (read-only)</h2>
+<table>
+<tr><th>Property</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>C, S</td><td>(nmax+1)&times;(nmax+1) double</td><td>coefficient matrices, C(n+1,m+1)</td></tr>
+<tr><td>sigmaC, sigmaS</td><td>same or []</td><td>formal errors</td></tr>
+<tr><td>GM, R</td><td>(1,1) double</td><td>gravitational parameter [m&sup3;/s&sup2;], reference radius [m]</td></tr>
+<tr><td>nmax</td><td>dependent</td><td>maximum degree</td></tr>
+<tr><td>epoch</td><td>(1,1) double</td><td>decimal years, NaN if unknown</td></tr>
+<tr><td>productType</td><td>string</td><td>"GSM", "GAA".."GAD", "static", "difference", ...</td></tr>
+<tr><td>tideSystem, name, header, variableTerms</td><td>&nbsp;</td><td>metadata from the file</td></tr>
+<tr><td>history</td><td>string column</td><td>provenance log, written into exported headers</td></tr>
+</table>
+
+<h2>Methods</h2>
+<table>
+<tr><th>Group</th><th>Methods</th></tr>
+<tr><td>Arithmetic</td><td><code class="inline">+ &nbsp; - &nbsp; * (scalar)</code> &mdash; checks nmax/GM/R (and epoch for +); sigmas propagate by RSS; GSM + GAX combines the product type</td></tr>
+<tr><td>Editing</td><td><code class="inline">truncate(nmax)</code>, <code class="inline">setCoefficient(n,m,C,S)</code>, <code class="inline">applyTN14(tn, ReplaceC30="auto")</code>, <code class="inline">addDegree1(tn13)</code> <span class="tag">v2.1</span> &mdash; TN-13 geocenter coefficients (C10, C11, S11 with sigmas), completing the GSM + TN-14 + TN-13 chain (see <a href="readTN13.html">readTN13</a>)</td></tr>
+<tr><td>Filtering</td><td><code class="inline">destripe(minOrder=6, polyOrder=3, windowLength=[])</code>, <code class="inline">gaussian(radiusKm)</code></td></tr>
+<tr><td>Spectral</td><td><code class="inline">degreeRMS</code>, <code class="inline">crossover</code>, <code class="inline">spectrum</code>, <code class="inline">triangle</code></td></tr>
+<tr><td>Spatial</td><td><code class="inline">synthesis(latVec, lonVec, quantity="geoid"|"gravity_anomaly"|"gravity_disturbance"|"potential"|"ewh", kn=..., nmin=..., nmax=..., Method="auto")</code> &mdash; Legendre functions served from a verified cache. <b>v2.1:</b> <code class="inline">Method="fft"</code>/<code class="inline">"auto"</code> uses FFT along uniform full-circle longitude grids (5&ndash;20&times; faster at 1&deg;) and the latitude parity trick; degree/order now stable to 2190 (scaled recursion).</td></tr>
+<tr><td>Analysis <span class="tag">v2.1</span></td><td><code class="inline">shCoefficients.analysis(grid, lat, lon, nmax, quantity=..., Method="auto"|"rings"|"ls", Weights=..., Kaula=...)</code> (static) &mdash; the inverse of synthesis: estimate Stokes coefficients from a ring grid (exact fast per-order solver) or scattered points (least squares, optional Kaula regularization). See <a href="shAnalysisGrid.html">shAnalysisGrid</a>.</td></tr>
+<tr><td>gfct</td><td><code class="inline">evalAt(epoch)</code></td></tr>
+<tr><td>I/O</td><td><code class="inline">write(filename)</code> (ICGEM writer, round-trip tested), <code class="inline">vec(idx)</code></td></tr>
+</table>
+<p>All methods return a <em>new</em> object with an appended <code class="inline">history</code> entry; the original is never modified.</p>
+
+<h2>Example</h2>
+<pre>gA = shCoefficients.read("GSM-2_202401.gfc").applyTN14("TN-14.txt");
+gB = shCoefficients.read("GSM-2_202402.gfc").applyTN14("TN-14.txt");
+d  = gB - gA;
+[grid, lat, lon] = d.destripe.gaussian(300).synthesis(-89:89, 0:359, ...
+                       quantity="ewh", kn=kn);   % kn: user-supplied Love numbers
+imagesc(lon, lat, grid*100); set(gca,'YDir','normal'); colorbar   % cm EWH</pre>
+
+<div class="note">No load Love numbers or other physical tables are hardcoded anywhere in the
+toolbox &mdash; supply <code class="inline">kn</code> explicitly for EWH, and TN-14 tables as files.</div>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="shSeries.html">shSeries</a> <a href="shClimatology.html">shClimatology</a> <a href="tvANS.html">tvANS filter</a> <a href="shAnalysis.html">toolbox overview</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

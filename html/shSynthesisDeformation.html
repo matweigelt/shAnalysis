@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.shSynthesisDeformation</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spatial</span>
+<h1>shx.shSynthesisDeformation</h1>
+<p>Elastic load deformation (up / north / east) &mdash; the GRACE &harr; GNSS loading comparison.</p>
+<h2>Syntax</h2>
+<pre>[up, north, east] = shx.shSynthesisDeformation(C, S, R, lat, lon, ...
+    kn=kn, hn=hn, ln=ln)                       % grid
+[up, north, east] = g.deformation(latSta, lonSta, kn=kn, hn=hn, ln=ln, ...
+    Mode="points", LatType="geodetic")         % GNSS stations</pre>
+<h2>Description</h2>
+<p>Synthesizes the three components of elastic surface deformation caused by the load in the (residual) Stokes coefficients (Wahr et&nbsp;al. 1998):</p>
+<pre>up    = R &Sigma; h'n/(1+k'n) &Delta;C Ybar
+north = R &Sigma; l'n/(1+k'n) &part;Ybar/&part;&phi;
+east  = R &Sigma; l'n/(1+k'n) (1/cos&phi;) &part;Ybar/&part;&lambda;</pre>
+<p>The vertical is a pure degree factor (also available as <code class="inline">quantity="deformation_up"</code> in every synthesis entry point); the horizontals need the exact SH gradient. <code class="inline">shx.legendreALFDeriv</code> supplies dPbar/d&phi; via a frozen identity, calibrated per (n,m) against numerical differentiation and validated to the finite-difference floor (~1e-9); north/east match brute-force gradients to ~5e-10.</p>
+<h2>Inputs / Outputs</h2>
+<table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>C, S</td><td>(n1,n1) double</td><td>RESIDUAL coefficients (mean removed) &mdash; deformation from the static field is not meaningful</td></tr>
+<tr><td>kn, hn, ln</td><td>(&ge;n1,1) double</td><td>load Love numbers k', h', l' &mdash; user-supplied, from ONE consistent loading model and degree-1 frame (CF/CE)</td></tr>
+<tr><td>nmin (1)</td><td>double</td><td>degree 0 carries no deformation; include degree 1 only with consistent geocenter handling</td></tr>
+<tr><td>Mode</td><td>"grid" | "points"</td><td>outer-product grid, or pairwise station list</td></tr>
+<tr><td>up, north, east</td><td>[m]</td><td>east is NaN at |lat| = 90 (undefined direction)</td></tr></table>
+<div class="note">Workflow (guide, G7): monthly residual series &rarr; tvANS &rarr; per-month <code class="inline">g.deformation(staLat, staLon, Mode="points", LatType="geodetic")</code> &rarr; compare against GNSS displacement time series.</div>
+<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="geodetic2geocentric.html">geodetic2geocentric</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.3 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

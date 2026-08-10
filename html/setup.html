@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>setup_shAnalysis</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Function</span><span class="tag">v2.5</span>
+<h1>setup_shAnalysis</h1>
+<p>One-call setup: adds the toolbox to the MATLAB path (temporarily or
+permanently) and <b>orchestrates the data downloads in cumulative levels</b>.
+Re-running is idempotent &mdash; existing files are skipped, every download is
+verified by parse before it is accepted, and an offline machine still gets a
+working path setup plus the shipped fixtures.</p>
+
+<h2>Syntax</h2>
+<pre>setup_shAnalysis                        % path, this session only
+setup_shAnalysis(Permanent = true)      % path + savepath
+setup_shAnalysis(Download = "core")     % + TN-14/TN-13 (~250 KB)
+setup_shAnalysis(Download = "filters", DDK = [2 3 5])
+setup_shAnalysis(Download = "starter")  % + ITSG starter months
+s = setup_shAnalysis(DryRun = true, Download = "starter")   % plan only</pre>
+
+<h2>Download levels (cumulative)</h2>
+<table>
+<tr><th>level</th><th>adds</th><th>size</th><th>backend</th></tr>
+<tr><td><code class="inline">"none"</code></td><td>path only (default)</td><td>&mdash;</td><td>&mdash;</td></tr>
+<tr><td><code class="inline">"core"</code></td><td>GSFC TN-14 (C20/C30) + TN-13 geocenter files (GFZ/CSR/JPL) &mdash; the low-degree completion chain</td><td>~250 KB</td><td><code class="inline">shx.fetchTN</code></td></tr>
+<tr><td><code class="inline">"filters"</code></td><td>anisotropic DDK decorrelation matrices (subset via <code class="inline">DDK=</code>, default 3)</td><td>~10 MB each</td><td><code class="inline">shx.fetchDDK</code></td></tr>
+<tr><td><code class="inline">"starter"</code></td><td>ITSG monthly-solution starter set (default: the n96 companions of the shipped n60 fixture months, 2008-04 and 2025-12)</td><td>~1 MB/month</td><td><code class="inline">shx.fetchITSG</code></td></tr>
+</table>
+<p>Downloads land in <code class="inline">shx.dataFolder()</code> subfolders
+(<code class="inline">TN/</code>, <code class="inline">DDK/</code>,
+<code class="inline">itsg_series/</code>). Point
+<code class="inline">shx.dataFolder(PATH)</code> at a shared location first to
+reuse downloads across machines.</p>
+
+<h2>Path handling</h2>
+<p>Already-on-path is detected (no duplicate entries). With
+<code class="inline">Permanent=true</code>, <code class="inline">savepath</code>
+persists the path; if that fails (no write permission on
+<code class="inline">pathdef.m</code> &mdash; common on managed machines) the
+session path stays set and a warning explains the
+<code class="inline">startup.m</code> alternative.</p>
+
+<h2>Verification &amp; failure handling</h2>
+<p><code class="inline">shx.fetchTN</code> parses every file with
+<code class="inline">shx.readTN13</code>/<code class="inline">readTN14</code>
+before accepting it &mdash; a truncated download or an HTML error page never
+survives (deleted + reported). Each level runs in isolation: failures are
+collected in <code class="inline">summary.failed</code> and the remaining
+levels still run. <code class="inline">summary.ok</code> is true iff nothing
+failed.</p>
+
+<h2>DryRun</h2>
+<p><code class="inline">DryRun=true</code> returns the full action plan with
+<b>zero side effects</b>: no path change, no folder creation, no network.
+Contract-tested.</p>
+
+<h2>Options</h2>
+<table>
+<tr><th>option</th><th>default</th><th>description</th></tr>
+<tr><td>Permanent</td><td>false</td><td>persist the path via savepath</td></tr>
+<tr><td>Download</td><td>"none"</td><td>"none" | "core" | "filters" | "starter"</td></tr>
+<tr><td>DDK</td><td>3</td><td>subset of 1..8 for the filters level</td></tr>
+<tr><td>Providers</td><td>["GFZ","CSR","JPL"]</td><td>TN-13 providers</td></tr>
+<tr><td>Months</td><td>["2008-04","2025-12"]</td><td>starter months (yyyy-mm)</td></tr>
+<tr><td>Nmax</td><td>96</td><td>ITSG starter degree (60 or 96)</td></tr>
+<tr><td>Docs</td><td>false</td><td>builddocsearchdb(html/) for help-browser search</td></tr>
+<tr><td>DryRun</td><td>false</td><td>plan only, zero side effects</td></tr>
+<tr><td>Quiet</td><td>false</td><td>suppress progress output</td></tr>
+</table>
+
+<h2>Output</h2>
+<p><code class="inline">summary</code> struct: <code class="inline">root</code>,
+<code class="inline">pathAction</code> ("already-on-path" | "added-temporarily" |
+"added-permanently" | "planned"), <code class="inline">dataFolder</code>,
+<code class="inline">plan</code>, <code class="inline">fetched</code>,
+<code class="inline">skipped</code>, <code class="inline">failed</code>,
+<code class="inline">ok</code>.</p>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="dataManagement.html">data management</a>
+<a href="fetchITSG.html">fetchITSG</a>
+<a href="readDDK.html">readDDK / fetchDDK</a>
+<a href="readTN13.html">readTN13</a></p>
+<p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</div></body></html>

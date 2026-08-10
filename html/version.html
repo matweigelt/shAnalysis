@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.version</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+</head>
+<body><div class="content">
+<h1>shx.version</h1>
+<p><span class="tag">v2.5.1</span> Toolbox metadata: name, version, date, root path, provenance.</p>
+
+<h2>Syntax</h2>
+<pre>v = shx.version();
+shx.version                          % print a summary</pre>
+
+<h2>Description</h2>
+<p><code class="inline">v = shx.version()</code> returns the toolbox metadata as a struct.
+The version string and date are <b>parsed from Contents.m</b> (the MATLAB toolbox
+convention line <code class="inline">% Version x.y.z ... dd-Mmm-yyyy</code>), so there is a
+single source of truth that is also honoured by MATLAB's own
+<code class="inline">ver('shAnalysis')</code>. Called without an output argument, a short
+summary is printed instead.</p>
+
+<h2>Outputs</h2>
+<table>
+<tr><th>field</th><th>size / type</th><th>description</th></tr>
+<tr><td><code class="inline">v.Name</code></td><td>(1&times;1) string</td><td>"shAnalysis"</td></tr>
+<tr><td><code class="inline">v.Version</code></td><td>(1&times;1) string</td><td>e.g. "2.5.1"</td></tr>
+<tr><td><code class="inline">v.Date</code></td><td>(1&times;1) string</td><td>release date from Contents.m</td></tr>
+<tr><td><code class="inline">v.Root</code></td><td>(1&times;1) string</td><td>toolbox root folder</td></tr>
+<tr><td><code class="inline">v.Provenance</code></td><td>(1&times;1) string</td><td>authorship line</td></tr>
+</table>
+
+<h2>Example</h2>
+<pre>v = shx.version();
+fprintf("%s %s (%s)\n", v.Name, v.Version, v.Date)</pre>
+
+<h2>See also</h2>
+<p class="seealso"><a href="setup.html">setup_shAnalysis</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 2026-08-08 (v2.5.1).</p>
+</div></body></html>

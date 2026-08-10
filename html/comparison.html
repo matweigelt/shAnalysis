@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Comparison suite</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+</head>
+<body><div class="content">
+<h1>Comparison suite (v2.6.0)</h1>
+<p><span class="tag">v2.6.0</span> Standard metrics for comparing solutions and series in the spectral, spatial and temporal domain - each accessible standalone, aggregated by <code class="inline">shx.compareSolutions</code> / <code class="inline">shx.compareSeries</code>.</p>
+
+<h2>Single points of access</h2>
+<pre>rep = shx.compareSolutions(g1, g2, Names = ["CSR", "ITSG"], Plot = true);
+rep = shx.compareSeries({tsCSR, tsGFZ, tsJPL}, Names = ["CSR","GFZ","JPL"]);
+rep = g.compare(g2);          % method forms
+rep = ts.compare({ts2, ts3});</pre>
+<p>Both enforce a <b>common basis</b> first: truncation to the smallest nmax, GM/R
+unification, and (series) epoch matching within a tolerance - unmatched epochs are
+dropped and reported, never interpolated across gaps. Otherwise the numbers measure
+processing chains, not solutions.</p>
+
+<h2>The metric set</h2>
+<table>
+<tr><th>domain</th><th>metric</th><th>function</th></tr>
+<tr><td>spectral</td><td>difference degree amplitude vs both signal spectra; per-degree correlation; agreement crossover degree</td><td><code class="inline">shx.diffSpectrum</code></td></tr>
+<tr><td>spatial</td><td>area-weighted (cos &phi;) bias, RMSD, centered RMSD, pattern correlation, std ratio; Mask= for land/ocean/basins</td><td><code class="inline">shx.spatialStats</code></td></tr>
+<tr><td>temporal</td><td>Nash-Sutcliffe efficiency (punishes bias and amplitude, unlike correlation)</td><td><code class="inline">shx.nashSutcliffe</code></td></tr>
+<tr><td>temporal</td><td>correlation with AR(1)-corrected significance (Neff, two-sided p via betainc - base MATLAB)</td><td><code class="inline">shx.effectiveCorr</code></td></tr>
+<tr><td>temporal</td><td>trend difference &plusmn; combined sigma (Kendall AR(1)-corrected fits); annual amplitude ratio and phase lag [days]</td><td>via <code class="inline">compareSeries</code></td></tr>
+<tr><td>errors</td><td>&chi;&sup2;/dof of coefficient differences vs combined formal sigmas: tests error <i>realism</i>, a separate question from agreement</td><td>via <code class="inline">compare*</code></td></tr>
+<tr><td>multi-solution</td><td>generalized three-cornered hat: individual noise level per solution (N &ge; 3) - the question pairwise metrics cannot answer</td><td><code class="inline">shx.threeCorneredHat</code></td></tr>
+</table>
+
+<h2>Visualization</h2>
+<p><code class="inline">Plot = true</code> renders 4-panel figures: spectra + crossover, degree
+correlation, difference map and order-RMS of the difference (solutions); comparison
+series, Taylor diagram, trend-difference spectra and difference series (series).
+<code class="inline">shx.taylorDiagram(refStd, stds, corrs)</code> stands alone and consumes
+<code class="inline">spatialStats</code> outputs directly.</p>
+
+<h2>Validation</h2>
+<p>All numerics are Python-validated: degree-correlation and Taylor identities to 1e-12,
+TCH noise recovery within 1% (T = 20000), and the AR(1) correction reduces the
+false-positive rate of the correlation test from ~30% to ~6% at &phi; = 0.7.</p>
+
+<h2>See also</h2>
+<p class="seealso"><a href="version.html">shx.version</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 2026-08-08 (v2.6.0).</p>
+</div></body></html>

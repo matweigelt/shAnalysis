@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shSeries</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Class</span>
+<h1>shSeries</h1>
+<p>A time series of coefficient sets: everything with a time dimension. Mean field, climatology
+(bias/trend/annual/semi-annual), GAX background restoration, the classic destripe+Gaussian chain
+applied per epoch, the tvANS time-variable anisotropic Wiener filter, and basin averages with
+exact deconvolution. Immutable, with provenance in <code class="inline">.history</code>.</p>
+
+<h2>Construction</h2>
+<pre>ts = shSeries.read("GSM-2_*.gfc");            % pattern; sorted by epoch
+ts = shSeries.read(fileList, Truncate=60);    % string array of paths
+ts = shSeries(objArray);                      % from shCoefficients array
+ts = shSeries(Cs, Ss=Ss, Epochs=ep);          % raw (nmax+1)x(nmax+1)xT stacks</pre>
+
+<h2>Properties (read-only)</h2>
+<table>
+<tr><th>Property</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>Cs, Ss</td><td>(nmax+1)&times;(nmax+1)&times;T double</td><td>coefficient stacks</td></tr>
+<tr><td>sigmaCs, sigmaSs</td><td>same or []</td><td>formal error stacks</td></tr>
+<tr><td>epochs</td><td>(T,1) double</td><td>decimal years, sorted</td></tr>
+<tr><td>GM, R, productType, names, history</td><td>&nbsp;</td><td>shared metadata + provenance</td></tr>
+<tr><td>nmax, nEpochs</td><td>dependent</td><td>&nbsp;</td></tr>
+</table>
+
+<h2>Methods</h2>
+<table>
+<tr><th>Group</th><th>Methods</th></tr>
+<tr><td>Access</td><td><code class="inline">at(k)</code> &rarr; shCoefficients of epoch k</td></tr>
+<tr><td>Statistics</td><td><code class="inline">mean(Omitnan=true)</code> &rarr; mean field (sigmas = standard error of the mean); <code class="inline">ts - ts.mean</code> &rarr; anomaly series</td></tr>
+<tr><td>Climatology</td><td><code class="inline">[clim, resid] = climatology(Robust=false, T0=mean(epochs), Periods=[], Weights=[])</code> &rarr; <a href="shClimatology.html">shClimatology</a> + residual series (&ge; 6+2K epochs). <b>v2.1:</b> <code class="inline">Periods</code> adds extra periodic terms [yr], e.g. the GRACE tidal alias periods <code class="inline">[161/365.25, 3.66, 7.48]</code> (S2, K2, K1); <code class="inline">Weights</code> takes per-epoch weights (e.g. <code class="inline">1./info.vce</code>). The climatology carries per-coefficient 1-sigma significance.</td></tr>
+<tr><td>GAX</td><td><code class="inline">restore(gaxSeries, Tolerance=0.05, AllowMissing=false)</code> &mdash; epoch-matched add-back of GAA/GAB/GAC/GAD background series; productType becomes e.g. "GSM+GAD"</td></tr>
+<tr><td>Classic chain</td><td><code class="inline">destripe(...)</code>, <code class="inline">gaussian(radiusKm)</code>, <code class="inline">truncate(nmax)</code> &mdash; per-epoch, stack-vectorized</td></tr>
+<tr><td>Optimal chain</td><td><code class="inline">[tsF, op, info] = filter("tvANS", ..., Blocks="auto")</code> &mdash; see <a href="tvANS.html">tvANS filter</a>. <b>v2.1:</b> block-diagonal fast path (identical results, tractable to Lmax&nbsp;~&nbsp;120); the output carries posterior 1-sigma stacks <code class="inline">tsF.sigmaCs/sigmaSs</code> per coefficient and month.</td></tr>
+<tr><td>Basins</td><td><code class="inline">basinAverage(B)</code> naive; <code class="inline">basinAverage(B, Deconvolve=true, Op=op, Ridge=0)</code> exact, unbiased. <b>v2.1:</b> <code class="inline">out.sigma</code> (K&times;T) is the propagated 1-sigma noise uncertainty of the deconvolved averages.</td></tr>
+<tr><td>Gap handling <span class="tag">v2.1</span></td><td><code class="inline">dropNaN()</code> removes epochs with any non-finite coefficient (the GRACE&harr;GRACE-FO gap); <code class="inline">select(mask | indices | [tMin tMax])</code> subsets by mask, index list, or year range. The remaining irregular sampling is handled natively by climatology and the filter.</td></tr>
+<tr><td>Arithmetic</td><td><code class="inline">ts - g</code> (field from every epoch) or <code class="inline">tsA - tsB</code> (epoch-matched)</td></tr>
+</table>
+
+<h2>Example: full GRACE-FO chain</h2>
+<pre>ts  = shSeries.read("GSM-2_*.gfc", Truncate=60);
+ts  = ts.restore(shSeries.read("GAD-2_*.gfc", Truncate=60));  % ocean bottom pressure back
+dts = ts - ts.mean;
+[clim, resid] = dts.climatology(Robust=true);
+[tsF, op] = dts.filter("tvANS", SignalMode="inhomogeneous");
+avg = tsF.basinAverage(B, Deconvolve=true, Op=op);            % K x T, unbiased</pre>
+
+<div class="note">NaN-containing stacks are accepted for <code class="inline">mean(Omitnan=true)</code> but rejected
+loudly (<code class="inline">shSeries:nanInSeries</code>) by the filtering chains &mdash; fill or drop months first
+(<code class="inline">ts.dropNaN()</code> since v2.1).</div>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="shCoefficients.html">shCoefficients</a> <a href="shClimatology.html">shClimatology</a> <a href="tvANS.html">tvANS filter</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

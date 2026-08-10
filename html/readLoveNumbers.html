@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>readLoveNumbers</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Function</span><span class="tag">v2.5</span>
+<h1>shx.readLoveNumbers</h1>
+<p>Read <b>load Love numbers</b> from a user-supplied table. The toolbox never
+hardcodes Love numbers &mdash; this reader turns YOUR loading-model table (PREM,
+Gutenberg-Bullen, ak135, ...) into the <code class="inline">kn</code>/<code class="inline">hn</code>/<code class="inline">ln</code>
+vectors that EWH synthesis and elastic deformation expect.</p>
+
+<h2>Syntax</h2>
+<pre>LN = shx.readLoveNumbers(file)
+[LN, info] = shx.readLoveNumbers(file, Columns="n h l k", ...
+        MaxDegree=96, Interp="pchip", InFrame="CE", OutFrame="CF")</pre>
+
+<h2>Recognized layouts</h2>
+<table>
+<tr><th>layout</th><th>handling</th></tr>
+<tr><td>2 columns</td><td>assumed <code class="inline">[n kn]</code> (documented default)</td></tr>
+<tr><td>3+ columns with header</td><td>mapped by header tokens n/degree, k(n)('), h(n)('), l(n)(') &mdash; commented headers (<code class="inline"># n h' l' k'</code>) recognized</td></tr>
+<tr><td>3+ columns, no header</td><td><b>refused as ambiguous</b> (classic Farrell tables order h&nbsp;l&nbsp;k, others k&nbsp;h&nbsp;l): pass <code class="inline">Columns=</code> explicitly</td></tr>
+</table>
+<p>Comment lines (%, #, !, //), csv/semicolon separators and unordered rows are handled.</p>
+
+<h2>Sparse tables (Interp)</h2>
+<p>Farrell-style tables list only n = ..., 32, 56, 100, ... With
+<code class="inline">MaxDegree=</code> the coverage of 0..MaxDegree is verified;
+gaps error unless <code class="inline">Interp="pchip"</code> fills them by
+shape-preserving interpolation in log(1+n). Python-validated: maximum absolute
+error 1.3e-4 (0.05% of the curve range) reconstructing a smooth k'<sub>n</sub>
+curve from 15 Farrell-spaced samples. Extrapolation beyond the table span errors.
+<code class="inline">info.interpolated</code> flags the filled degrees.</p>
+
+<h2>Degree-1 reference frames (InFrame/OutFrame)</h2>
+<p>Degree-1 load Love numbers depend on the origin of the reference frame
+(Blewitt 2003, isomorphic frames): h<sub>1</sub>, l<sub>1</sub>, k<sub>1</sub>
+all shift by the same constant d when the origin changes.</p>
+<table>
+<tr><th>conversion</th><th>shift d (computed from the input values)</th></tr>
+<tr><td>CE &rarr; CF</td><td>(h<sub>1</sub> + 2 l<sub>1</sub>) / 3</td></tr>
+<tr><td>CE &rarr; CM</td><td>1 + k<sub>1</sub></td></tr>
+<tr><td>CF &rarr; CM</td><td>1 + k<sub>1</sub></td></tr>
+<tr><td>CM &rarr; CF</td><td>(h<sub>1</sub> + 2 l<sub>1</sub>) / 3</td></tr>
+<tr><td>CF/CM &rarr; CE</td><td><b>refused</b> (not recoverable from the table alone)</td></tr>
+</table>
+<p>Validated against the published PREM values: CE (&minus;0.290, 0.113, 0.021)
+&rarr; CF (&minus;0.269, 0.134); the identity k<sub>1</sub>(CM) = &minus;1 holds
+exactly; the CF&rarr;CM&rarr;CF roundtrip is exact.</p>
+<div class="note">Use ONE consistent loading model for all three sets, and match
+the frame to your GRACE degree-1 handling (TN-13 is CF) before comparing with
+GNSS loading series.</div>
+
+<h2>Example (G7 GNSS chain)</h2>
+<pre>LN = shx.readLoveNumbers("prem_load.txt", Columns="n h l k", ...
+         MaxDegree=96, Interp="pchip", InFrame="CE", OutFrame="CF");
+[up, no, ea] = g.deformation(lat, lon, kn=LN.kn, hn=LN.hn, ...
+         ln=LN.ln, Mode="points");</pre>
+
+<h2>Outputs</h2>
+<table>
+<tr><th>field</th><th>size</th><th>description</th></tr>
+<tr><td>LN.n</td><td>D x 1</td><td>degrees, ascending</td></tr>
+<tr><td>LN.kn</td><td>D x 1</td><td>potential load Love numbers k'<sub>n</sub></td></tr>
+<tr><td>LN.hn, LN.ln</td><td>D x 1</td><td>vertical / horizontal (NaN if absent from the file)</td></tr>
+<tr><td>info</td><td>struct</td><td>source, columns, frame, interpolated mask</td></tr>
+</table>
+
+<h2>Error identifiers</h2>
+<p><code class="inline">shx:readLoveNumbers:fileNotFound</code>,
+<code class="inline">:noData</code>, <code class="inline">:ambiguousColumns</code>,
+<code class="inline">:badColumns</code>, <code class="inline">:degreeGap</code>,
+<code class="inline">:needsDegree1</code>, <code class="inline">:frameNotRecoverable</code>,
+<code class="inline">:badFrame</code>.</p>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="shSynthesis.html">shSynthesis</a>
+<a href="shSynthesisDeformation.html">deformation</a>
+<a href="readTN13.html">readTN13</a>
+<a href="dataManagement.html">data management</a></p>
+<p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</div></body></html>

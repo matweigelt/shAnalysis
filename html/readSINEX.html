@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>readSINEX</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Function</span><span class="tag">v2.1</span>
+<h1>readSINEX</h1>
+<p>Read gravity-field <b>SINEX</b> files (ITSG, COST-G, ...): parameter estimates, covariance
+matrices and normal equations &mdash; e.g. to feed a released full covariance into the tvANS
+filter via <code class="inline">opts.NoiseCov</code>.</p>
+
+<h2>Syntax</h2>
+<pre>snx = shx.readSINEX(filename)                          % .snx or .gz
+snx = shx.readSINEX(f, Output="covariance")            % invert an NEQ (Cholesky)
+snx = shx.readSINEX(f, Index=shx.shIndex(60))          % reorder to idx, row for row
+[tsF, op] = ts.filter("tvANS", NoiseCov = snx.M);      % downstream use</pre>
+
+<h2>Parsed blocks</h2>
+<table>
+<tr><th>Block</th><th>Content</th></tr>
+<tr><td><code class="inline">+SOLUTION/ESTIMATE</code></td><td>parameter list: type CN/SN, degree,
+order, value, formal sigma</td></tr>
+<tr><td><code class="inline">+SOLUTION/MATRIX_ESTIMATE L|U COVA</code></td><td>covariance
+(lower/upper triangle, up to 3 values per line, symmetrized)</td></tr>
+<tr><td><code class="inline">+SOLUTION/NORMAL_EQUATION_MATRIX L|U</code></td><td>normal-equation
+matrix; inverted to a covariance with <code class="inline">Output="covariance"</code>
+(errors <code class="inline">shx:readSINEX:neqNotPD</code> if not positive definite)</td></tr>
+</table>
+
+<h2>Outputs</h2>
+<table>
+<tr><th>Field</th><th>Description</th></tr>
+<tr><td>n, m, cs</td><td>(Q,1) parameter list (cs: 0=C, 1=S), file order or Index order</td></tr>
+<tr><td>x, sig</td><td>(Q,1) estimates and formal sigmas</td></tr>
+<tr><td>M</td><td>(Q,Q) symmetric covariance or NEQ ([] if absent)</td></tr>
+<tr><td>kind</td><td><code class="inline">'COVA'</code> | <code class="inline">'NEQ'</code> | ''</td></tr>
+</table>
+
+<div class="note"><b>Verified against real data.</b> The parser was validated against a real
+ITSG-Grace2018 n96 monthly SINEX (TU Graz): the actual layout is
+<code class="inline">CN&nbsp;&nbsp;2 --&nbsp;&nbsp;0&nbsp;&nbsp;08:107:00000 ---- 2&nbsp;&nbsp;value&nbsp;&nbsp;std</code>
+&mdash; CODE = degree, SOLN = order, PT = '--'. Degree/order are therefore taken as the first
+integer token after CN/SN and the next integer &le; degree, which also covers plain
+"CN n m ... value std" layouts. A truncated real fixture (first 12 parameters + the consistent
+12&times;12 NEQ principal submatrix, values verbatim) ships in
+<code class="inline">tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx</code> and is covered by
+the robustness suite incl. Cholesky inversion against independently computed sigmas. Matrix
+indices beyond the parameter list error with <code class="inline">shx:readSINEX:badMatrixIndex</code>.
+The reader loads the whole file into memory &mdash; fine for monthly solutions to Lmax ~ 120, not
+tuned for the full 440-MB n96 NEQ archives.</div>
+
+<p class="seealso"><a href="tvANS.html">tvANS filter</a> <a href="readTN13.html">readTN13</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2.1 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

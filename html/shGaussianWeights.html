@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shGaussianWeights</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Filtering</span>
+<h1>shGaussianWeights</h1>
+<p>Degree-domain weights for isotropic Gaussian smoothing of Stokes coefficients (Jekeli 1981).</p>
+<h2>Syntax</h2>
+<pre>Wn = shGaussianWeights(nmax, radius_km)</pre><pre>Wn = shGaussianWeights(nmax, radius_km, 'R', R_km)</pre>
+<h2>Description</h2>
+
+<p>Computes the classic Jekeli (1981) / Wahr et al. (1998) Gaussian averaging weights via the stable recursion
+b = ln(2)/(1-cos(radius/R)); W0=1; W1=(1+e^-2b)/(1-e^-2b) - 1/b; W_(n+1) = -(2n+1)/b W_n + W_(n-1).
+<code class="inline">radius_km</code> is the half-width radius at which the equivalent spatial averaging kernel
+drops to half its peak value -- larger radius means stronger smoothing (faster high-degree decay of Wn).</p>
+
+<div class='note'>Validated (see validate_filters.py) against direct numerical Legendre-polynomial expansion of the continuous spatial-domain Gaussian kernel: max abs difference 2.4e-14 over n=0..60 at 300 km radius.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>nmax</code></td><td>Maximum degree to compute weights for.</td></tr><tr><td><code class='inline'>radius_km</code></td><td>Gaussian averaging radius [km] (e.g. 300 for a typical GRACE mass-change map).</td></tr><tr><td><code class='inline'>'R'</code></td><td>Sphere radius used in b = ln(2)/(1-cos(radius/R)), default 6378.1363 km.</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>Wn</code></td><td>(nmax+1)x1 vector of weights, Wn(1) = W0 = 1 always.</td></tr></table>
+<h2>Examples</h2>
+<h3>Comparing filter radii</h3><pre>Wn300 = shGaussianWeights(60, 300);
+Wn500 = shGaussianWeights(60, 500);
+plot(0:60, Wn300, 0:60, Wn500); legend('300 km','500 km');
+xlabel('degree n'); ylabel('W_n');</pre><p>A wider radius suppresses high-degree coefficients more aggressively (smaller Wn at high n), trading spatial resolution for noise reduction.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shGaussianFilter.html'>shGaussianFilter</a> <a href='shSpectralCrossover.html'>shSpectralCrossover</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shSynthesis</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spatial domain</span>
+<h1>shSynthesis</h1>
+<p>Synthesize a global or regional lat/lon grid (geoid height, gravity anomaly, gravity disturbance, disturbing potential, or equivalent water height) from Stokes coefficients.</p>
+<h2>Syntax</h2>
+<pre>[grid, lat, lon] = shSynthesis(C, S, GM, R, latVec, lonVec)</pre><pre>[grid, lat, lon, P] = shSynthesis(..., 'quantity', q, 'nmin', n1, 'nmax', n2)</pre><pre>grid = shSynthesis(..., 'P', P)   % reuse precomputed Legendre functions</pre>
+<h2>Description</h2>
+
+<p>Performs the spatial-domain reconstruction f(&phi;,&lambda;) = &sum;<sub>n</sub> kernel(n) &sum;<sub>m</sub>
+Pbar_nm(sin&phi;) [Cnm cos(m&lambda;) + Snm sin(m&lambda;)], with a quantity-dependent degree kernel (see table below).</p>
+<table><tr><th>quantity</th><th>kernel(n)</th><th>units</th></tr>
+<tr><td>geoid (default)</td><td>R</td><td>m</td></tr>
+<tr><td>potential</td><td>GM/R</td><td>m^2/s^2</td></tr>
+<tr><td>gravity_anomaly</td><td>(GM/R^2)&middot;(n-1)</td><td>m/s^2</td></tr>
+<tr><td>gravity_disturbance</td><td>(GM/R^2)&middot;(n+1)</td><td>m/s^2</td></tr>
+<tr><td>ewh</td><td>(R&middot;&rho;_ave)/(3&rho;_water) &middot; (2n+1)/(1+k_n)</td><td>m (water equiv.)</td></tr>
+<tr><td>surface_density <i>(v2.3)</i></td><td>(R&middot;&rho;_ave)/3 &middot; (2n+1)/(1+k_n)</td><td>kg/m&sup2;</td></tr>
+<tr><td>bottom_pressure <i>(v2.3)</i></td><td>g&#8320; &middot; surface_density kernel, g&#8320; = GM/R&sup2;</td><td>Pa</td></tr>
+<tr><td>deformation_up <i>(v2.3)</i></td><td>R &middot; h'_n/(1+k'_n) &mdash; elastic vertical load deformation (horizontals: <a href="shSynthesisDeformation.html">shSynthesisDeformation</a>)</td><td>m</td></tr>
+<tr><td>gravity_gradient_rr <i>(v2.3)</i></td><td>(GM/R&sup3;)(n+1)(n+2) &mdash; T_rr; 1 E&ouml;tv&ouml;s = 1e-9 s&#8315;&sup2;</td><td>1/s&sup2;</td></tr>
+</table>
+
+<div class='note'>EWH synthesis intentionally does <b>not</b> ship a built-in Love number table -- pass <code class="inline">'kn'</code> explicitly from a validated source (e.g. a PREM-based table, Wahr et al. 1998 / Han &amp; Wahr) rather than relying on unverified hardcoded constants.</div><div class='note'>Runtime is loop-based over degree and latitude; fine for typical GRACE-FO monthly nmax (60-96). For very high-resolution static fields (nmax &gt; 200) at fine grid spacing, a Clenshaw-summation rewrite would be faster if this becomes a bottleneck.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>C, S</code></td><td>(nmax+1)x(nmax+1) fully normalized Stokes coefficient matrices.</td></tr><tr><td><code class='inline'>GM, R</code></td><td>Gravitational parameter [m^3/s^2] and reference radius [m] (from shReadGFC, typically).</td></tr><tr><td><code class='inline'>latVec, lonVec</code></td><td>Grid latitude/longitude vectors in <b>degrees</b>.</td></tr><tr><td><code class='inline'>'quantity'</code></td><td>'geoid' (default) | 'gravity_anomaly' | 'gravity_disturbance' | 'potential' | 'ewh' | 'surface_density' | 'bottom_pressure' | 'deformation_up' | 'gravity_gradient_rr' (v2.3).</td></tr><tr><td><code class='inline'>'nmin', 'nmax'</code></td><td>Degree range to include. Default 0 and size(C,1)-1.</td></tr><tr><td><code class='inline'>'kn'</code></td><td>Load Love numbers k'_n (required for 'ewh', 'surface_density', 'bottom_pressure', 'deformation_up'; NOT hardcoded -- must be supplied explicitly, see Notes).</td></tr><tr><td><code class='inline'>'hn'</code> <i>(v2.3)</i></td><td>Load Love numbers h'_n ('deformation_up' only; user-supplied).</td></tr><tr><td><code class='inline'>'Height'</code> <i>(v2.3)</i></td><td>Evaluation height above R [m]: upward-continuation attenuation (R/r)^p for potential-type quantities (p = n+1 potential, n+2 anomaly/disturbance, n+3 T_rr); surface quantities reject it.</td></tr><tr><td><code class='inline'>'rho_ave', 'rho_water'</code></td><td>Densities used for 'ewh', default 5517 and 1000 kg/m^3.</td></tr><tr><td><code class='inline'>'P'</code></td><td>Precomputed Legendre array from a prior call, to skip the recursion (see Examples).</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>grid</code></td><td>numel(latVec) x numel(lonVec) synthesized quantity.</td></tr><tr><td><code class='inline'>lat, lon</code></td><td>Row vectors of the grid coordinates actually used (degrees).</td></tr><tr><td><code class='inline'>P</code></td><td>Precomputed Legendre array, for reuse in a subsequent call (see batch example).</td></tr></table>
+<h2>v2.1: fast paths</h2>
+<p><code class="inline">'method'</code>: <code class="inline">'auto'</code> (default) |
+<code class="inline">'direct'</code> | <code class="inline">'fft'</code>. On a uniform full-circle longitude
+grid the per-order sums are accumulated into FFT bins (mod nlon, exact even when orders
+alias) and inverse-transformed &mdash; validated against the direct sum to 2.9e-13; typically
+5&ndash;20&times; faster at 1&deg; resolution. Symmetric latitude grids additionally reuse the Legendre
+recursion for &plusmn;lat pairs via the parity relation Pbar<sub>nm</sub>(&minus;&phi;) = (&minus;1)&#8319;&#8314;&#7504;&thinsp;Pbar<sub>nm</sub>(&phi;)
+(exact). The internal restructuring to per-order sums also speeds up the direct path
+(one BLAS product instead of a per-degree loop).</p>
+
+<h2>Examples</h2>
+<h3>Synthesizing a geoid-change map from monthly GRACE-FO coefficients</h3><pre>[N, lat, lon] = shSynthesis(dCg, dSg, m1.GM, m1.R, -90:1:90, 0:1:359, ...
+                             'quantity', 'geoid', 'nmax', 60);
+imagesc(lon, lat, N*1000); set(gca,'YDir','normal'); colorbar; % mm</pre><p>dCg/dSg would typically already be destriped and Gaussian-smoothed (see shDestripe, shGaussianFilter).</p><h3>Batch time series reusing precomputed Legendre functions</h3><pre>lat = -90:1:90; lon = 0:1:359;
+[grid1, ~, ~, P] = shSynthesis(dC1, dS1, GM, R, lat, lon, 'nmax', 60);
+for k = 2:nMonths
+    grids(:,:,k) = shSynthesis(dCk{k}, dSk{k}, GM, R, lat, lon, 'nmax', 60, 'P', P);
+end</pre><p>P depends only on latVec and nmax, not on the coefficients -- computing it once for a fixed grid and reusing it across all months in a time series skips the Legendre recursion entirely on every subsequent call.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='legendreALF.html'>legendreALF</a> <a href='shGaussianFilter.html'>shGaussianFilter</a> <a href='shDestripe.html'>shDestripe</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

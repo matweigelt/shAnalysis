@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.readDDK / shx.applyDDK</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Filtering</span>
+<h1>shx.readDDK / shx.applyDDK</h1>
+<p>DDK (Kusche) anisotropic decorrelation filters: load and apply.</p>
+<h2>Syntax</h2>
+<pre>W  = shx.readDDK('ddk4.mat')        % converted container (recommended)
+W  = shx.readDDK('ddk4.txt')        % documented ASCII exchange format
+gF = g.applyDDK(W);  tsF = ts.applyDDK(W);
+[Cf, Sf] = shx.applyDDK(C, S, W);   % low-level</pre>
+<h2>Description</h2>
+<p>The DDK filters (Kusche 2007; Kusche et&nbsp;al. 2009; DDK1&ndash;DDK8) are the standard published anisotropic alternative to Gaussian smoothing: within each (order m, C/S) block a full matrix over degrees replaces the scalar Gaussian weight. Container: <code class="inline">W.nmax</code>, <code class="inline">W.blocks(m, cs, n, M)</code>, <code class="inline">W.name</code>. Degrees not covered pass through unchanged; a filter reaching beyond the coefficients&rsquo; nmax raises <code class="inline">shx:applyDDK:nmaxMismatch</code>.</p>
+<div class="note"><b>Native binary support (v2.2.1):</b> the released <code class="inline">Wbd_*</code> files (Rietbroek/Kusche BIN format, <a href="https://github.com/strawpants/GRACE-filter">strawpants/GRACE-filter</a>, MIT) parse directly &mdash; endian autodetect, versions 2.1 and &ge; 2.4, verified against the repository-documented pack values of Wbd_2-120.a_1d12p_4 (DDK3) to 4.4e-16; that file ships in tests/test_data. Mapping: DDK1=a_1d14p_4, DDK2=1d13, DDK3=1d12, DDK4=5d11, DDK5=1d11, DDK6=5d10, DDK7=1d10, DDK8=5d9. Use <code class="inline">Nmax=96</code> to truncate an Lmax-120 filter for n96 series (leading submatrices, reference-consistent). The .mat container and ASCII exchange formats remain supported.</div>
+<h2>Sigma handling</h2>
+<p>applyDDK invalidates formal errors (NaN / dropped) &mdash; the filter correlates coefficients. Propagate uncertainties through the filter with <code class="inline">shx.mcPropagate</code>.</p>
+<h2>See also</h2><p class="seealso"><a href="shGaussianFilter.html">shGaussianFilter</a> <a href="tvANS.html">tvANS</a> <a href="mcPropagate.html">mcPropagate</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

@@ -1,0 +1,77 @@
+# shAnalysis CI - GitHub Actions workflow template (v2.6.0)
+#
+# INSTALL: copy this file to <repo-root>/.github/workflows/shanalysis-ci.yml
+# (workflow files only take effect at the repository root, so from within
+# gravfire the shAnalysis subfolder path below applies; for a standalone
+# shAnalysis repository set WORKDIR to '.').
+#
+# Licensing (see README section "Continuous integration"):
+#   public repo  - nothing to do: setup-matlab licenses base MATLAB
+#                  automatically on GitHub-hosted runners
+#   private repo - request a MATLAB batch licensing token (MathWorks
+#                  Batch Licensing Pilot form), store it as the GitHub
+#                  secret MATLAB_BATCH_TOKEN; the env line below maps it
+#   self-hosted  - change runs-on to [self-hosted] on a machine with
+#                  MATLAB installed; no token needed
+#
+# The suite is CI-safe by design: all fetch* tests are offline
+# (skip/mirror patterns), fixtures ship in tests/test_data, and no
+# toolboxes beyond base MATLAB are required.
+#
+# Developed by Matthias Weigelt with the help of Claude (Fable 5),
+# 2026-08-08 (v2.6.0).
+
+name: shAnalysis CI
+
+on:
+  push:
+    paths:
+      - '3rdParty/shAnalysis/**'
+      - '.github/workflows/shanalysis-ci.yml'
+  pull_request:
+    paths:
+      - '3rdParty/shAnalysis/**'
+  workflow_dispatch: {}
+
+env:
+  WORKDIR: 3rdParty/shAnalysis
+  # Private repositories only - remove for public repos:
+  MLM_LICENSE_TOKEN: ${{ secrets.MATLAB_BATCH_TOKEN }}
+
+jobs:
+  test:
+    name: runAllTests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        # add windows-latest to also mirror the PCWIN64 environment:
+        # os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2026a
+
+      - name: Run test suite
+        uses: matlab-actions/run-command@v3
+        with:
+          command: >
+            cd(getenv('WORKDIR'));
+            addpath(pwd);
+            results = runtests('tests', IncludeSubfolders = false);
+            disp(table(results));
+            assertSuccess(results);
+
+      - name: Archive test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: |
+            ${{ env.WORKDIR }}/tests/perf_log.csv
+          if-no-files-found: ignore

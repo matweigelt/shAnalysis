@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Visualization suite (v2.4)</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Visualization</span>
+<h1>Visualization suite (v2.4)</h1>
+<p>Maps, basin series, triangle differences, covariance images, spectrum overlays, animations.</p>
+<h2>shx.plotSHMap / g.map</h2>
+<pre>g.map(-89:89, 0:359, quantity="ewh", kn=kn, Units="m")
+shx.plotSHMap(grid, lat, lon, Projection="hammer", CLim=[-0.3 0.3])</pre>
+<p>Divergent blue-white-red colormap symmetric about zero (built programmatically), robust 98th-percentile limits, coastline overlay from base-MATLAB <code class="inline">coastlines</code>, plate-carr&eacute;e or analytic Hammer equal-area projection &mdash; no Mapping Toolbox anywhere.</p>
+<h2>shx.plotBasinSeries</h2>
+<pre>[avg, out] = shx.basinDeconvolve(b, op);    % b: (P x K) kernel(s)
+shx.plotBasinSeries(op.tYears, avg(1,:)', out.sigma(1,:)', Units="cm")</pre>
+<p>1&sigma; band, grey patches over gaps &gt; 0.3 yr (the 2017&ndash;2018 mission gap), AR(1)-corrected trend annotation.</p>
+<h2>Triangle differences</h2>
+<pre>plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S)</pre>
+<p>Signed difference on a linear divergent scale &mdash; the before/after diagnostic for filter comparisons. Peak stays up, cells stay square (v2.3.1 contract).</p>
+<h2>shx.plotCovariance</h2>
+<pre>out = shx.readSINEX(f, Output="covariance");
+shx.plotCovariance(out.M, out.idx)   % Type="covariance" for log10</pre>
+<p>Correlation image in shIndex order with (order, C/S) block boundaries &mdash; one look shows how block-diagonal the matrix really is.</p>
+<h2>Spectrum overlays (v2.4)</h2>
+<pre>plotSHSpectrum({specSig, specErr}, 'names', {'signal','error'}, ...
+    'Kaula', 1e-5, 'MarkCrossover', true)</pre>
+<h2>shx.writeAnimation</h2>
+<pre>shx.writeAnimation(tsF, 'ewh.mp4', quantity="ewh", kn=kn, Units="m")</pre>
+<p>MPEG-4 via VideoWriter, one frame per epoch, FIXED robust color scale across the whole stack.</p>
+<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="basinDeconvolve.html">basinDeconvolve</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

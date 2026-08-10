@@ -1,0 +1,9 @@
+# generated at runtime
+tests/perf_log.csv
+*.asv
+*.autosave
+*.bak
+*.mat
+# OS noise
+Thumbs.db
+Desktop.ini

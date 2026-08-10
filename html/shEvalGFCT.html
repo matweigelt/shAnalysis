@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shEvalGFCT</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">I/O</span>
+<h1>shEvalGFCT</h1>
+<p>Evaluate time-variable Stokes coefficients C(t), S(t) at a specific epoch from a gfct-type model read by shReadGFC.</p>
+<h2>Syntax</h2>
+<pre>[Ct, St] = shEvalGFCT(model, epoch)</pre>
+<h2>Description</h2>
+
+<p>Reconstructs C(t) = C0 + trnd&middot;(t-t0) + &sum;<sub>k</sub> [acos_k&middot;cos(2&pi;(t-t0)) + asin_k&middot;sin(2&pi;(t-t0))],
+and analogously for S(t), from <code class="inline">model.C</code>/<code class="inline">model.S</code> (the constant part)
+and <code class="inline">model.variableTerms</code>.</p>
+
+<div class='note'><b>Assumption:</b> acos/asin terms are treated as annual (period = 1, same units as epoch/t0). This matches the common ICGEM gfct convention but is not universal -- check <code class="inline">model.variableTerms(:).type</code> and your model's own documentation, especially if it defines additional sub-annual terms under other tags.</div><div class='note'>If <code class="inline">model.variableTerms</code> is empty (a static file was read), this function returns the constant C, S unchanged and issues a warning.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>model</code></td><td>Struct from <a href='shReadGFC.html'>shReadGFC</a> with a non-empty <code class='inline'>variableTerms</code> field.</td></tr><tr><td><code class='inline'>epoch</code></td><td>Evaluation epoch, same units/convention as the t0 values in the file (typically decimal year).</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>Ct, St</code></td><td>(nmax+1)x(nmax+1) coefficient matrices evaluated at <code class='inline'>epoch</code>.</td></tr></table>
+<h2>Examples</h2>
+<h3>Evaluate a time-variable model at a chosen epoch</h3><pre>model = shReadGFC('EIGEN-6C4-timevariable.gfct');
+[Ct, St] = shEvalGFCT(model, 2015.5);</pre><p>Ct, St can be fed directly into shDegreeRMS or shSynthesis like any other coefficient set.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shReadGFC.html'>shReadGFC</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.shSynthesisGradientTensor</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spatial</span>
+<h1>shx.shSynthesisGradientTensor</h1>
+<p>Full gravity gradient tensor in the local north-east-up frame.</p>
+<h2>Syntax</h2>
+<pre>[G, info] = shx.shSynthesisGradientTensor(C, S, GM, R, lat, lon, ...
+    Height=250e3);      % G.uu G.nn G.ee G.un G.ue G.ne  [1/s^2]</pre>
+<h2>Description</h2>
+<p>All six independent components at satellite altitude (GOCE diagnostics; 1 E&ouml;tv&ouml;s = 1e-9 s&#8315;&sup2;). Second latitude derivatives of the Legendre functions come from the frozen first-derivative stencil applied twice (<a href="shSynthesisDeformation.html">legendreALFDeriv</a>, exact; validated vs numerical second differences at the FD floor). Validation invariants: Laplace trace(G) = 0 at 7e-16 of max|G| (built in as info.maxTraceResidual), G<sub>uu</sub> identical to the 'gravity_gradient_rr' kernel route. East-involving components are NaN at the poles.</p>
+<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="shSynthesisDeformation.html">shSynthesisDeformation</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

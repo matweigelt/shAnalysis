@@ -1,0 +1,38 @@
+function y = icgemDate2Year(d)
+%ICGEMDATE2YEAR Convert ICGEM/GRACE yyyymmdd(.hhmm) epochs to decimal years.
+%
+%   Y = shx.icgemDate2Year(D) converts date codes of the form yyyymmdd or
+%   yyyymmdd.hhmm (as used in ICGEM gfct files, TN-13/TN-14) to decimal
+%   years, using day-of-year / (days in year) with proper leap years.
+%   Values that do not look like date codes (< 1.8e7, e.g. already-decimal
+%   years in legacy synthetic files) are returned UNCHANGED - this rule
+%   keeps pre-v2.1 files evaluating identically.
+%
+%   Inputs   d  double array, yyyymmdd(.hhmm) or decimal years
+%   Outputs  y  double array, decimal years
+%
+%   Claude (Fable 5), 2026-08-07.
+%   Outputs
+%     t          (same size as input) double   decimal years
+%
+%   Developed by Matthias Weigelt with the help of Claude (Fable 5).
+
+arguments
+    d double
+end
+y = d;
+isDate = d >= 1.8e7;
+if ~any(isDate(:)), return; end
+dd = d(isDate);
+di = floor(dd);
+yyyy = floor(di / 1e4);
+mm   = floor(mod(di, 1e4) / 1e2);
+day  = mod(di, 1e2);
+frac = dd - di;                                % .hhmm
+hh   = floor(frac * 1e2);
+mins = round(mod(frac * 1e4, 1e2));
+t = datetime(yyyy, mm, day, hh, mins, zeros(size(hh)));
+y0 = dateshift(t, 'start', 'year');
+y1 = y0 + calyears(1);
+y(isDate) = yyyy + days(t - y0) ./ days(y1 - y0);
+end

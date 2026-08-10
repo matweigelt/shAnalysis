@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shSpectralCrossover</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spectral domain</span>
+<h1>shSpectralCrossover</h1>
+<p>Find the degree at which the error spectrum first exceeds the signal (degree-amplitude) spectrum -- a principled guide for choosing a truncation degree or Gaussian filter radius.</p>
+<h2>Syntax</h2>
+<pre>[nCrossover, degreeInterp] = shSpectralCrossover(spec)</pre>
+<h2>Description</h2>
+
+<p>Requires <code class="inline">spec</code> to include both <code class="inline">degAmplitude</code> and
+<code class="inline">errAmplitude</code> (i.e. produced by <a href="shDegreeRMS.html">shDegreeRMS</a> called with
+<code class="inline">sigmaC</code>/<code class="inline">sigmaS</code>). Returns the first integer degree where
+error exceeds signal, plus a sub-degree estimate via log-space linear interpolation between that degree and
+the one before it -- more useful in practice for tuning a smooth filter radius than the integer value alone.</p>
+
+<div class='note'>Returns NaN/NaN if the error spectrum never exceeds the signal spectrum over the available degree range -- this can legitimately happen for very well-determined low-degree static fields.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>spec</code></td><td>Struct from shDegreeRMS with both degAmplitude and errAmplitude fields.</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>nCrossover</code></td><td>First integer degree where errAmplitude &gt; degAmplitude. NaN if no crossing occurs.</td></tr><tr><td><code class='inline'>degreeInterp</code></td><td>Sub-degree (real-valued) interpolated crossover estimate. NaN if no crossing occurs.</td></tr></table>
+<h2>Examples</h2>
+<h3>Finding a data-driven filter radius</h3><pre>spec = shDegreeRMS(dC, dS, 'R', R, 'n0', 2, 'sigmaC', sigC, 'sigmaS', sigS);
+[nX, nXi] = shSpectralCrossover(spec);
+fprintf('crossover near degree %.1f -- consider truncating there or filtering to suppress it\n', nXi);</pre><p>A common rule of thumb is to choose a Gaussian filter radius whose weight function (shGaussianWeights) has dropped substantially by nXi, rather than truncating hard (which introduces ringing).</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shDegreeRMS.html'>shDegreeRMS</a> <a href='shGaussianFilter.html'>shGaussianFilter</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

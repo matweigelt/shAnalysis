@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shAnalysis</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Toolbox</span>
+<h1>shAnalysis v2 &mdash; overview</h1>
+<p>Spherical harmonic (Stokes coefficient) analysis for GRACE/GRACE-FO, GOCE, and static gravity
+field models. Three user-facing classes cover the whole chain; numerical internals live in the
+<code class="inline">+shx</code> package; the v1 function API remains available in
+<code class="inline">compat/</code>.</p>
+
+<h2>The three classes</h2>
+<table>
+<tr><th>Class</th><th>Scope</th></tr>
+<tr><td><a href="shCoefficients.html">shCoefficients</a></td><td>one coefficient set: read/write, arithmetic, TN-14, destriping, Gaussian smoothing, spectra, synthesis, gfct evaluation</td></tr>
+<tr><td><a href="shSeries.html">shSeries</a></td><td>time series: mean field, climatology, GAX restore, classic chain per epoch, <a href="tvANS.html">tvANS filter</a>, basin averages with exact deconvolution</td></tr>
+<tr><td><a href="shClimatology.html">shClimatology</a></td><td>bias/trend/annual/semi-annual model: components, evaluation, amplitude/phase maps</td></tr>
+</table>
+
+<h2>Typical session</h2>
+<pre>ts  = shSeries.read("GSM-2_*.gfc", Truncate=60);
+ts  = ts.restore(shSeries.read("GAD-2_*.gfc", Truncate=60));
+dts = ts - ts.mean;
+[clim, resid] = dts.climatology(Robust=true);
+tsA = dts.destripe(minOrder=6).gaussian(300);        % classic
+[tsF, op] = dts.filter("tvANS");                     % optimal
+avg = tsF.basinAverage(B, Deconvolve=true, Op=op);</pre>
+
+<h2>v1 function pages</h2>
+<p class="seealso">
+<a href="shReadGFC.html">shReadGFC</a> <a href="shEvalGFCT.html">shEvalGFCT</a>
+<a href="legendreALF.html">legendreALF</a> <a href="shDegreeRMS.html">shDegreeRMS</a>
+<a href="shSpectralCrossover.html">shSpectralCrossover</a> <a href="plotSHSpectrum.html">plotSHSpectrum</a>
+<a href="plotSHCoeffTriangle.html">plotSHCoeffTriangle</a> <a href="shDestripe.html">shDestripe</a>
+<a href="shGaussianWeights.html">shGaussianWeights</a> <a href="shGaussianFilter.html">shGaussianFilter</a>
+<a href="shSynthesis.html">shSynthesis</a></p>
+<p>These signatures still work unchanged from <code class="inline">compat/</code> and delegate to the
+same <code class="inline">+shx</code> internals the classes use.</p>
+
+<h2>New in v2.1</h2>
+<table>
+<tr><th>Area</th><th>What</th></tr>
+<tr><td>SH analysis</td><td><a href="shAnalysisGrid.html">shCoefficients.analysis / shx.shAnalysisGrid</a>:
+grid or scattered points &rarr; Stokes coefficients. Exact fast per-order solver for ring grids,
+chunked least squares with Kaula regularization for scattered data, quantity kernels inverted.</td></tr>
+<tr><td>Degree 1</td><td><a href="readTN13.html">readTN13</a> + <code class="inline">addDegree1</code>:
+TN-13 geocenter coefficients complete the GSM + TN-14 + TN-13 chain.</td></tr>
+<tr><td>Filter scale &amp; uncertainty</td><td><a href="tvANS.html">tvANS</a>: block-diagonal fast path
+(identical results, Lmax ~ 120 tractable), posterior 1-sigma per coefficient/month
+(<code class="inline">tsF.sigmaCs/Ss</code>), propagated basin-average sigmas
+(<code class="inline">out.sigma</code>).</td></tr>
+<tr><td>Climatology</td><td>Extra periods (S2/K2/K1 tidal aliases), per-epoch weights,
+per-coefficient significance on every component (<code class="inline">trend().sigmaC</code>).</td></tr>
+<tr><td>Synthesis speed</td><td>FFT along longitude (<code class="inline">Method="auto"|"fft"</code>) +
+latitude parity trick; scaled Legendre recursion stable to degree 2190.</td></tr>
+<tr><td>Gap handling</td><td><code class="inline">ts.dropNaN()</code>, <code class="inline">ts.select(...)</code>
+for the GRACE&harr;GRACE-FO gap; irregular sampling handled natively downstream.</td></tr>
+<tr><td>I/O</td><td>ICGEM format 2.0 (piecewise gfct), <a href="readSINEX.html">readSINEX</a>
+(covariances/NEQs), yyyymmdd epoch conversion; two real ITSG monthly solutions
+(GRACE 2008-04, GRACE-FO 2025-12) ship in tests/test_data.</td></tr>
+</table>
+
+<h2>Validation</h2>
+<p><code class="inline">runAllTests</code> executes five suites: numerical correctness (golden and
+analytic values), API contract (error identifiers, immutability, dimensions), robustness (NaN
+stacks, degenerate basins, corrupted files, poles), the complete unmodified v1 suite against the
+compat layer, and performance benchmarks (with a Legendre-cache speedup assertion). tvANS numerics
+were additionally cross-validated in Python before the MATLAB port.</p>
+
+<div class="note">Policy: no physical tables are hardcoded &mdash; Love numbers, TN-14 corrections
+etc. are always user-supplied and parsed, never assumed.</div>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

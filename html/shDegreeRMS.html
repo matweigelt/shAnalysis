@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shDegreeRMS</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spectral domain</span>
+<h1>shDegreeRMS</h1>
+<p>Compute degree variance, degree RMS, geoid degree amplitude, and (optionally) the formal-error degree amplitude of a set of Stokes coefficients.</p>
+<h2>Syntax</h2>
+<pre>spec = shDegreeRMS(C, S)</pre><pre>spec = shDegreeRMS(C, S, 'R', R, 'n0', n0, 'sigmaC', sigC, 'sigmaS', sigS)</pre>
+<h2>Description</h2>
+
+<p>This is the standard first quantitative look at a spherical harmonic field: how is the signal's power
+distributed across degree (spatial scale)? Real geophysical signal typically decays smoothly with degree;
+GRACE/GRACE-FO error grows with degree and eventually dominates -- the degree at which that happens is the
+natural truncation/filter-radius choice (see <a href="shSpectralCrossover.html">shSpectralCrossover</a>).</p>
+
+
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>C, S</code></td><td>(nmax+1)x(nmax+1) fully normalized Stokes coefficient matrices.</td></tr><tr><td><code class='inline'>'R'</code></td><td>Reference radius [m] used to convert degree RMS into geoid-height-equivalent amplitude. Default 6378136.3.</td></tr><tr><td><code class='inline'>'n0'</code></td><td>Lowest degree to include; coefficients below n0 are zeroed first (e.g. n0=2 to drop degree 0/1 translation/scale terms). Default 0.</td></tr><tr><td><code class='inline'>'sigmaC', 'sigmaS'</code></td><td>Formal error matrices, same layout as C, S. If given, an error-spectrum ('errRMS'/'errAmplitude') is also computed.</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>spec.degree</code></td><td>(nmax+1)x1 vector 0..nmax.</td></tr><tr><td><code class='inline'>spec.degVariance</code></td><td>Sum of Cnm^2+Snm^2 over m, per degree.</td></tr><tr><td><code class='inline'>spec.degRMS</code></td><td>sqrt(degVariance).</td></tr><tr><td><code class='inline'>spec.degAmplitude</code></td><td>R * degRMS, in the same units as R (typically meters, geoid-height-equivalent).</td></tr><tr><td><code class='inline'>spec.cumAmplitude</code></td><td>R * sqrt(cumsum(degVariance)) -- cumulative amplitude up to and including degree n.</td></tr><tr><td><code class='inline'>spec.errRMS, spec.errAmplitude</code></td><td>Same quantities computed from sigmaC/sigmaS, if supplied.</td></tr></table>
+<h2>Examples</h2>
+<h3>Basic degree-amplitude spectrum of a monthly gravity change</h3><pre>spec = shDegreeRMS(dC, dS, 'R', m1.R, 'n0', 2);
+plotSHSpectrum(spec);</pre><p>Plots the geoid-height-equivalent degree amplitude in mm on a log-log scale. Degree 0/1 are excluded (n0=2) since they represent geocenter/reference-frame terms, not gravity-change signal.</p><h3>Including the error spectrum and finding a filter radius</h3><pre>spec = shDegreeRMS(dC, dS, 'R', m1.R, 'n0', 2, 'sigmaC', m2.sigmaC, 'sigmaS', m2.sigmaS);
+[nX, nXinterp] = shSpectralCrossover(spec);
+fprintf('signal/error crossover near degree %.1f\n', nXinterp);</pre><p>The crossover degree is a principled starting point for choosing a Gaussian filter radius or hard truncation degree -- filtering should suppress degrees beyond this point.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='plotSHSpectrum.html'>plotSHSpectrum</a> <a href='shSpectralCrossover.html'>shSpectralCrossover</a> <a href='shGaussianFilter.html'>shGaussianFilter</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

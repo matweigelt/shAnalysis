@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.eofAnalysis</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Time series</span>
+<h1>shx.eofAnalysis</h1>
+<p>Empirical orthogonal functions of a coefficient series.</p>
+<h2>Syntax</h2>
+<pre>[~, resid] = ts.climatology();
+[modes, pcs, ve] = shx.eofAnalysis(resid, NModes=4);
+modes{1}.map(quantity="ewh", kn=kn)   % spatial pattern of mode 1
+plot(resid.epochs, pcs(:,1))          % its temporal amplitude</pre>
+<h2>Description</h2>
+<p>SVD of the time-centered coefficient stack. Mode k carries U<sub>k</sub>s<sub>k</sub>/&radic;(T&minus;1) as shCoefficients, PCS columns are unit variance, so field &times; pc reconstructs the mode exactly; VE are variance fractions. Tested: a synthetic two-mode field is recovered with &gt; 99.9% variance in two modes and pattern correlation &gt; 0.98.</p>
+<h2>See also</h2><p class="seealso"><a href="shClimatology.html">climatology</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

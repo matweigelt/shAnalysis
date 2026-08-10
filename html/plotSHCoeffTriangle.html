@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>plotSHCoeffTriangle</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Diagnostics / plotting</span>
+<h1>plotSHCoeffTriangle</h1>
+<p>Degree/order 'butterfly' triangle image of log|Cnm| (left half) and log|Snm| (right half) -- the standard first diagnostic for spotting striping, leakage, or bad coefficients.</p>
+<h2>Syntax</h2>
+<pre>plotSHCoeffTriangle(C, S)</pre><pre>plotSHCoeffTriangle(C, S, 'nmax', n, 'clim', [lo hi])</pre>
+<h2>Description</h2>
+
+<p>Displays |Cnm| and |Snm| together as a single mirrored image, degree n on the vertical axis (n=0 at top),
+order m on the horizontal axis (Cnm to the right of center, Snm mirrored to the left). Because real
+geophysical signal is generally smooth in both n and m, patterns that break that smoothness are diagnostic:</p>
+<ul>
+<li><b>Vertical banding at a fixed order</b> (a column that is systematically brighter than its neighbors) is
+the classic signature of correlated noise / striping, and is what <a href="shDestripe.html">shDestripe</a> targets.</li>
+<li><b>Isolated bright spots</b> at a single (n,m) with no smooth relation to neighboring coefficients usually
+indicate a bad or corrupted coefficient rather than real signal.</li>
+<li><b>A broad bright wedge at high degree, low-to-mid order</b> is typically GRACE/GRACE-FO's characteristic
+error growth with degree, motivating Gaussian smoothing.</li>
+</ul>
+
+
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>C, S</code></td><td>(nmax+1)x(nmax+1) Stokes coefficient matrices.</td></tr><tr><td><code class='inline'>'nmax'</code></td><td>Max degree to display, default size(C,1)-1.</td></tr><tr><td><code class='inline'>'clim'</code></td><td>[min max] log10(|value|) color limits; default auto-scaled.</td></tr><tr><td><code class='inline'>'ax'</code></td><td>Axes handle to plot into (default: new figure).</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>h</code></td><td>The axes handle used.</td></tr></table>
+<h2>Examples</h2>
+<h3>Basic triangle plot of a monthly gravity-change field</h3><pre>plotSHCoeffTriangle(dC, dS, 'nmax', 60);</pre><p>Look for vertical banding at high order -- if present, destripe before proceeding to spatial synthesis.</p><h3>Before/after destriping comparison</h3><pre>figure;
+subplot(1,2,1); plotSHCoeffTriangle(dC, dS, 'nmax', 60, 'ax', gca); title('before');
+[dCf, dSf] = shDestripe(dC, dS, 'minOrder', 6);
+subplot(1,2,2); plotSHCoeffTriangle(dCf, dSf, 'nmax', 60, 'ax', gca); title('after');</pre><p>The vertical banding at high order should be visibly reduced after destriping, without the low-order coefficients (real signal) changing noticeably.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shDestripe.html'>shDestripe</a> <a href='plotSHSpectrum.html'>plotSHSpectrum</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

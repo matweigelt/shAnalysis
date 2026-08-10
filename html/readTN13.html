@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>readTN13</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Function</span><span class="tag">v2.1</span>
+<h1>readTN13</h1>
+<p>Read a GRACE/GRACE-FO <b>TN-13 geocenter (degree-1)</b> file and complete the standard
+processing chain: GSM coefficients + <code class="inline">applyTN14</code> (C20/C30) +
+<code class="inline">addDegree1</code> (C10/C11/S11). Without degree 1, EWH and mass grids are
+systematically biased.</p>
+
+<h2>Syntax</h2>
+<pre>tn = shx.readTN13(filename)              % .txt or .gz
+g1 = g.addDegree1(tn)                    % nearest epoch within Tolerance=0.05 yr
+g1 = g.addDegree1("TN-13_GEOC_CSR_RL06.txt")</pre>
+
+<h2>Format</h2>
+<p>Official TN-13 products (JPL/CSR/GFZ) with data lines</p>
+<pre>GRCOF2  n  m  Clm  Slm  Clm_sig  Slm_sig  begin  end</pre>
+<p>n = 1, m = 0/1, epochs yyyymmdd.hhmm. Line pairs sharing an interval are combined into one
+monthly record with the interval mid-point as epoch (decimal years via
+<code class="inline">shx.icgemDate2Year</code>).</p>
+
+<h2>Outputs</h2>
+<table>
+<tr><th>Field</th><th>Size</th><th>Description</th></tr>
+<tr><td>epoch</td><td>(K,1) double</td><td>interval mid-points [decimal years]</td></tr>
+<tr><td>C10, C11, S11</td><td>(K,1) double</td><td>degree-1 Stokes coefficients</td></tr>
+<tr><td>sigC10, sigC11, sigS11</td><td>(K,1) double</td><td>1-sigma formal errors</td></tr>
+<tr><td>t0, t1</td><td>(K,1) double</td><td>interval bounds [decimal years]</td></tr>
+</table>
+
+<div class="note"><b>Verified against real data.</b> The parser is validated against a real
+GFZ TN-13 (RL06.3, 2002-04&nbsp;&ndash;&nbsp;2026-04): 256 months, 512 perfectly paired GRCOF2
+lines in exactly the layout above (9 columns; a 10th solution-flags column mentioned in the
+header does not occur in the data and would be ignored). The file ships as a fixture in
+<code class="inline">tests/test_data/TN-13_GEOC_GFZ_RL06_3.txt</code>; the robustness suite checks
+hard expected values (first/last month, epoch conversion to 1e-12), the full degree-1 chain on
+the real ITSG 2008-04 solution, the gzip branch, and that the GRACE&harr;GRACE-FO gap
+(2017.39&ndash;2018.41) is visible in the sampling &mdash; the motivation for
+<code class="inline">ts.dropNaN()/select()</code>. Non-GRCOF2 lines (including the yaml header's
+<code class="inline">key_name : GRCOF2</code>) are skipped safely. JPL/CSR TN-13 variants share
+this record format per the GRACE Level-2 handbook.</div>
+
+<p class="seealso"><a href="shCoefficients.html">shCoefficients</a> <a href="readSINEX.html">readSINEX</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2.1 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

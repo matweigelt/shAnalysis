@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>removeGIA (shSeries / shClimatology)</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Processing</span>
+<h1>removeGIA (shSeries / shClimatology)</h1>
+<p>Glacial isostatic adjustment correction &mdash; the missing step before every trend map.</p>
+<h2>Syntax</h2>
+<pre>gia = shCoefficients.read('ICE-6G_D_Stokes_trend.gfc');   % rate [1/yr]
+ts2 = ts.removeGIA(gia);                 % subtract rate*(t - T0) per epoch
+cl2 = ts.climatology().removeGIA(gia);   % or correct the fitted trend</pre>
+<h2>Description</h2>
+<p>Secular trends in GRACE/GRACE-FO Stokes coefficients mix present-day mass change with the solid-Earth GIA signal. Both routes above are exactly consistent for the trend (tested to 1e-13): subtracting the linear model from the series, or subtracting the rate coefficients from the fitted trend. Models are ALWAYS user-supplied gfc files &mdash; never embedded.</p>
+<div class="note"><b>Honest accounting:</b> the model is treated as exact; its uncertainty (often the dominant regional trend error over Laurentia, Fennoscandia, Antarctica) is not propagated. Best practice: difference several GIA models (ICE-6G_D, Caron, A/W13) as a spread estimate &mdash; see the guide.</div>
+<h2>See also</h2><p class="seealso"><a href="shSeries.html">shSeries</a> <a href="shClimatology.html">shClimatology</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

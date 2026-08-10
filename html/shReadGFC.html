@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shReadGFC</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">I/O</span>
+<h1>shReadGFC</h1>
+<p>Read an ICGEM ASCII gravity field model file (.gfc, .gfct, or gzip-compressed .gfc.gz / .gfct.gz) into Stokes coefficient matrices and metadata.</p>
+<h2>Syntax</h2>
+<pre>model = shReadGFC(filename)</pre>
+<h2>Description</h2>
+
+<p>Parses the ICGEM header (key:value pairs up to <code class="inline">end_of_head</code>) and the coefficient
+block. Supports both plain static models (<code class="inline">gfc</code> records) and time-variable models
+(<code class="inline">gfct</code> records plus <code class="inline">trnd</code>/<code class="inline">acos</code>/<code class="inline">asin</code>
+term records). Gzip-compressed files are decompressed to a temporary directory automatically and cleaned up afterward.</p>
+
+<div class='note'>GM and R fall back to GRACE-era constants (3.986004415e14, 6378136.3) only if the header does not provide them -- always check <code class="inline">model.header</code> if you need to confirm what was actually read from the file.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>filename</code></td><td>Path to a .gfc, .gfct, .gfc.gz, or .gfct.gz file.</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>model.GM</code></td><td>Gravitational parameter [m^3/s^2] (from the header, or a GRACE-era fallback if absent).</td></tr><tr><td><code class='inline'>model.R</code></td><td>Reference radius [m].</td></tr><tr><td><code class='inline'>model.nmax</code></td><td>Maximum degree found in the file.</td></tr><tr><td><code class='inline'>model.C, model.S</code></td><td>(nmax+1)x(nmax+1) coefficient matrices, C(n+1,m+1), lower-triangular.</td></tr><tr><td><code class='inline'>model.sigmaC, model.sigmaS</code></td><td>Formal errors, same layout (NaN where not given).</td></tr><tr><td><code class='inline'>model.header</code></td><td>Struct of all raw header key:value pairs.</td></tr><tr><td><code class='inline'>model.variableTerms</code></td><td>Struct array of trnd/acos/asin records (empty for static models) -- see <a href='shEvalGFCT.html'>shEvalGFCT</a>.</td></tr><tr><td><code class='inline'>model.modelname</code></td><td>Model name string, if present in the header.</td></tr></table>
+<h2>v2.1: ICGEM format 2.0</h2>
+<p>Files with <code class="inline">format icgem2.0</code> in the header are fully supported:
+piecewise <code class="inline">gfct</code> validity intervals (all pieces are stored in
+<code class="inline">variableTerms</code>; <code class="inline">C/S</code> expose the most recent piece),
+per-term [t0,&thinsp;t1) activity windows on <code class="inline">trnd/acos/asin</code> lines, explicit
+period columns, and yyyymmdd(.hhmm) epochs converted to decimal years
+(<code class="inline">shx.icgemDate2Year</code>). <code class="inline">shEvalGFCT</code> evaluates the correct
+piece per epoch and errors with <code class="inline">shEvalGFCT:epochOutside</code> beyond the covered
+range. ICGEM 1.0 behavior is preserved; note one documented change: an 8-column
+<code class="inline">acos/asin</code> line is now read as EIGEN-style
+&ldquo;period in the last column&rdquo; (with the reference epoch taken from the matching
+<code class="inline">gfct</code> line), while &ge;9-column lines keep the pre-v2.1 t0/t1 reading.</p>
+
+<h2>Examples</h2>
+<h3>Reading a static model</h3><pre>m = shReadGFC('EGM2008.gfc');
+fprintf('GM=%.6e, R=%.3f, nmax=%d\n', m.GM, m.R, m.nmax);</pre><p>Standard static field, e.g. a mean gravity field or geoid model.</p><h3>Reading a GRACE-FO monthly solution and forming an anomaly</h3><pre>m1 = shReadGFC('GSM-2_202401.gfc');
+m2 = shReadGFC('GSM-2_202402.gfc');
+dC = m2.C - m1.C;
+dS = m2.S - m1.S;</pre><p>Monthly gravity-change coefficients, the standard input to the spectral/spatial analysis chain (see the shAnalysis workflow overview).</p><h3>Reading a gzip-compressed file directly</h3><pre>m = shReadGFC('GSM-2_202401.gfc.gz');</pre><p>No manual decompression needed -- handled transparently.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shEvalGFCT.html'>shEvalGFCT</a> <a href='shDegreeRMS.html'>shDegreeRMS</a> <a href='shSynthesis.html'>shSynthesis</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

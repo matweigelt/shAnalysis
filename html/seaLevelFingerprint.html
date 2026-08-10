@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.seaLevelFingerprint</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Sea level</span>
+<h1>shx.seaLevelFingerprint</h1>
+<p>Elastic sea-level fingerprint: the sea-level equation, iterated.</p>
+<h2>Syntax</h2>
+<pre>idx = shx.shIndex(96, MinDegree=0);
+loadF = @(la,lo) -sigmaIce(la,lo);        % kg/m^2, negative = loss
+[S, grid, info] = shx.seaLevelFingerprint(loadF, oceanMask, idx, ...
+    kn=kn, hn=hn);
+shx.plotSHMap(info.S2D, grid.latDeg, grid.lonDeg, Units="m")</pre>
+<h2>Description</h2>
+<p>The ocean does not rise uniformly: S = O(N &minus; U + &kappa;) with geoid change N and uplift U from the TOTAL load and &kappa; enforcing global mass conservation (Farrell &amp; Clark 1976, elastic limit), iterated on the exact Gauss-Legendre quadrature pair of the toolbox. Python-validated: mass conserved to machine precision, ~11 iterations, and the classic pattern &mdash; sea level FALLS in the near field of a melting mass (lost self-attraction + rebound) and exceeds eustatic in the far field (validation: near &minus;0.3 mm vs far +0.8 mm about eustatic +0.6 mm per unit load).</p>
+<div class="note"><b>Limitations (by design, documented):</b> elastic only (no viscous GIA), no rotational feedback, fixed coastlines, band-limited masks (Gibbs at coasts &mdash; OverSample and Lmax control it).</div>
+<h2>See also</h2><p class="seealso"><a href="shSynthesisDeformation.html">shSynthesisDeformation</a> <a href="basinKernel.html">evalMask</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

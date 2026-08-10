@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>plotSHSpectrum</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Spectral domain / plotting</span>
+<h1>plotSHSpectrum</h1>
+<p>Log-log degree-amplitude spectrum plot, with support for overlaying several spectra (e.g. successive months, or signal vs. formal error).</p>
+<h2>Syntax</h2>
+<pre>plotSHSpectrum(spec)</pre><pre>plotSHSpectrum({spec1, spec2, ...}, 'names', {'a','b',...})</pre>
+<h2>Description</h2>
+
+<p>Plots <code class="inline">spec.degree</code> against a chosen field (default <code class="inline">degAmplitude</code>)
+on a log-log scale. This is the standard visualization for interpreting a <a href="shDegreeRMS.html">shDegreeRMS</a>
+result: a smoothly decaying line is dominated by real signal; a spectrum that flattens or turns upward at high
+degree is dominated by noise (see the Getting Started guide / accompanying PDF for annotated examples).</p>
+
+
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>specs</code></td><td>A single spec struct (from shDegreeRMS), or a cell array of specs to overlay.</td></tr><tr><td><code class='inline'>'names'</code></td><td>Cell array of legend labels, one per spec.</td></tr><tr><td><code class='inline'>'units'</code></td><td>'mm' (default) or 'm' for the y-axis.</td></tr><tr><td><code class='inline'>'field'</code></td><td>Which spec field to plot, default 'degAmplitude'; also accepts 'errAmplitude' to plot the error spectrum.</td></tr><tr><td><code class='inline'>'ax'</code></td><td>Axes handle to plot into (default: new figure).</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>h</code></td><td>Vector of line handles, one per spectrum plotted.</td></tr></table>
+<h2>Examples</h2>
+<h3>Single spectrum</h3><pre>spec = shDegreeRMS(dC, dS, 'R', R, 'n0', 2);
+plotSHSpectrum(spec);</pre><p>Quick look at one month's degree-amplitude spectrum.</p><h3>Signal vs. error overlay</h3><pre>spec = shDegreeRMS(dC, dS, 'R', R, 'n0', 2, 'sigmaC', sigC, 'sigmaS', sigS);
+plotSHSpectrum({spec, spec}, 'names', {'signal','error'}, 'field', 'degAmplitude'); % first trace
+hold on;
+plotSHSpectrum(spec, 'field', 'errAmplitude', 'ax', gca, 'names', {'error'});</pre><p>Overlaying signal and error spectra makes the crossover degree visually obvious -- compare against the numeric value from shSpectralCrossover.</p><h3>Comparing several months</h3><pre>plotSHSpectrum({spec_jan, spec_feb, spec_mar}, 'names', {'Jan','Feb','Mar'});</pre><p>Useful for spotting months with anomalous high-degree power (often a sign of a bad solution or unusually strong striping that month).</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='shDegreeRMS.html'>shDegreeRMS</a> <a href='shSpectralCrossover.html'>shSpectralCrossover</a> <a href='plotSHCoeffTriangle.html'>plotSHCoeffTriangle</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

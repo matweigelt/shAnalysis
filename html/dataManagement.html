@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Data management</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Data management</span>
+<h1>Data folder, DDK family, ICGEM access (v2.4.1)</h1>
+<p>One persistent storage location, all released DDK filters, and the ICGEM model catalogue.</p>
+<h2>shx.dataFolder</h2>
+<pre>shx.dataFolder("D:/geodata/shx")   % set once, persists across sessions
+shx.dataFolder()                    % query (default: &lt;toolbox&gt;/data)
+shx.dataFolder("reset")</pre>
+<p>All fetchers store beneath it: itsg_series/, DDK/, icgem/. Point it at a shared network folder to reuse downloads across machines.</p>
+<h2>shx.fetchDDK / shx.readDDK("DDK&lt;n&gt;")</h2>
+<pre>shx.fetchDDK(1:8);                  % ~10 MB each, skips existing
+W5 = shx.readDDK("DDK5");           % name resolution against dataFolder
+gF = g.applyDDK(W5);</pre>
+<p>All eight released filters (Kusche 2007; Kusche et&nbsp;al. 2009), strong &rarr; weak: DDK1 (a=1e14) &hellip; DDK8 (5e9); regularization a&middot;l&#8308;. DDK3 ships inside the toolbox and never needs fetching; an unfetched name errors with the fetch hint (<code class="inline">shx:readDDK:notFetched</code>). Filenames come from one mapping (<code class="inline">shx.ddkNames</code>), verified against the repository.</p>
+<h2>shx.listICGEM / shx.fetchICGEM</h2>
+<pre>T = shx.listICGEM();                        % 180+ static models: name,
+sortrows(T, 'year', 'descend')              % year, degree, data, url
+f = shx.fetchICGEM("EGM2008");              % -> dataFolder/icgem/*.gfc
+g = shCoefficients.read(f);</pre>
+<p>The static catalogue is parsed from icgem.gfz.de/tom_longtime (parser fixture-tested offline against a saved page). Name resolution: exact match, else unique prefix; ambiguity errors with candidates. <code class="inline">Type="temporal"</code> (reworked v2.4.2) returns the <b>full temporal catalogue</b> parsed from the series-page links of /sl/temporal &mdash; every series of every center (~70+ across the groups 01_GRACE, 02_COST-G, 03_other, 04_SLR) with columns group, center, series, path, url (series page) and zip (whole-series ZIP, hundreds of MB). Passing a catalogue <code class="inline">path</code> into <code class="inline">Series=</code> lists the <b>individual files</b> of that series (name, url) &mdash; single monthly .gfc files download directly via websave; the earlier "JavaScript-only" caveat is obsolete. Example:</p>
+<pre>T = shx.listICGEM(Type="temporal");             % 70+ series, all centers
+F = shx.listICGEM(Type="temporal", ...
+        Series="03_other/ITSG/ITSG-Grace2018/monthly");
+websave("m1.gfc", F.url(1));                    % one monthly file</pre>
+<p>For ITSG monthly files <a href="fetchITSG.html">shx.fetchITSG</a> remains the convenient route, whose default target is dataFolder/itsg_series.</p>
+<h2>See also</h2><p class="seealso"><a href="fetchITSG.html">fetchITSG</a> <a href="shGaussianFilter.html">DDK filtering</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4.1 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

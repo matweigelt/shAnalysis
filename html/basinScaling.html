@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.basinScaling</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Basin analysis</span>
+<h1>shx.basinScaling</h1>
+<p>Leakage/attenuation scaling factors by forward modelling.</p>
+<h2>Syntax</h2>
+<pre>[k, info] = shx.basinScaling(op, b, tsModel);            % tvANS op
+[k, info] = shx.basinScaling(W, b, tsModel, idx=idx, tYears=ep);  % matrix</pre>
+<h2>Description</h2>
+<p>The classic gain-factor approach: push a model series through the SAME operator as the data and regress true against filtered basin averages, k = &Sigma;a<sub>true</sub>a<sub>filt</sub>/&Sigma;a<sub>filt</sub>&sup2;. Scaled series: k&middot;(b&prime;x<sub>filt</sub>)/(b&prime;b). Operators: tvANS struct, static P&times;P matrix (Gaussian/DDK/fan), or function handle. INFO carries sigmaK and per-month factors (PerMonth=true) so the model-dependence assumption is checkable. Complements <a href="basinDeconvolve.html">basinDeconvolve</a> (operator inversion on a kernel set) with the literature-standard scaling route.</p>
+<div class="note">k depends on the MODEL's spatial pattern inside and around the basin. Quote k with its model dependence, or use two models and report the spread.</div>
+<h2>See also</h2><p class="seealso"><a href="basinDeconvolve.html">basinDeconvolve</a> <a href="basinKernel.html">basinKernel</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

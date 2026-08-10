@@ -1,0 +1,742 @@
+[
+ {
+  "name": "shx.applyDDK",
+  "example": "W = shx.readDDK(\"DDK3\", Nmax = 60);\n[Cf, Sf] = shx.applyDDK(g.C, g.S, W);",
+  "run": true
+ },
+ {
+  "name": "shx.basinDeconvolve",
+  "example": "[avg, out] = shx.basinDeconvolve(B, op);   % op from ts.filter(\"tvANS\")\nerrorbar(op.tYears, avg(1,:), out.sigma(1,:))",
+  "run": true
+ },
+ {
+  "name": "shx.basinKernel",
+  "example": "b = shx.basinKernel(idx, maskAmazon, TaperKm = 200);",
+  "run": false
+ },
+ {
+  "name": "shx.basinScaling",
+  "example": "k = shx.basinScaling(op, b, tsHydModel);   % scale factor vs a model series",
+  "run": false
+ },
+ {
+  "name": "shx.buildNoiseCov",
+  "example": "N = shx.buildNoiseCov(Xres, idx);          % empirical order/parity blocks",
+  "run": true
+ },
+ {
+  "name": "shx.buildSignalCov",
+  "example": "S = shx.buildSignalCov(Xres, N, idx, Mode = \"isotropic\");",
+  "run": true
+ },
+ {
+  "name": "shx.combineCenters",
+  "example": "tsC = shx.combineCenters({tsCSR, tsGFZ, tsJPL});   % VCE-weighted",
+  "run": true
+ },
+ {
+  "name": "shx.compareSeries",
+  "example": "    rep = shx.compareSeries({tsCSR, tsGFZ, tsJPL}, ...\n        Names = [\"CSR\", \"GFZ\", \"JPL\"]);\n    fprintf(\"TCH noise: %s\\n\", sprintf(\"%.3g \", rep.tch.sigma))",
+  "run": true
+ },
+ {
+  "name": "shx.compareSolutions",
+  "example": "    rep = shx.compareSolutions(g, g.gaussian(350), Names = [\"raw\", \"G350\"]);\n    fprintf(\"crossover n = %d, spatial corr = %.3f\\n\", ...\n        rep.spectral.ncross, rep.spatial.corr)",
+  "run": true
+ },
+ {
+  "name": "shx.csFromVec",
+  "example": "[C, S] = shx.csFromVec(x, idx);           % vector -> triangle matrices",
+  "run": true
+ },
+ {
+  "name": "shx.dataFolder",
+  "example": "shx.dataFolder(\"D:/grace_data\")      % shared download location",
+  "run": false
+ },
+ {
+  "name": "shx.ddkNames",
+  "example": "names = shx.ddkNames();               % Wbd file names DDK1..8",
+  "run": true
+ },
+ {
+  "name": "shx.diffSpectrum",
+  "example": "    gF = g.gaussian(350);\n    spec = shx.diffSpectrum(g.C, g.S, gF.C, gF.S);\n    semilogy(spec.n, [spec.amp1, spec.diffAmp]); grid on",
+  "run": true
+ },
+ {
+  "name": "shx.effectiveCorr",
+  "example": "    ec = shx.effectiveCorr(avg(1,:)', avg(2,:)');   % two basin series\n    fprintf(\"r = %.3f (p = %.3g, Neff = %.0f)\\n\", ec.r, ec.p, ec.neff)",
+  "run": true
+ },
+ {
+  "name": "shx.eofAnalysis",
+  "example": "[modes, pcs, ve] = shx.eofAnalysis(resid);\nplot(resid.epochs, pcs(:, 1))         % leading principal component",
+  "run": true
+ },
+ {
+  "name": "shx.errorMap",
+  "example": "sig = shx.errorMap(M, idx, -89:4:89, 0:4:356, quantity = \"ewh\", kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shx.evalMask",
+  "example": "[mask, area] = shx.evalMask(idx, capSpec);   % quadrature-grid mask",
+  "run": false
+ },
+ {
+  "name": "shx.fetchDDK",
+  "example": "shx.fetchDDK(1:8);                    % ~80 MB, skips existing",
+  "run": false
+ },
+ {
+  "name": "shx.fetchICGEM",
+  "example": "f = shx.fetchICGEM(\"GOCO06s\");        % static model by name",
+  "run": false
+ },
+ {
+  "name": "shx.fetchITSG",
+  "example": "shx.fetchITSG([\"2008-04\", \"2025-12\"], Nmax = 96);",
+  "run": false
+ },
+ {
+  "name": "shx.fetchTN",
+  "example": "    shx.fetchTN(Update = true);            % monthly refresh, safe swap\n    tn13 = shx.readTN13(fullfile(shx.dataFolder(), \"TN\", ...\n               \"TN-13_GEOC_CSR_RL06.3.txt\"));\n    g1 = g.applyTN14(tn14).addDegree1(tn13);",
+  "run": false
+ },
+ {
+  "name": "shx.fitDeterministicModel",
+  "example": "[model, Xres, coef, A, sig] = shx.fitDeterministicModel(X, tYears, ARCorrect = true);",
+  "run": true
+ },
+ {
+  "name": "shx.gaussLegendre",
+  "example": "[xNodes, w] = shx.gaussLegendre(61);   % quadrature nodes/weights",
+  "run": true
+ },
+ {
+  "name": "shx.geocentric2geodetic",
+  "example": "latGd = shx.geocentric2geodetic(latGc);   % WGS84",
+  "run": true
+ },
+ {
+  "name": "shx.geodetic2geocentric",
+  "example": "latGc = shx.geodetic2geocentric(latGd);   % before synthesis",
+  "run": true
+ },
+ {
+  "name": "shx.icgemDate2Year",
+  "example": "t = shx.icgemDate2Year(20080415.0000);   % -> 2008.29",
+  "run": true
+ },
+ {
+  "name": "shx.kernelFactors",
+  "example": "kf = shx.kernelFactors(\"ewh\", 60, GM, R, kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shx.legendreALF",
+  "example": "P = shx.legendreALF(96, deg2rad(-89:89));   % stable to n=2190",
+  "run": true
+ },
+ {
+  "name": "shx.legendreALFDeriv",
+  "example": "[P, dP] = shx.legendreALFDeriv(60, theta);   % for deformation/tensor",
+  "run": true
+ },
+ {
+  "name": "shx.legendreCached",
+  "example": "shx.legendreCached(\"clear\")           % drop the synthesis cache",
+  "run": true
+ },
+ {
+  "name": "shx.listICGEM",
+  "example": "T = shx.listICGEM(Type = \"temporal\", Series = \"ITSG-Grace2018\");",
+  "run": false
+ },
+ {
+  "name": "shx.mcPropagate",
+  "example": "out = shx.mcPropagate(@(gs) gs.C(3, 1), g, N = 200);   % any functional of g",
+  "run": true
+ },
+ {
+  "name": "shx.nashSutcliffe",
+  "example": "    nse = shx.nashSutcliffe(avg(1,:), avg(2,:));   % e.g. SH vs mascon basin",
+  "run": true
+ },
+ {
+  "name": "shx.normalFieldCS",
+  "example": "[Cn, info] = shx.normalFieldCS(96, System = \"WGS84\");",
+  "run": true
+ },
+ {
+  "name": "shx.opApply",
+  "example": "xf = shx.opApply(op, op.Xres(:, 1), 1);   % W_1 * x without the P x P matrix",
+  "run": true
+ },
+ {
+  "name": "shx.parseGraceFilename",
+  "example": "meta = shx.parseGraceFilename(\"GSM-2_2008095-2008120_...gz\");",
+  "run": true
+ },
+ {
+  "name": "shx.pctile",
+  "example": "q = shx.pctile(res, [16 50 84]);      % base-MATLAB percentiles",
+  "run": true
+ },
+ {
+  "name": "shx.plotBasinSeries",
+  "example": "shx.plotBasinSeries(op.tYears, avg(1,:).', out.sigma(1,:).', Units = \"m EWH\");",
+  "run": true
+ },
+ {
+  "name": "shx.plotCovariance",
+  "example": "shx.plotCovariance(snx.M, idx);       % SINEX covariance structure",
+  "run": false
+ },
+ {
+  "name": "shx.plotSHCoeffTriangle",
+  "example": "shx.plotSHCoeffTriangle(g.C, g.S);\nshx.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed diff",
+  "run": true
+ },
+ {
+  "name": "shx.plotSHMap",
+  "example": "shx.plotSHMap(grid, lat, lon, Title = \"EWH 2008-04 [m]\");",
+  "run": true
+ },
+ {
+  "name": "shx.plotSHSpectrum",
+  "example": "spec = shx.shDegreeRMS(g.C, g.S);\nshx.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);",
+  "run": true
+ },
+ {
+  "name": "shx.readDDK",
+  "example": "W = shx.readDDK(\"DDK5\");              % resolves dataFolder/DDK",
+  "run": true
+ },
+ {
+  "name": "shx.readLoveNumbers",
+  "example": "    LN = shx.readLoveNumbers(\"prem_load.txt\", Columns=\"n h l k\", ...\n             MaxDegree=96, Interp=\"pchip\", InFrame=\"CE\", OutFrame=\"CF\");\n    [up, no, ea] = g.deformation(latPts, lonPts, kn=LN.kn, hn=LN.hn, ...\n             ln=LN.ln, Mode=\"points\");",
+  "run": true
+ },
+ {
+  "name": "shx.readMascon",
+  "example": "M = shx.readMascon(\"CSR_..._Mascons.nc\");   % lat/lon/time EWH stack",
+  "run": false
+ },
+ {
+  "name": "shx.readSINEX",
+  "example": "snx = shx.readSINEX(\"ITSG-Grace2018_n96_2008-04_head12.snx\");\nfprintf(\"%s with %d params\\n\", snx.kind, numel(snx.x))",
+  "run": true
+ },
+ {
+  "name": "shx.readTN13",
+  "example": "tn13 = shx.readTN13(\"TN-13_GEOC_CSR_RL06.3.txt\");",
+  "run": true
+ },
+ {
+  "name": "shx.readTN14",
+  "example": "tn14 = shx.readTN14(\"TN-14_C30_C20_SLR_GSFC.txt\");",
+  "run": true
+ },
+ {
+  "name": "shx.rescaleGMR",
+  "example": "[C2, S2] = shx.rescaleGMR(g.C, g.S, g.GM, g.R, GMref, Rref);",
+  "run": true
+ },
+ {
+  "name": "shx.resolutionMap",
+  "example": "res = shx.resolutionMap(op, 1, -60:30:60, 0:60:300);   % epoch 1",
+  "run": true
+ },
+ {
+  "name": "shx.seaLevelFingerprint",
+  "example": "S = shx.seaLevelFingerprint(gLoad, oceanMask, idx, kn = LN.kn, hn = LN.hn);",
+  "run": false
+ },
+ {
+  "name": "shx.shAnalysisGrid",
+  "example": "g2 = shx.shAnalysisGrid(grid, lat, lon, 10);   % exact on ring grids",
+  "run": true
+ },
+ {
+  "name": "shx.shDegreeRMS",
+  "example": "spec = shx.shDegreeRMS(g.C, g.S);          % degree-amplitude spectrum struct",
+  "run": true
+ },
+ {
+  "name": "shx.shDestripe",
+  "example": "[Cf, Sf] = shx.shDestripe(g.C, g.S, minOrder = 6);",
+  "run": true
+ },
+ {
+  "name": "shx.shEvalGFCT",
+  "example": "[C, S] = shx.shEvalGFCT(model, 2015.5);   % piecewise gfct at an epoch",
+  "run": true
+ },
+ {
+  "name": "shx.shFanFilter",
+  "example": "[C2, S2] = shx.shFanFilter(g.C, g.S, 350, 200);",
+  "run": true
+ },
+ {
+  "name": "shx.shGaussianFilter",
+  "example": "[Cf, Sf] = shx.shGaussianFilter(g.C, g.S, 350);",
+  "run": true
+ },
+ {
+  "name": "shx.shGaussianWeights",
+  "example": "w = shx.shGaussianWeights(60, 350);   % Jekeli recursion",
+  "run": true
+ },
+ {
+  "name": "shx.shIndex",
+  "example": "idx = shx.shIndex(60);                % MinDegree = 2 default",
+  "run": true
+ },
+ {
+  "name": "shx.shOrderRMS",
+  "example": "spec = shx.shOrderRMS(g.C, g.S);           % stripes live at high orders",
+  "run": true
+ },
+ {
+  "name": "shx.shReadGFC",
+  "example": "g = shx.shReadGFC(\"ITSG-Grace2018_n60_2008-04.gfc\");",
+  "run": true
+ },
+ {
+  "name": "shx.shSpectralCrossover",
+  "example": "spec = shx.shDegreeRMS(g.C, g.S, 'sigmaC', g.sigmaC, 'sigmaS', g.sigmaS);\nnc = shx.shSpectralCrossover(spec);   % signal/error crossover degree",
+  "run": true
+ },
+ {
+  "name": "shx.shSynthesis",
+  "example": "grid = shx.shSynthesis(g.C, g.S, g.GM, g.R, -89:89, 0:359);",
+  "run": true
+ },
+ {
+  "name": "shx.shSynthesisDeformation",
+  "example": "[up, no, ea] = shx.shSynthesisDeformation(g.C, g.S, g.R, latPts, lonPts, kn = LN.kn, hn = LN.hn, ln = LN.ln, Mode = \"points\");",
+  "run": true
+ },
+ {
+  "name": "shx.shSynthesisGradientTensor",
+  "example": "T = shx.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, Height = 450e3);",
+  "run": true
+ },
+ {
+  "name": "shx.slepianBasis",
+  "example": "[G, lam] = shx.slepianBasis(idx, capSpec);   % concentration basis",
+  "run": false
+ },
+ {
+  "name": "shx.spatialStats",
+  "example": "    A1 = g.synthesis(lat, lon); A2 = gF.synthesis(lat, lon);\n    st = shx.spatialStats(A1, A2, lat, lon);\n    fprintf(\"rmsd %.3g, corr %.3f\\n\", st.rmsd, st.corr)",
+  "run": true
+ },
+ {
+  "name": "shx.synthesisMatrix",
+  "example": "[Y, w] = shx.synthesisMatrix(idx);    % quadrature-consistent pair",
+  "run": true
+ },
+ {
+  "name": "shx.taylorDiagram",
+  "example": "    st = shx.spatialStats(grid, 0.8 * grid, lat, lon);\n    shx.taylorDiagram(st.stdA, st.stdB, st.corr, Labels = \"damped\");",
+  "run": true
+ },
+ {
+  "name": "shx.threeCorneredHat",
+  "example": "    out = shx.threeCorneredHat(Y3);   % T x 3 basin series (CSR/GFZ/JPL)\n    fprintf(\"noise levels: %s\\n\", sprintf(\"%.3g \", out.sigma))",
+  "run": true
+ },
+ {
+  "name": "shx.tvANSFilter",
+  "example": "[Xf, op, info] = shx.tvANSFilter(X, tYears, idx);\nsigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)",
+  "run": true
+ },
+ {
+  "name": "shx.vceRescale",
+  "example": "s = shx.vceRescale(N, Xres, idx);          % monthly noise factors",
+  "run": true
+ },
+ {
+  "name": "shx.vecFromCS",
+  "example": "x = shx.vecFromCS(g10.C, g10.S, idx);     % triangle -> idx-ordered vector",
+  "run": true
+ },
+ {
+  "name": "shx.version",
+  "example": "    v = shx.version();\n    fprintf(\"%s %s (%s)\\n\", v.Name, v.Version, v.Date)",
+  "run": true
+ },
+ {
+  "name": "shx.writeAnimation",
+  "example": "shx.writeAnimation(ts, \"ewh_2002_2026.gif\", quantity = \"ewh\", kn = kn, FrameRate = 6);",
+  "run": false
+ },
+ {
+  "name": "shx.writeGFC",
+  "example": "shx.writeGFC(\"out.gfc\", g.C, g.S, g.GM, g.R, Comment = \"DDK3 filtered\");",
+  "run": true
+ },
+ {
+  "name": "shx.writeGrid",
+  "example": "shx.writeGrid(\"ewh.nc\", grid, lat, lon);   % netCDF/geotiff/ascii",
+  "run": true
+ },
+ {
+  "name": "shx.ylm",
+  "example": "Y = shx.ylm(deg2rad(latPts), deg2rad(lonPts), idx);   % design rows, idx order",
+  "run": true
+ },
+ {
+  "name": "setup_shAnalysis",
+  "example": "    setup_shAnalysis(Permanent = true, Download = \"core\")\n    setup_shAnalysis(Download = \"filters\", DDK = [2 3 5])\n    s = setup_shAnalysis(DryRun = true, Download = \"starter\")",
+  "run": false
+ },
+ {
+  "name": "runAllTests",
+  "example": "runAllTests            % 180 tests; acceptance gate on R2026a",
+  "run": false
+ },
+ {
+  "name": "demo_shAnalysis",
+  "example": "demo_shAnalysis([\"D01\", \"D06\"])   % run selected demos, fail-and-continue",
+  "run": false
+ },
+ {
+  "name": "shCoefficients.shCoefficients",
+  "example": "g = shCoefficients(C, S, GM = 3.986004415e14, R = 6.3781363e6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.plus",
+  "example": "gsm = g + gad;                        % epoch-checked restore",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.minus",
+  "example": "dg = g - gMean;                       % anomaly about the mean field",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.uminus",
+  "example": "gNeg = -g;",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.mtimes",
+  "example": "gHalf = 0.5 * g;                      % scalar scaling, sigmas follow",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.compare",
+  "example": "rep = g.compare(gF, Names = [\"raw\", \"G350\"]);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.times",
+  "example": "gW = w .* g;                          % per-coefficient weighting",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.truncate",
+  "example": "g60 = g.truncate(60);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.setCoefficient",
+  "example": "g = g.setCoefficient(2, 0, c20slr);   % SLR C20 by hand",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.applyTN14",
+  "example": "g = g.applyTN14(tn14);                % C20/C30 replacement",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.addDegree1",
+  "example": "g = g.addDegree1(tn13);               % nearest epoch within 0.05 yr",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.destripe",
+  "example": "g = g.destripe(minOrder = 6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.gaussian",
+  "example": "g = g.gaussian(350);                  % radius in km",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.degreeRMS",
+  "example": "spec = g.degreeRMS();                  % degree amplitude + error spectrum",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.crossover",
+  "example": "nc = g.crossover();                   % needs formal sigmas",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.spectrum",
+  "example": "g.spectrum(Kaula = true, MarkCrossover = true);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.triangle",
+  "example": "g.triangle();                          % butterfly plot",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.synthesis",
+  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.toReference",
+  "example": "g = g.toReference(GM = 3.986004415e14, R = 6.3781363e6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.subtractNormalField",
+  "example": "g = g.subtractNormalField(System = \"GRS80\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.map",
+  "example": "g.map(quantity = \"geoid\", Title = \"Geoid 2008-04 [m]\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.fan",
+  "example": "g = g.fan(350, 200);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.deformation",
+  "example": "[up, no, ea] = g.deformation(latPts, lonPts, kn = LN.kn, hn = LN.hn, ...\n    ln = LN.ln, Mode = \"points\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.applyDDK",
+  "example": "g = g.applyDDK(\"DDK3\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.evalAt",
+  "example": "g2015 = g.evalAt(2015.5);              % gfct variable terms AT AN EPOCH",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.write",
+  "example": "g.write(\"out.gfc\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.vec",
+  "example": "x = g10.vec(idx);                     % idx-ordered coefficient vector",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.disp",
+  "example": "disp(g)                                % degree, epoch, history",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.read",
+  "example": "g = shCoefficients.read(\"ITSG-Grace2018_n60_2008-04.gfc\", Epoch = 2008.29);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.fromVec",
+  "example": "g2 = shCoefficients.fromVec(x, idx, g10);   % sizes/GM/R from template",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.analysis",
+  "example": "g2 = shCoefficients.analysis(grid, lat, lon, 10, Kaula = 1e-10);",
+  "run": true
+ },
+ {
+  "name": "shSeries.shSeries",
+  "example": "ts = shSeries(Cs, Ss = Ss, Epochs = tYears);",
+  "run": true
+ },
+ {
+  "name": "shSeries.at",
+  "example": "g = ts.at(37);                         % single month as shCoefficients",
+  "run": true
+ },
+ {
+  "name": "shSeries.mean",
+  "example": "gM = ts.mean;                          % NaN-month tolerant",
+  "run": true
+ },
+ {
+  "name": "shSeries.climatology",
+  "example": "[clim, resid] = ts.climatology(Robust = true, ARCorrect = true);",
+  "run": true
+ },
+ {
+  "name": "shSeries.trendBreaks",
+  "example": "out = ts.trendBreaks(Breaks = 2021.0); % F-test on the hinge",
+  "run": true
+ },
+ {
+  "name": "shSeries.fan",
+  "example": "tsF = ts.fan(350, 200);",
+  "run": true
+ },
+ {
+  "name": "shSeries.applyTN14",
+  "example": "ts = ts.applyTN14(tn14);               % epoch-matched per month",
+  "run": true
+ },
+ {
+  "name": "shSeries.addDegree1",
+  "example": "ts = ts.addDegree1(tn13);",
+  "run": true
+ },
+ {
+  "name": "shSeries.removeGIA",
+  "example": "ts = ts.removeGIA(giaModel);           % e.g. ICE-6G trend gfc",
+  "run": true
+ },
+ {
+  "name": "shSeries.applyDDK",
+  "example": "ts = ts.applyDDK(\"DDK3\");",
+  "run": true
+ },
+ {
+  "name": "shSeries.compare",
+  "example": "rep = ts.compare({tsGFZ, tsJPL}, Names = [\"ref\", \"GFZ\", \"JPL\"]);",
+  "run": true
+ },
+ {
+  "name": "shSeries.restore",
+  "example": "ts = ts.restore(tsGAD);                % GSM + GAD, epoch-matched",
+  "run": true
+ },
+ {
+  "name": "shSeries.minus",
+  "example": "dts = ts - ts.mean;",
+  "run": true
+ },
+ {
+  "name": "shSeries.destripe",
+  "example": "ts = ts.destripe(minOrder = 6);",
+  "run": true
+ },
+ {
+  "name": "shSeries.gaussian",
+  "example": "ts = ts.gaussian(300);",
+  "run": true
+ },
+ {
+  "name": "shSeries.truncate",
+  "example": "ts8 = ts.truncate(8);                  % keep low degrees",
+  "run": true
+ },
+ {
+  "name": "shSeries.dropNaN",
+  "example": "ts = ts.dropNaN;                       % remove gap months",
+  "run": true
+ },
+ {
+  "name": "shSeries.select",
+  "example": "ts = ts.select(ts.epochs > 2018.5);    % GRACE-FO era only",
+  "run": true
+ },
+ {
+  "name": "shSeries.filter",
+  "example": "[tsF, op, info] = ts.filter(\"tvANS\", Constraints = Ac, Blocks = \"off\");",
+  "run": true
+ },
+ {
+  "name": "shSeries.basinAverage",
+  "example": "[avg, out] = tsF.basinAverage(B, Deconvolve = true, Op = op);",
+  "run": true
+ },
+ {
+  "name": "shSeries.disp",
+  "example": "disp(ts)",
+  "run": true
+ },
+ {
+  "name": "shSeries.read",
+  "example": "ts2 = shSeries.read(\"ITSG-Grace*_n60_*.gfc\");   % wildcard, epoch-sorted",
+  "run": true
+ },
+ {
+  "name": "shSeries.fromFolder",
+  "example": "ts = shSeries.fromFolder(shx.dataFolder() + \"/itsg_series\");",
+  "run": false
+ },
+ {
+  "name": "shClimatology.withNote",
+  "example": "clim = clim.withNote(\"GIA: ICE-6G_D removed\");",
+  "run": true
+ },
+ {
+  "name": "shClimatology.removeGIA",
+  "example": "clim = clim.removeGIA(giaModel);",
+  "run": true
+ },
+ {
+  "name": "shClimatology.eval",
+  "example": "g2020 = clim.eval(2020.0);             % model field at an epoch",
+  "run": true
+ },
+ {
+  "name": "shClimatology.bias",
+  "example": "g0 = clim.bias();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.trend",
+  "example": "gT = clim.trend();                     % [units/yr], sigmas attached",
+  "run": true
+ },
+ {
+  "name": "shClimatology.cosAnnual",
+  "example": "gc = clim.cosAnnual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.sinAnnual",
+  "example": "gs = clim.sinAnnual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.cosSemiannual",
+  "example": "gc2 = clim.cosSemiannual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.sinSemiannual",
+  "example": "gs2 = clim.sinSemiannual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.periodic",
+  "example": "[gc, gs] = clim.periodic(1);           % extra Periods= component",
+  "run": true
+ },
+ {
+  "name": "shClimatology.amplitudeMap",
+  "example": "[A, lat, lon] = clim.amplitudeMap(\"annual\", -89:89, 0:359, quantity = \"ewh\", kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shClimatology.disp",
+  "example": "disp(clim)",
+  "run": true
+ },
+ {
+  "name": "shClimatology.fromCoef",
+  "example": "clim = shClimatology.fromCoef(coef, t0, ts);",
+  "run": false
+ }
+]

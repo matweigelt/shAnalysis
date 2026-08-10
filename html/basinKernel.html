@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shx.basinKernel</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Regional</span>
+<h1>shx.basinKernel</h1>
+<p>Band-limited basin kernels from polygons, masks, or functions &mdash; with great-circle buffering and spectral tapering.</p>
+<h2>Syntax</h2>
+<pre>[b, info] = shx.basinKernel(idx, region)
+[b, info] = shx.basinKernel(idx, region, BufferKm=300, TaperKm=350)</pre>
+<h2>Description</h2>
+<p>Builds the spherical-harmonic coefficient vector of the (band-limited) indicator function of a region by exact Gauss&ndash;Legendre quadrature, <code class="inline">b = Y' * (w .* mask)</code>, in the ordering of <code class="inline">idx = shx.shIndex(...)</code>. The result feeds <code class="inline">ts.basinAverage(b)</code> and <code class="inline">shx.basinDeconvolve</code>.</p>
+<h2>Inputs</h2>
+<table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>idx</td><td>struct</td><td>from <code class="inline">shx.shIndex</code></td></tr>
+<tr><td>region</td><td>handle | Kx2 double | Ngrid x 1</td><td>vectorized <code class="inline">f(latDeg,lonDeg)</code> in [0,1]; polygon vertices [lat lon]; or a mask on the quadrature grid</td></tr>
+<tr><td>BufferKm</td><td>(1,1) double, 0</td><td>&gt;0 grows / &lt;0 shrinks the region by exact great-circle distance before quadrature</td></tr>
+<tr><td>TaperKm</td><td>(1,1) double, 0</td><td>spectral Jekeli-Gaussian taper of the kernel (soft edges, less ringing/leakage)</td></tr>
+<tr><td>R</td><td>(1,1) double, 6378136.3</td><td>sphere radius [m] for km conversions (default, overridable)</td></tr></table>
+<h2>Outputs</h2>
+<table><tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>b</td><td>(P,1) double</td><td>kernel coefficients, idx ordering</td></tr>
+<tr><td>info</td><td>struct</td><td>areaFraction, nGridPoints, buffered, tapered</td></tr></table>
+<div class="note">Best practice: match <code class="inline">TaperKm</code> to the smoothing radius of your coefficient filter; use <code class="inline">BufferKm</code> to trade leakage-in against leakage-out. Theory and worked examples: workflow guide, &ldquo;Basin averages&rdquo;.</div>
+<h2>See also</h2><p class="seealso"><a href="shAnalysis.html">Overview</a> <a href="tvANS.html">tvANS</a> <a href="slepianBasis.html">slepianBasis</a></p>
+<p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

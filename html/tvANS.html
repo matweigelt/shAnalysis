@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>tvANS filter</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Filtering</span>
+<h1>tvANS &mdash; time-variable anisotropic Wiener filter</h1>
+<p>The optimal alternative to destripe+Gaussian: a per-month anisotropic non-symmetric Wiener filter
+W<sub>t</sub> = S (S + s<sub>t</sub> N)<sup>-1</sup> applied to the residuals about the deterministic
+(bias/trend/annual/semi-annual) model, which passes through unfiltered. Invoked via
+<code class="inline">shSeries.filter("tvANS", ...)</code>.</p>
+
+<h2>Components</h2>
+<table>
+<tr><th>Piece</th><th>Default</th><th>Notes</th></tr>
+<tr><td>N &mdash; noise covariance shape</td><td>empirical, per-order/per-parity blocks with shrinkage</td><td>captures the correlated same-parity striping structure; supply a full covariance via <code class="inline">NoiseCov</code> when available (SINEX/ITSG reader: roadmap)</td></tr>
+<tr><td>s<sub>t</sub> &mdash; monthly scale</td><td>Helmert VCE over high degrees</td><td><code class="inline">Robust=true</code> uses a chi&sup2;(1)-median estimator</td></tr>
+<tr><td>S &mdash; signal covariance</td><td>iterative, data-driven</td><td><code class="inline">SignalMode="isotropic"</code> (degree-wise) or <code class="inline">"inhomogeneous"</code> (spatially varying via S = G S<sub>iso</sub> G')</td></tr>
+<tr><td>Constraints</td><td>none</td><td>hard linear constraints (e.g. ocean-mass conservation): columns of <code class="inline">Constraints</code></td></tr>
+</table>
+<p>One generalized eigendecomposition <code class="inline">eig(S, N, 'chol')</code> makes every monthly
+filter an exact O(P&sup2;) update &mdash; no per-month solves.</p>
+
+<h2>v2.1: block-diagonal fast path and uncertainties</h2>
+<table>
+<tr><th>Feature</th><th>What it does</th></tr>
+<tr><td><code class="inline">Blocks="auto"|"on"|"off"</code></td><td>With <code class="inline">SignalMode="isotropic"</code>,
+empirical noise covariance and no constraints, both S and N are block-diagonal per
+(order, C/S, degree parity), so the generalized eigendecomposition decouples into
+O(Lmax&sup2;) small blocks. Removes the O(P&sup3;) wall and the dense P&times;P memory footprint:
+Lmax = 96&ndash;120 becomes tractable. Results are <b>identical</b> to the full path
+(validated to 1.8e-15). <code class="inline">"auto"</code> engages it exactly when the conditions hold.</td></tr>
+<tr><td>Posterior sigma</td><td><code class="inline">info.sigmaXfres</code> (P&times;T): per-coefficient/month
+1-sigma of the filtered residual, diag((I&minus;W<sub>t</sub>)S) = (V.&sup2;)&middot;(s<sub>t</sub>&lambda;/(&lambda;+s<sub>t</sub>))
+&mdash; validated against the direct matrix product to 3.5e-16. Mapped onto the series as
+<code class="inline">tsF.sigmaCs/sigmaSs</code>. With hard constraints (v2.5) the EXACT diagonal of
+(W&minus;I)S(W&minus;I)' + s&middot;WNW' is used (Python-validated to 2e-15 against the brute-force
+covariance; the constrained-direction identity Ac'&middot;Cov&middot;Ac = s&middot;Ac'NAc holds exactly).
+Honest correction: the earlier unconstrained formula UNDERESTIMATED along constrained
+directions (validation ratios down to ~0.72), not "upper bound" as documented before.</td></tr>
+<tr><td>Basin sigma</td><td><code class="inline">out.sigma</code> (K&times;T) from
+<code class="inline">basinAverage(..., Deconvolve=true)</code>: cov(c) = s<sub>t</sub>&middot;A&#8315;&sup1;(Gv'&middot;g&sup2;&middot;Gv)A&#8315;&ᵀ
+evaluated via the stored eigenfactors (W&thinsp;N&thinsp;W' = V&middot;diag(g&sup2;)&middot;V'), Monte-Carlo validated
+(0.7% at 4&middot;10&#8308; samples). Since v2.5 the basin sigma additionally carries the OLS
+parameter uncertainty of the restored deterministic part (design leverage &times; per-coefficient
+residual variance; Monte-Carlo validated: emp/pred 1.18 without the term, 1.00 with it), and with
+constraints the deconvolution noise covariance uses the exact constrained operator. The
+deterministic-part errors are correlated across epochs through the shared fit (pointwise sigma
+reported; documented).</td></tr>
+</table>
+
+<h2>Usage</h2>
+<pre>[tsF, op, info] = dts.filter("tvANS", ...
+        SignalMode="inhomogeneous", Robust=true, MinDegree=2);
+% info.vce   per-month VCE factors s_t
+% op         the stored linear operator: needed for deconvolution
+avg = tsF.basinAverage(B, Deconvolve=true, Op=op);   % removes attenuation
+res = shx.resolutionMap(op, t, latq, lonq);          % kernel half-widths</pre>
+
+<p>Degrees below <code class="inline">MinDegree</code> (default 2) pass through unfiltered.
+Basin deconvolution solves (B' W<sub>t</sub> B) c = B' x&#770;<sub>f</sub> exactly &mdash; unbiased
+without hydrology-model scale factors (use <code class="inline">Ridge</code> for near-collinear basin sets).</p>
+
+<div class="note">All formulas (Wiener MSE identity, eigen-trick equivalence, constrained-filter
+transpose identity, quadrature exactness, unbiased deconvolution) were cross-validated in Python
+(numpy/scipy) to machine precision before the MATLAB implementation; the MATLAB test suite asserts
+the same identities.</div>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="shSeries.html">shSeries</a> <a href="shCoefficients.html">shCoefficients</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

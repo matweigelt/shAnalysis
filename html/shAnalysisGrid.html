@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shAnalysisGrid</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<body><div class="content">
+<span class="tag">Function</span><span class="tag">v2.1</span>
+<h1>shAnalysisGrid</h1>
+<p>Spherical harmonic <b>analysis</b>: estimate Stokes coefficients from gridded or scattered
+data &mdash; the inverse of <a href="shSynthesis.html">shSynthesis</a>. User-facing entry point:
+<code class="inline">shCoefficients.analysis(...)</code>; the core is <code class="inline">shx.shAnalysisGrid</code>.</p>
+
+<h2>Syntax</h2>
+<pre>[C, S, info] = shx.shAnalysisGrid(grid, latVec, lonVec, nmax)
+[C, S, info] = shx.shAnalysisGrid(..., Method="auto"|"rings"|"ls", quantity=..., ...
+                                  Weights="none"|"coslat", Kaula=0, kn=..., GM=..., R=...)
+g = shCoefficients.analysis(grid, latVec, lonVec, nmax, ...)   % returns an shCoefficients</pre>
+
+<h2>Two data layouts (auto-detected)</h2>
+<table>
+<tr><th>Layout</th><th>Method</th><th>Properties</th></tr>
+<tr><td><b>Ring grid</b>: grid is nlat&times;nlon, lonVec uniform covering the full circle
+(any latitude spacing: equiangular, Gauss-Legendre, irregular rings)</td>
+<td><code class="inline">"rings"</code></td>
+<td>Longitude is diagonalized by FFT; one small least-squares problem per order over the
+latitude rings. For band-limited data with enough rings (&gt; nmax&minus;m per order) and
+nlon &gt; 2&middot;nmax this is <b>exact</b> &mdash; round-trip validated to 8.7e-15, including
+non-zero start longitude, cos-latitude weighting and quantity kernels (1.4e-22 in the
+literal-port check). Fast: O(nlat&middot;nlon&middot;log&thinsp;nlon + nmax&sup3;) instead of a dense
+(nlat&middot;nlon)&times;(nmax+1)&sup2; system.</td></tr>
+<tr><td><b>Scattered points</b>: grid, latVec, lonVec equal-length vectors</td>
+<td><code class="inline">"ls"</code></td>
+<td>Full least squares on (nmax+1)&sup2; unknowns; normal equations accumulated in chunks
+(<code class="inline">ChunkSize=2000</code>), Cholesky solve with conditioning guards. Exact for
+sufficient sampling (validated 6.4e-15).</td></tr>
+</table>
+
+<h2>Key options</h2>
+<table>
+<tr><th>Option</th><th>Meaning</th></tr>
+<tr><td><code class="inline">quantity</code></td><td><code class="inline">'geoid'</code> (default) |
+<code class="inline">'potential'</code> | <code class="inline">'gravity_anomaly'</code> |
+<code class="inline">'gravity_disturbance'</code> | <code class="inline">'ewh'</code>. The degree-dependent
+kernel (<code class="inline">shx.kernelFactors</code>, the same single source used by synthesis) is divided
+out so C, S are Stokes coefficients. Degrees with zero kernel (n = 0, 1 for gravity anomaly)
+are unobservable, returned as 0 and listed in <code class="inline">info.unobservedDegrees</code>.
+<code class="inline">'ewh'</code> requires user-supplied load Love numbers <code class="inline">kn</code>
+(never hardcoded).</td></tr>
+<tr><td><code class="inline">Weights</code></td><td><code class="inline">"coslat"</code> applies
+sqrt(cos&thinsp;lat) row scaling (diagonal area-weight approximation); recommended for redundant
+noisy equiangular grids. For complete ring systems the solution is weight-independent.</td></tr>
+<tr><td><code class="inline">Kaula</code></td><td>&gt; 0 enables Tikhonov regularization toward 0 with
+per-degree sigma Kaula&middot;1e-5/n&sup2; (Kaula's rule; 1 = classic). <b>Required</b> when the sampling
+underdetermines the coefficients &mdash; without it, rank deficiency raises
+<code class="inline">shx:shAnalysisGrid:rankDeficient</code> instead of returning leakage-contaminated
+numbers silently.</td></tr>
+</table>
+
+<h2>Outputs</h2>
+<table>
+<tr><th>Name</th><th>Type / size</th><th>Description</th></tr>
+<tr><td>C, S</td><td>(nmax+1)&times;(nmax+1) double</td><td>Stokes coefficients, C(n+1,m+1); S(:,1) always 0</td></tr>
+<tr><td>info</td><td>struct</td><td><code class="inline">method</code>, <code class="inline">nPoints</code>,
+<code class="inline">residRMS</code> (post-fit, grid units; Parseval-exact for rings),
+<code class="inline">condEst</code>, <code class="inline">unobservedDegrees</code>,
+<code class="inline">regularized</code></td></tr>
+</table>
+
+<div class="note"><b>Regional grids.</b> Analysis of an incomplete/regional grid is ill-posed:
+expect leakage across degrees unless Kaula regularization is used or nmax is restricted to what
+the sampling supports. S<sub>n0</sub> does not exist (sin&thinsp;0 = 0) and is always returned 0.</div>
+
+<h2>Example</h2>
+<pre>% round trip: synthesize a band-limited EWH field, recover the coefficients
+lat = linspace(-89, 89, 180);  lon = 0:2:358;
+grid = g.synthesis(lat, lon, quantity="ewh", kn=kn);
+gHat = shCoefficients.analysis(grid, lat, lon, 60, quantity="ewh", kn=kn, ...
+                               GM=g.GM, R=g.R);
+max(abs(gHat.C - g.C), [], 'all')          % ~1e-15 relative
+
+% scattered altimetry-style points with Kaula stabilization
+gS = shCoefficients.analysis(vals, latPts, lonPts, 30, Kaula=1);</pre>
+
+<p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="shCoefficients.html">shCoefficients</a> <a href="shReadGFC.html">shReadGFC</a></p>
+<hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
+<p style="color:#888;font-size:11.5px;">shAnalysis v2.1 &middot; Claude (Fable 5), 2026-08-07</p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>

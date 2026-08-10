@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shDestripe</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Filtering</span>
+<h1>shDestripe</h1>
+<p>Remove correlated north-south striping noise from Stokes coefficients (Swenson & Wahr 2006).</p>
+<h2>Syntax</h2>
+<pre>[Cf, Sf] = shDestripe(C, S)</pre><pre>[Cf, Sf] = shDestripe(C, S, 'minOrder', m0, 'polyOrder', p, 'windowLength', w)</pre>
+<h2>Description</h2>
+
+<p>At each order m &ge; <code class="inline">minOrder</code>, splits the coefficients into even-degree and
+odd-degree subsequences (correlated GRACE errors alias into that parity split) and removes a low-order
+polynomial fit in degree n from each. By default this is a single polynomial fit over the whole available
+degree range per order/parity (the original Swenson &amp; Wahr formulation); setting
+<code class="inline">'windowLength'</code> switches to a centered moving-window fit (the "P3M6"-style variant,
+polyOrder=3, windowLength=6 being a common choice from Duan et al. 2009).</p>
+
+<div class='note'>Cross-checked (validate_destripe.py): a synthetic pure quadratic-in-degree trend is absorbed to &lt;1e-13 residual by the order-2 polynomial fit, confirming the filter removes exactly the class of smooth-in-degree trend it targets.</div>
+<h2>Input Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>C, S</code></td><td>Stokes coefficient matrices to destripe.</td></tr><tr><td><code class='inline'>'minOrder'</code></td><td>Lowest order to filter, default 6. Below this, real signal dominates and destriping mostly removes signal -- verify against your own signal-vs-error spectrum (shDegreeRMS/shSpectralCrossover) rather than trusting the default blindly.</td></tr><tr><td><code class='inline'>'polyOrder'</code></td><td>Polynomial order fit and removed per order/parity, default 3.</td></tr><tr><td><code class='inline'>'windowLength'</code></td><td>If empty (default), fit one polynomial over the full series. If an odd integer &ge; polyOrder+2, use a centered moving window of that length instead.</td></tr></table>
+<h2>Output Arguments</h2>
+<table><tr><th>Argument</th><th>Description</th></tr><tr><td><code class='inline'>Cf, Sf</code></td><td>Destriped coefficient matrices, same size as input.</td></tr></table>
+<h2>Examples</h2>
+<h3>Classic (whole-series) destriping</h3><pre>[dCf, dSf] = shDestripe(dC, dS, 'minOrder', 6, 'polyOrder', 3);</pre><p>Good default for a first look; check the coefficient triangle (plotSHCoeffTriangle) before/after.</p><h3>Moving-window ('P3M6'-style) destriping</h3><pre>[dCf, dSf] = shDestripe(dC, dS, 'minOrder', 6, 'polyOrder', 3, 'windowLength', 6);</pre><p>Tends to preserve more real signal at the transition orders than the whole-series fit, at some cost in stripe-removal strength -- compare both against your specific noise characteristics.</p>
+<h2>See Also</h2>
+<p class="seealso"><a href='plotSHCoeffTriangle.html'>plotSHCoeffTriangle</a> <a href='shGaussianFilter.html'>shGaussianFilter</a></p>
+</div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
+</body></html>
