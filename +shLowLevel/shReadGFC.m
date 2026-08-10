@@ -64,8 +64,7 @@ gfctT0 = zeros(0, 3);  % ICGEM 1.0: [n m t0] reference epochs from gfct lines
 txtAll = fread(fid, inf, '*char')';
 frewind(fid);
 eoh = regexp(txtAll, 'end_of_head[^\n]*\n', 'end', 'once');
-fastPath = ~isempty(eoh) && isempty(regexp(txtAll(eoh:end), ...
-    '^\s*(gfct|trnd|dot|acos|asin)\s', 'lineanchors', 'once'));
+fastPath = ~isempty(eoh);
 if fastPath                                     %#ok<ALIGN>
     % header: identical key/value semantics to the loop below
     hLines = strsplit(txtAll(1:eoh), '\n');
@@ -86,38 +85,112 @@ if fastPath                                     %#ok<ALIGN>
             end
         end
     end
-    % body: strip comment lines, count columns from the first record,
-    % then one bulk sscanf ('gfc' cannot occur inside a number)
+    % body (v3.1.1): GROUP-WISE bulk parse. Lines are extracted per
+    % record key (gfc/gfct/trnd/acos/asin; 'dot' is skipped exactly as
+    % the line parser skips unknown keys) and each uniform group goes
+    % through one sscanf - this covers variable-term files too (GRGS
+    % mean fields, ~10^5..10^6 records; the per-line loop with per-line
+    % calendarDuration dates took tens of minutes). Column bookkeeping:
+    % V is KEY-STRIPPED, so legacy parts{k} maps to V(:, k-1). Any
+    % group failing the consumed-everything check drops the whole file
+    % to the legacy line parser (its skip/NaN semantics stay
+    % authoritative for dirty records).
     body = txtAll(eoh+1:end);
     body = regexprep(body, '^\s*#[^\n]*\n', '', 'lineanchors');
-    m1 = regexp(body, '^\s*gfc\s+([^\n]*)', 'tokens', 'once', 'lineanchors');
-    if isempty(m1)
+    isV2f = isfield(header, 'format') && ...
+        contains(lower(char(string(header.format))), 'icgem2.0');
+    kk = {'gfc', 'gfct', 'trnd', 'acos', 'asin'};
+    Gv = cell(1, 5); Gn = zeros(1, 5);
+    okBulk = true;
+    for ki = 1:5
+        L = regexp(body, ['^[ \t]*' kk{ki} '[ \t]+[^\n]*'], ...
+            'match', 'lineanchors');
+        if ki == 1 && ~isempty(L)               % 'gfc\t' never hits gfct
+            L = L(cellfun(@(s) isempty(regexp(s, '^[ \t]*gfct', ...
+                'once')), L));
+        end
+        if isempty(L), continue, end
+        fl = strrep(strrep(strrep(L{1}, kk{ki}, ''), 'D', 'E'), 'd', 'e');
+        nc = numel(sscanf(fl, '%f'));
+        J = strjoin(L, newline);
+        J = strrep(J, kk{ki}, '');              % key token only
+        J = strrep(strrep(J, 'D', 'E'), 'd', 'e');
+        [V, ~, em, ni] = sscanf(J, '%f', [nc, Inf]);
+        V = V';
+        if ~isempty(em) || isempty(V) || ...
+                ~all(isstrprop(J(min(ni, end):end), 'wspace'))
+            okBulk = false;
+            break
+        end
+        Gv{ki} = V; Gn(ki) = nc;
+    end
+    if okBulk && isempty(Gv{1}) && isempty(Gv{2})
         fclose(fid);
         error('shReadGFC:noData', ...
             'No gfc/gfct data records found in %s', filename);
     end
-    ncol = numel(sscanf(strrep(strrep(m1{1}, 'D', 'E'), 'd', 'e'), '%f'));
-    stripped = strrep(body, 'gfc', '');
-    % FORTRAN D-exponents (EIGEN-6C4 switches to 0.98...D-11 mid-file):
-    % sscanf('%f') rejects 'D' where str2double accepts it. After the
-    % key strip only numeric text remains, so the normalization is safe;
-    % the consumed-everything validation still guards anything else.
-    stripped = strrep(strrep(stripped, 'D', 'E'), 'd', 'e');
-    [vals, ~, errmsg, nexti] = sscanf(stripped, '%f', [ncol, Inf]);
-    vals = vals';
-    clean = isempty(errmsg) && ...
-        all(isstrprop(stripped(min(nexti, end):end), 'wspace')) && ...
-        ~isempty(vals);
-    if clean
-        nmax = max(vals(:, 1));
-        rows = nan(size(vals, 1), 6);
-        rows(:, 1:min(ncol, 6)) = vals(:, 1:min(ncol, 6));
+    varNum = zeros(0, 7);                       % n m C S t0 t1 period
+    varT = cell(0, 1);
+    if okBulk
+        for ki = 1:5
+            V = Gv{ki};
+            if isempty(V) || ~okBulk, continue, end
+            nc = Gn(ki); N2 = size(V, 1);
+            nmax = max(nmax, max(V(:, 1)));
+            if ki <= 2 && ~(ki == 2 && isV2f)
+                % gfc, and gfct under ICGEM 1.0: the constant part
+                r = nan(N2, 6);
+                r(:, 1:min(nc, 6)) = V(:, 1:min(nc, 6));
+                rows = [rows; r]; %#ok<AGROW>
+                if ki == 2 && nc >= 7           % parts>=8: t0 = V(:,7)
+                    gfctT0 = [gfctT0; V(:, 1:2), ...
+                        shLowLevel.icgemDate2Year(V(:, 7))]; %#ok<AGROW>
+                end
+                continue
+            end
+            t0 = nan(N2, 1); t1 = t0; per = t0;
+            if ki == 2                          % gfct, ICGEM 2.0 piece
+                if nc < 8, okBulk = false; continue, end
+                t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                t1 = shLowLevel.icgemDate2Year(V(:, 8));
+            elseif isV2f
+                % 2.0: trnd -> ... t0 t1 ; acos/asin -> ... per t0 t1
+                if ki == 3
+                    if nc < 8, okBulk = false; continue, end
+                    t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                    t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                else
+                    if nc < 9, okBulk = false; continue, end
+                    per = V(:, 7);
+                    t0 = shLowLevel.icgemDate2Year(V(:, 8));
+                    t1 = shLowLevel.icgemDate2Year(V(:, 9));
+                end
+            else
+                % 1.0 disambiguation (documented in the line parser):
+                % parts>=9 (nc>=8): t0/t1 = V(:,7:8), period 1 yr for
+                % acos/asin; parts==8 & ~trnd (nc==7): V(:,7) = period
+                if nc >= 8
+                    t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                    t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                    if ki > 3, per = ones(N2, 1); end
+                elseif nc == 7 && ki > 3
+                    per = V(:, 7);
+                end
+            end
+            varNum = [varNum; V(:, 1:2), V(:, 3:4), t0, t1, per]; %#ok<AGROW>
+            varT = [varT; repmat(kk(ki), N2, 1)]; %#ok<AGROW>
+        end
+    end
+    if okBulk
+        if ~isempty(varNum)
+            varRows = [varT, num2cell(varNum)];
+        end
         fclose(fid);
     else
-        % junk between records (corrupt file): the line parser's
-        % skip-unknown-lines semantics are authoritative - fall back
-        fastPath = false;
+        fastPath = false;                       % dirty -> line parser
         header = struct(); rows = []; nmax = 0;
+        varRows = {}; gfctT0 = zeros(0, 3);
+        varNum = zeros(0, 7); varT = cell(0, 1); %#ok<NASGU>
     end
 end
 if ~fastPath
@@ -247,24 +320,23 @@ if isempty(varRows)
     model.variableTerms = struct('type',{},'n',{},'m',{},'C',{},'S',{}, ...
         't0',{},'t1',{},'period',{});
 else
-    vt = struct('type',{},'n',{},'m',{},'C',{},'S',{},'t0',{},'t1',{}, ...
-        'period',{});
-    for k = 1:size(varRows,1)
-        vt(k).type = varRows{k,1};
-        vt(k).n = varRows{k,2};
-        vt(k).m = varRows{k,3};
-        vt(k).C = varRows{k,4};
-        vt(k).S = varRows{k,5};
-        vt(k).t0 = varRows{k,6};
-        vt(k).t1 = varRows{k,7};
-        vt(k).period = varRows{k,8};
-        if isnan(vt(k).t0) && ~isempty(gfctT0)
-            hit = gfctT0(:,1) == vt(k).n & gfctT0(:,2) == vt(k).m;
-            if any(hit)
-                vt(k).t0 = gfctT0(find(hit, 1), 3);
-            end
+    % vectorized assembly (v3.1.1): the per-element struct growth was
+    % O(N^2) at GRGS scale. Patch missing t0 from the 1.0 gfct epochs
+    % first, then build the struct array in one call.
+    vN = cell2mat(varRows(:, 2:8));
+    if ~isempty(gfctT0)
+        miss = isnan(vN(:, 5));
+        if any(miss)
+            [tf, loc] = ismember(vN(miss, 1:2), gfctT0(:, 1:2), 'rows');
+            idxm = find(miss);
+            vN(idxm(tf), 5) = gfctT0(loc(tf), 3);
         end
     end
+    vt = struct('type', varRows(:, 1)', ...
+        'n', num2cell(vN(:, 1))', 'm', num2cell(vN(:, 2))', ...
+        'C', num2cell(vN(:, 3))', 'S', num2cell(vN(:, 4))', ...
+        't0', num2cell(vN(:, 5))', 't1', num2cell(vN(:, 6))', ...
+        'period', num2cell(vN(:, 7))');
     model.variableTerms = vt;
 
     % ICGEM 2.0: gfct pieces live in variableTerms; expose the most recent

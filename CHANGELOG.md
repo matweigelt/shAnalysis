@@ -6,6 +6,15 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 ## [3.1.0] - Unreleased
 
 ### Fixed
+- `shReadGFC` parses variable-term files (GRGS mean fields, ICGEM 2.0)
+  in bulk too: group-wise sscanf per record key, vectorized epoch
+  conversion, vectorized variableTerms assembly (the per-element
+  struct growth was O(N^2)). `icgemDate2Year` is pure arithmetic now -
+  the datetime/calendarDuration construction cost ~1 ms per call and
+  was invoked per record. A 73 MB CNES_GRGS mean field verification
+  went from tens of minutes (the second reported "stall") to seconds;
+  dirty records still fall back to the authoritative line parser,
+  which itself now assembles variableTerms vectorized.
 - `shReadGFC` fast path accepts FORTRAN D-exponents (EIGEN-6C4 switches
   from e to D serialization at degree 371): normalized to E after the
   key strip, matching str2double semantics. Previously such files fell
