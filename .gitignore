@@ -8,3 +8,8 @@ tests/perf_log.csv
 Thumbs.db
 Desktop.ini
 
+# user-supplied SINEX archives for testUserSuppliedSINEXFiles stay local
+# (GitHub rejects files > 100 MB; the shipped head fixture is exempt)
+tests/test_data/*.snx
+tests/test_data/*.snx.gz
+!tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx
