@@ -103,16 +103,14 @@ if fastPath                                     %#ok<ALIGN>
     Gv = cell(1, 5); Gn = zeros(1, 5);
     okBulk = true;
     for ki = 1:5
+        % [ \t]+ after the key cannot match the 't' of gfct, so the
+        % 'gfc' pattern already excludes gfct lines - no filter needed
         L = regexp(body, ['^[ \t]*' kk{ki} '[ \t]+[^\n]*'], ...
             'match', 'lineanchors');
-        if ki == 1 && ~isempty(L)               % 'gfc\t' never hits gfct
-            L = L(cellfun(@(s) isempty(regexp(s, '^[ \t]*gfct', ...
-                'once')), L));
-        end
         if isempty(L), continue, end
         fl = strrep(strrep(strrep(L{1}, kk{ki}, ''), 'D', 'E'), 'd', 'e');
         nc = numel(sscanf(fl, '%f'));
-        J = strjoin(L, newline);
+        J = sprintf('%s\n', L{:});             % strjoin: O(minutes) here
         J = strrep(J, kk{ki}, '');              % key token only
         J = strrep(strrep(J, 'D', 'E'), 'd', 'e');
         [V, ~, em, ni] = sscanf(J, '%f', [nc, Inf]);
