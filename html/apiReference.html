@@ -29,6 +29,7 @@ code itself.</p>
 <a href="#shLowLevel.csFromVec">csFromVec</a>
 <a href="#shLowLevel.dataFolder">dataFolder</a>
 <a href="#shLowLevel.ddkNames">ddkNames</a>
+<a href="#shLowLevel.designFilter">designFilter</a>
 <a href="#shLowLevel.diffSpectrum">diffSpectrum</a>
 <a href="#shLowLevel.effectiveCorr">effectiveCorr</a>
 <a href="#shLowLevel.eofAnalysis">eofAnalysis</a>
@@ -87,6 +88,7 @@ code itself.</p>
 <a href="#shLowLevel.shSynthesisGradientTensor">shSynthesisGradientTensor</a>
 <a href="#shLowLevel.slepianBasis">slepianBasis</a>
 <a href="#shLowLevel.spatialStats">spatialStats</a>
+<a href="#shLowLevel.standardChain">standardChain</a>
 <a href="#shLowLevel.synthesisMatrix">synthesisMatrix</a>
 <a href="#shLowLevel.synthesisPoints">synthesisPoints</a>
 <a href="#shLowLevel.taylorDiagram">taylorDiagram</a>
@@ -242,6 +244,19 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>names</code></td><td>(1 x 8) string   Wbd file names for DDK1..DDK8</td></tr>
 </table>
 <b>Example</b><pre>names = shLowLevel.ddkNames();               % Wbd file names DDK1..8</pre>
+</div>
+<div class="entry" id="shLowLevel.designFilter">
+<h3><code>shLowLevel.designFilter(SigmaC, SigmaS, opts)</code></h3>
+<p class="h1line">Build a DDK-class anisotropic filter from user covariances.</p>
+<p>W = shLowLevel.designFilter(SIGMAC, SIGMAS) constructs the Wiener- type decorrelation filter W = (N + Alpha * inv(S))^-1 * N per order/parity block - the same construction as the published DDK filters, but matched to YOUR solution&#x27;s error information instead of a fixed release. N is the normal (inverse noise covariance) matrix built from the formal sigmas (diagonal) or from a full covariance (Noise=); S is the signal covariance from a Kaula-type degree rule or your own model (Signal= / DegVar=). The result uses the exact block format of shLowLevel.readDDK, so it drops into applyDDK, g.filter/ts.filter(&quot;ddk&quot;, W = ...) and every downstream tool unchanged. Python-validated: block eigenvalues in (0, 1) for SPD inputs, identity limit for Alpha -&gt; 0, pinned 2 x 2 reference.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>SigmaC</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>SigmaS</code></td><td>-</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Alpha</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Kaula</code></td><td>1 x 1</td><td>double</td><td>1e-5</td></tr><tr><td><code>DegVar</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Noise</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Signal</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Idx</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>MinDegree</code></td><td>1 x 1</td><td>double</td><td>2</td></tr><tr><td><code>Name</code></td><td>1 x 1</td><td>string</td><td>&quot;designFilter&quot;</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>W</code></td><td>(1,1) struct  fields: nmax (1,1 double), name (char), blocks (1,K struct: m (1,1 double), cs (&#x27;c&#x27;|&#x27;s&#x27;), n (1,B double, degrees), M (B x B double)) - identical layout to shLowLevel.readDDK</td></tr>
+<tr><td><code>info</code></td><td>(1,1) struct  fields: alpha (1,1 double), mode (string: &quot;diagonal&quot; | &quot;fullcov&quot;), gainRange (1,2 double, min/max eigenvalue over all blocks)</td></tr>
+</table>
+<b>Example</b><pre>    W = shLowLevel.designFilter(g.sigmaC, g.sigmaS, Alpha = 1);
+    gF = g.applyDDK(W);                % apply like any DDK</pre>
 </div>
 <div class="entry" id="shLowLevel.diffSpectrum">
 <h3><code>shLowLevel.diffSpectrum(C1, S1, C2, S2)</code></h3>
@@ -901,6 +916,20 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <b>Example</b><pre>    A1 = g.synthesis(lat, lon); A2 = gF.synthesis(lat, lon);
     st = shLowLevel.spatialStats(A1, A2, lat, lon);
     fprintf(&quot;rmsd %.3g, corr %.3f\n&quot;, st.rmsd, st.corr)</pre>
+</div>
+<div class="entry" id="shLowLevel.standardChain">
+<h3><code>shLowLevel.standardChain(folder, opts)</code></h3>
+<p class="h1line">Canonical GRACE/GRACE-FO post-processing in one call.</p>
+<p>[TS, REP] = shLowLevel.standardChain(FOLDER) encodes the standard chain as a single, correctly ordered entry point: 1. read all monthly solutions from FOLDER (shSeries.fromFolder) 2. replace C20/C30 with the SLR values (TN-14) 3. add the degree-1 (geocenter) coefficients (TN-13) 4. optionally subtract a GIA trend field 5. filter (Gaussian radius, a DDK, or a shLowLevel.designFilter W) The order matters (TN corrections BEFORE filtering, GIA on the corrected series) and getting it wrong is the classic beginner error this function exists to prevent. Every step is recorded in REP and in the series history; steps are skippable for sensitivity studies. Data files come from the persistent data folder by default (setup_shAnalysis fetches them) and can be overridden with explicit paths for reproducible pipelines.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.gfc*&quot;</td></tr><tr><td><code>Truncate</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>TN14</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>TN14File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Degree1</code></td><td>1 x 1</td><td>string</td><td>&quot;GFZ&quot;</td></tr><tr><td><code>Degree1File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIA</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>ts</code></td><td>(1,1) shSeries  the processed series (full history)</td></tr>
+<tr><td><code>rep</code></td><td>(1,1) struct  fields: files (1,T string), steps (1,K string, applied stages with parameters), nmax (1,1 double), epochs (T,1 double), version (1,1 string, shLowLevel.version at run time), created (1,1 string)</td></tr>
+</table>
+<b>Example</b><pre>[ts, rep] = shLowLevel.standardChain(&quot;D:/grace/monthly&quot;, ...
+    Filter = &quot;DDK3&quot;, Degree1 = &quot;GFZ&quot;);
+disp(rep.steps&#x27;)</pre>
 </div>
 <div class="entry" id="shLowLevel.synthesisMatrix">
 <h3><code>shLowLevel.synthesisMatrix(idx, opts)</code></h3>

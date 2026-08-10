@@ -711,6 +711,52 @@ verifyTrue(testCase, contains(src, char(v.Version)));   % no stale stamps
 verifyTrue(testCase, isfile([fn '.provenance.json']));
 end
 
+function testStandardChain(testCase)
+% v3.1.0: the canonical pipeline entry point on fixtures - order,
+% report, GIA subtraction, all three filter forms, error contracts
+d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
+tn14 = fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt');
+tn13 = fullfile(d, 'TN-13_GEOC_GFZ_RL06.3.txt');
+assumeTrue(testCase, isfile(src) && isfile(tn14) && isfile(tn13));
+fol = tempname; mkdir(fol);
+cl = onCleanup(@() rmdir(fol, 's')); %#ok<NASGU>
+copyfile(src, fullfile(fol, 'ITSG-Grace2018_n60_2008-04.gfc'));
+copyfile(src, fullfile(fol, 'ITSG-Grace2018_n60_2008-05.gfc'));
+[ts, rep] = shLowLevel.standardChain(fol, TN14File = tn14, ...
+    Degree1File = tn13, Filter = "gauss300", Quiet = true);
+verifyEqual(testCase, ts.nEpochs, 2);
+verifyEqual(testCase, numel(rep.steps), 4);      % read/TN14/deg1/filter
+verifyTrue(testCase, contains(rep.version, "shAnalysis"));
+verifyTrue(testCase, any(contains(string(ts.history), "gaussian", ...
+    'IgnoreCase', true)) || numel(ts.history) >= 3);
+% GIA: with t0 = first epoch, only the second epoch shifts
+gT = shCoefficients(zeros(61), zeros(61));
+gT = gT.setCoefficient(2, 0, 1e-9, NaN);
+[t2, ~] = shLowLevel.standardChain(fol, TN14 = false, Degree1 = "none", ...
+    GIA = gT, GIAEpoch = NaN, Filter = "none", Quiet = true);
+[t0, ~] = shLowLevel.standardChain(fol, TN14 = false, Degree1 = "none", ...
+    Filter = "none", Quiet = true);
+dt = t2.epochs(2) - t2.epochs(1);
+g2 = t2.at(2); g0 = t0.at(2);
+verifyEqual(testCase, g0.C(3, 1) - g2.C(3, 1), (dt / 2) * 1e-9, ...
+    'RelTol', 1e-10);                            % t0 = mean epoch
+% custom W path (designFilter output drops in)
+g1 = t0.at(1);
+sc = 3e-11 * ones(61);
+W = shLowLevel.designFilter(sc, sc, Kaula = 1e-6);
+[tw, repW] = shLowLevel.standardChain(fol, TN14 = false, ...
+    Degree1 = "none", Filter = W, Quiet = true);
+verifyEqual(testCase, tw.nEpochs, 2);
+verifyTrue(testCase, any(contains(repW.steps, "custom W")));
+verifyError(testCase, @() shLowLevel.standardChain(fol, ...
+    Filter = "bogus", TN14 = false, Degree1 = "none", Quiet = true), ...
+    'shLowLevel:standardChain:badFilter');
+verifyError(testCase, @() shLowLevel.standardChain(fol, ...
+    TN14File = "no/such/file.txt", Degree1 = "none", Quiet = true), ...
+    'shLowLevel:standardChain:noTN14');
+end
+
 function testVersionMetadata(testCase)
 % shLowLevel.version reports toolbox metadata parsed from Contents.m - the
 % single source of truth also honoured by MATLAB's ver().

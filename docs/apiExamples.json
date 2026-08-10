@@ -60,6 +60,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.designFilter",
+  "example": "    W = shLowLevel.designFilter(g.sigmaC, g.sigmaS, Alpha = 1);\n    gF = g.applyDDK(W);                % apply like any DDK",
+  "run": true
+ },
+ {
   "name": "shLowLevel.diffSpectrum",
   "example": "    gF = g.gaussian(350);\n    spec = shLowLevel.diffSpectrum(g.C, g.S, gF.C, gF.S);\n    semilogy(spec.n, [spec.amp1, spec.diffAmp]); grid on",
   "run": true
@@ -348,6 +353,11 @@
   "name": "shLowLevel.spatialStats",
   "example": "    A1 = g.synthesis(lat, lon); A2 = gF.synthesis(lat, lon);\n    st = shLowLevel.spatialStats(A1, A2, lat, lon);\n    fprintf(\"rmsd %.3g, corr %.3f\\n\", st.rmsd, st.corr)",
   "run": true
+ },
+ {
+  "name": "shLowLevel.standardChain",
+  "example": "[ts, rep] = shLowLevel.standardChain(\"D:/grace/monthly\", ...\n    Filter = \"DDK3\", Degree1 = \"GFZ\");\ndisp(rep.steps')",
+  "run": false
  },
  {
   "name": "shLowLevel.synthesisMatrix",
