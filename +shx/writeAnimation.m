@@ -27,6 +27,7 @@ arguments
     opts.lat (1,:) double = -89:2:89
     opts.lon (1,:) double = 0:2:358
     opts.FrameRate (1,1) double = 4
+    opts.Sidecar (1,1) logical = true
     opts.CLim double = []
     opts.Coast (1,1) logical = true
     opts.Units (1,1) string = ""
@@ -83,4 +84,23 @@ for k = 1:T
     drawnow;
     writeVideo(vw, getframe(fig));
 end
+if opts.Sidecar
+    writeSidecar(string(filename), struct('nEpochs', ts.nEpochs, ...
+        'quantity', char(opts.quantity), 'frameRate', opts.FrameRate));
+end
+end
+
+function writeSidecar(target, extra)
+% provenance JSON sidecar: <target>.provenance.json (v2.7.0)
+v = shx.version();
+p = struct('tool', sprintf('%s %s (%s)', v.Name, v.Version, v.Date), ...
+    'provenance', v.Provenance, ...
+    'created', char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
+    'matlab', sprintf('%s / %s', version, computer), ...
+    'file', char(target));
+fn = fieldnames(extra);
+for k = 1:numel(fn), p.(fn{k}) = extra.(fn{k}); end
+fid = fopen(char(string(target) + ".provenance.json"), 'w');
+fprintf(fid, '%s\n', jsonencode(p, 'PrettyPrint', true));
+fclose(fid);
 end
