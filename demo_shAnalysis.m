@@ -212,7 +212,7 @@ if isempty(g), g = demoField(60, 11); fprintf('  (synthetic field)\n');
 else, fprintf('  (real ITSG file)\n'); end
 newfig(vis, 'D01 triangle & spectrum');
 subplot(1, 2, 1);
-plotSHCoeffTriangle(g.C, g.S, 'ax', gca);
+shx.plotSHCoeffTriangle(g.C, g.S, 'ax', gca);
 subplot(1, 2, 2);
 if ~isempty(g.sigmaC)
     sC = g.sigmaC; sS = g.sigmaS;             % real formal errors
@@ -220,7 +220,7 @@ else
     sC = abs(g.C) * 0.02 + 1e-13; sS = sC;    % mock if none
 end
 spec = shx.shDegreeRMS(g.C, g.S, 'R', g.R, 'sigmaC', sC, 'sigmaS', sS);
-plotSHSpectrum(spec, 'ax', gca, 'Kaula', 1e-5, 'MarkCrossover', true);
+shx.plotSHSpectrum(spec, 'ax', gca, 'Kaula', 1e-5, 'MarkCrossover', true);
 end
 
 function d02(vis, ~)
@@ -286,13 +286,13 @@ gF = g.fan(350, 200);
 gD = g.destripe();
 newfig(vis, 'D04 filter differences (removed signal)');
 subplot(1, 3, 1);
-plotSHCoeffTriangle(gG.C, gG.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shx.plotSHCoeffTriangle(gG.C, gG.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('Gaussian 350 - raw');
 subplot(1, 3, 2);
-plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shx.plotSHCoeffTriangle(gF.C, gF.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('fan 350/200 - raw');
 subplot(1, 3, 3);
-plotSHCoeffTriangle(gD.C, gD.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shx.plotSHCoeffTriangle(gD.C, gD.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title('destripe - raw');
 try
     W = shx.readDDK("DDK3", Nmax = 40);            % name resolution (v2.4.1)
@@ -303,7 +303,7 @@ end
 if haveDDK
     gK = g.applyDDK(W);
     newfig(vis, 'D04 DDK3 (real Wbd file)');
-    plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+    shx.plotSHCoeffTriangle(gK.C, gK.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
     title('DDK3 - raw');
 end
 end
@@ -374,7 +374,7 @@ lat = asind(xg(:)'); lon = (0:49) * 360 / 50;
 grid = g.synthesis(lat, lon, UseCache = false);
 g2 = shCoefficients.analysis(grid, lat, lon, 24);
 newfig(vis, 'D07 analysis roundtrip error');
-plotSHCoeffTriangle(g2.C, g2.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
+shx.plotSHCoeffTriangle(g2.C, g2.S, 'RefC', g.C, 'RefS', g.S, 'ax', gca);
 title(sprintf('recovered - true (max %.1e)', ...
     max(abs(g2.C(:) - g.C(:)))));
 fprintf('  ring roundtrip max error %.2e\n', max(abs(g2.C(:) - g.C(:))));
