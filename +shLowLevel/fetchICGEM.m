@@ -14,8 +14,13 @@ function [file, info] = fetchICGEM(model, opts)
 %     List (table()) ([])   pass a pre-fetched listICGEM table (avoids re-listing
 %                 in loops / enables the offline fixture in tests)
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
-%     Quiet (false)       suppress progress output (sizes, [k/K]
-%                         counter, per-file timing, failure summary)
+%     Quiet (false)       suppress progress output ([k/K] counter,
+%                         per-file timing, failure summary)
+%     Pause (3)           seconds between models in bulk mode - the
+%                         ICGEM server RATE-LIMITS rapid requests
+%                         (HTTP 429), which looks like a stall
+%     Retries (3)         retry attempts on 429/timeout, with 30/60/120
+%                         second backoff
 %     Update (false)  refresh existing files (safe swap: verified before replacing)
 %   Outputs
 %     file  string   local path
@@ -34,6 +39,8 @@ arguments
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.Quiet (1,1) logical = false
+    opts.Pause (1,1) double {mustBeNonnegative} = 3
+    opts.Retries (1,1) double {mustBeInteger, mustBeNonnegative} = 3
 end
 % ---- v3.0.0: numeric idx vector (rows of shLowLevel.listICGEM), "all", or a
 % list of names fetch multiple models in one call
@@ -73,7 +80,10 @@ if isnumeric(model) || ...
             [file(k), infos{k}] = shLowLevel.fetchICGEM(rows(k, :), ...
                 Dest = opts.Dest, Timeout = opts.Timeout, ...
                 Proxy = opts.Proxy, Update = opts.Update, ...
-                Quiet = opts.Quiet, List = T);
+                Quiet = opts.Quiet, Retries = opts.Retries, List = T);
+            if k < K && ~infos{k}.skipped
+                pause(opts.Pause);              % ICGEM rate limit
+            end
         catch err
             if ismember('name', rows.Properties.VariableNames)
                 nm = rows.name(k);
@@ -133,16 +143,34 @@ if present && ~opts.Update
     return
 end
 if ~opts.Quiet
-    nb = headBytes(row.url, min(opts.Timeout, 15), opts.Proxy);
-    sz = '';
-    if isfinite(nb), sz = sprintf(' (%.1f MB)', nb / 1e6); end
-    fprintf('  %s %s%s from ICGEM...\n', ...
-        ternary(present, 'updating', 'fetching'), string([base, ext]), sz);
+    fprintf('  %s %s from ICGEM (large models can take minutes)...\n', ...
+        ternary(present, 'updating', 'fetching'), string([base, ext]));
 end
 tDl = tic;
 tmpf = file + ".part";
 try
-    webFetch(row.url, tmpf, opts.Timeout, opts.Proxy);
+    backoff = [30, 60, 120];
+    attempt = 0;
+    while true
+        try
+            webFetch(row.url, tmpf, opts.Timeout, opts.Proxy);
+            break
+        catch errDl
+            attempt = attempt + 1;
+            retryable = contains(errDl.message, '429') || ...
+                contains(errDl.message, 'Too Many Requests') || ...
+                contains(lower(errDl.message), 'timed out');
+            if ~retryable || attempt > opts.Retries
+                rethrow(errDl);
+            end
+            wsec = backoff(min(attempt, numel(backoff)));
+            if ~opts.Quiet
+                fprintf(['  rate-limited by ICGEM - waiting %d s, ' ...
+                    'then retry %d/%d\n'], wsec, attempt, opts.Retries);
+            end
+            pause(wsec);
+        end
+    end
     if endsWith(lower(file), [".gfc", ".gfc.gz"])
         shLowLevel.shReadGFC(tmpf);                    % verify BEFORE swap
     else
