@@ -26,18 +26,16 @@ name: shAnalysis CI
 on:
   push:
     paths:
-      - '3rdParty/shAnalysis/**'
+      - 'shAnalysis/**'
       - '.github/workflows/shanalysis-ci.yml'
   pull_request:
     paths:
-      - '3rdParty/shAnalysis/**'
+      - 'shAnalysis/**'
   workflow_dispatch: {}
 
 env:
-  WORKDIR: 3rdParty/shAnalysis
-  # Private repositories only - remove for public repos:
-  MLM_LICENSE_TOKEN: ${{ secrets.MATLAB_BATCH_TOKEN }}
-
+  WORKDIR: shAnalysis
+  
 jobs:
   test:
     name: runAllTests (${{ matrix.os }})
