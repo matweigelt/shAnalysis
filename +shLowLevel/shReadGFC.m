@@ -66,7 +66,7 @@ frewind(fid);
 eoh = regexp(txtAll, 'end_of_head[^\n]*\n', 'end', 'once');
 fastPath = ~isempty(eoh) && isempty(regexp(txtAll(eoh:end), ...
     '^\s*(gfct|trnd|dot|acos|asin)\s', 'lineanchors', 'once'));
-if fastPath
+if fastPath                                     %#ok<ALIGN>
     % header: identical key/value semantics to the loop below
     hLines = strsplit(txtAll(1:eoh), '\n');
     for hk = 1:numel(hLines)
@@ -92,16 +92,30 @@ if fastPath
     body = regexprep(body, '^\s*#[^\n]*\n', '', 'lineanchors');
     m1 = regexp(body, '^\s*gfc\s+([^\n]*)', 'tokens', 'once', 'lineanchors');
     if isempty(m1)
+        fclose(fid);
         error('shReadGFC:noData', ...
             'No gfc/gfct data records found in %s', filename);
     end
     ncol = numel(sscanf(m1{1}, '%f'));
-    vals = sscanf(strrep(body, 'gfc', ''), '%f', [ncol, Inf])';
-    nmax = max(vals(:, 1));
-    rows = nan(size(vals, 1), 6);
-    rows(:, 1:min(ncol, 6)) = vals(:, 1:min(ncol, 6));
-    fclose(fid);
-else
+    stripped = strrep(body, 'gfc', '');
+    [vals, ~, errmsg, nexti] = sscanf(stripped, '%f', [ncol, Inf]);
+    vals = vals';
+    clean = isempty(errmsg) && ...
+        all(isstrprop(stripped(min(nexti, end):end), 'wspace')) && ...
+        ~isempty(vals);
+    if clean
+        nmax = max(vals(:, 1));
+        rows = nan(size(vals, 1), 6);
+        rows(:, 1:min(ncol, 6)) = vals(:, 1:min(ncol, 6));
+        fclose(fid);
+    else
+        % junk between records (corrupt file): the line parser's
+        % skip-unknown-lines semantics are authoritative - fall back
+        fastPath = false;
+        header = struct(); rows = []; nmax = 0;
+    end
+end
+if ~fastPath
 line = fgetl(fid);
 inHeader = true;
 while ischar(line)
