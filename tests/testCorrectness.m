@@ -1562,6 +1562,21 @@ verifyTrue(testCase, isempty(g1.variableTerms) || ...
     size(g1.variableTerms, 1) == 0);
 % header semantics identical between the two parsers
 verifyEqual(testCase, g2.header, g1.header);
+% FORTRAN D-exponents mid-file (the EIGEN-6C4 case): fast path must
+% accept and match str2double semantics exactly
+f3 = fullfile(tmp, 'dexp.gfc');
+fid = fopen(f3, 'w');
+fprintf(fid, 'max_degree 3\nerrors formal\nend_of_head\n');
+fprintf(fid, 'gfc 2 0 -4.84165217061e-04 0.0 1.1081e-13 0.0\n');
+fprintf(fid, 'gfc 3 0 0.983749337450D-11 0.000000000000D+00 0.7218D-12 0.0000D+00\n');
+fprintf(fid, 'gfc 3 1 -.574259122710D-10 0.2D+00 0.7187D-12 0.1d-01\n');
+fclose(fid);
+g3 = shLowLevel.shReadGFC(f3);
+verifyEqual(testCase, g3.C(4, 1), str2double('0.983749337450D-11'), 'AbsTol', 0);
+verifyEqual(testCase, g3.C(4, 2), str2double('-.574259122710D-10'), 'AbsTol', 0);
+verifyEqual(testCase, g3.S(4, 2), 0.2, 'AbsTol', 0);
+verifyEqual(testCase, g3.sigmaS(4, 2), 0.01, 'RelTol', 1e-15);
+verifyEqual(testCase, g3.C(3, 1), -4.84165217061e-04, 'AbsTol', 0);
 end
 
 function testSpectralFamilyIdentities(testCase)
