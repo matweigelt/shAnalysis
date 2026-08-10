@@ -71,6 +71,8 @@ if isempty(opts.Catalog) && (isstring(months) || ischar(months)) ...
     error('shLowLevel:fetchITSG:noSelection', ...
         'Give months/years, "all", or Catalog= (see shLowLevel.listITSG).');
 end
+base = opts.BaseURL;
+localBase = isfolder(base);
 % ---- Catalog= selection (rows of shLowLevel.listITSG) fetches folders fully
 if ~isempty(opts.Catalog)
     T = shLowLevel.listITSG(BaseURL = opts.BaseURL, Timeout = opts.Timeout);
@@ -149,8 +151,7 @@ if strlength(dest) == 0
     dest = string(fullfile(shLowLevel.dataFolder(), sub));             % v2.4.1
 end
 if ~isfolder(dest), mkdir(dest); end
-base = opts.BaseURL;
-localBase = isfolder(base);
+
 wo = weboptions('Timeout', opts.Timeout);
 files = strings(1, 0); fetched = files; skipped = files; missing = files;
 updated = files;
