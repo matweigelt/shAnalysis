@@ -1574,6 +1574,31 @@ verifyEqual(testCase, g5.C, g2.C, 'AbsTol', 0);
 verifyEqual(testCase, g5.S, g2.S, 'AbsTol', 0);
 verifyEqual(testCase, g5.sigmaC, g2.sigmaC, 'AbsTol', 0);
 verifyEqual(testCase, g5.variableTerms, g2.variableTerms);
+% v3.1.1 ragged groups (the EIGEN-5S pattern): ONE gfc line with a
+% trailing epoch among uniform ones, plus gfct-1.0 and dot lines.
+% Bulk must width-subgroup it and agree with forced-legacy bit-for-bit
+f6 = fullfile(tmp, 'ragged.gfc');
+fid = fopen(f6, 'w');
+fprintf(fid, 'max_degree 4\nerrors formal\nend_of_head\n');
+fprintf(fid, 'gfc 2 0 -4.84e-4 0.0 1.0e-13 0.0\n');
+fprintf(fid, 'gfc 2 1 -2.7e-10 1.4e-9 7.8e-12 3.7e-11 20041001\n');
+fprintf(fid, 'gfct 3 0 9.57e-7 0.0 1.1e-11 0.0 20041001\n');
+fprintf(fid, 'dot 3 0 4.9e-12 0.0 0.0 0.0\n');
+fprintf(fid, 'gfc 4 4 -4.0e-9 2.5e-9 1.0e-12 1.0e-12\n');
+fclose(fid);
+g6 = shLowLevel.shReadGFC(f6);                 % bulk, width subgroups
+verifyEqual(testCase, g6.nmax, 4);             % NOT 20041001
+verifyEqual(testCase, g6.C(3, 2), -2.7e-10, 'AbsTol', 0);
+verifyEqual(testCase, g6.sigmaS(3, 2), 3.7e-11, 'AbsTol', 0);
+f7 = fullfile(tmp, 'ragged_dirty.gfc');
+copyfile(f6, f7); fid = fopen(f7, 'a');
+fprintf(fid, 'gfc 0 0 0.0 0.0 x y\n');        % forces the line parser
+fclose(fid);
+g7 = shLowLevel.shReadGFC(f7);
+verifyEqual(testCase, g7.C, g6.C, 'AbsTol', 0);
+verifyEqual(testCase, g7.S, g6.S, 'AbsTol', 0);
+verifyEqual(testCase, g7.sigmaC, g6.sigmaC, 'AbsTol', 0);
+verifyEqual(testCase, g7.variableTerms, g6.variableTerms);
 % FORTRAN D-exponents mid-file (the EIGEN-6C4 case): fast path must
 % accept and match str2double semantics exactly
 f3 = fullfile(tmp, 'dexp.gfc');

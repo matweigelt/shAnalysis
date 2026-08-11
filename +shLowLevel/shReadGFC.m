@@ -100,7 +100,7 @@ if fastPath                                     %#ok<ALIGN>
     isV2f = isfield(header, 'format') && ...
         contains(lower(char(string(header.format))), 'icgem2.0');
     kk = {'gfc', 'gfct', 'trnd', 'acos', 'asin'};
-    Gv = cell(1, 5); Gn = zeros(1, 5);
+    Gv = cell(1, 5); Gn = cell(1, 5);           % per width-subgroup
     okBulk = true;
     for ki = 1:5
         % [ \t]+ after the key cannot match the 't' of gfct, so the
@@ -115,12 +115,38 @@ if fastPath                                     %#ok<ALIGN>
         J = strrep(strrep(J, 'D', 'E'), 'd', 'e');
         [V, ~, em, ni] = sscanf(J, '%f', [nc, Inf]);
         V = V';
-        if ~isempty(em) || isempty(V) || ...
-                ~all(isstrprop(J(min(ni, end):end), 'wspace'))
-            okBulk = false;
+        clean = isempty(em) && ~isempty(V) && ...
+            all(isstrprop(J(min(ni, end):end), 'wspace'));
+        if clean && size(V, 1) == numel(L)
+            % rectangular group (the overwhelming common case)
+            Gv{ki} = {V}; Gn{ki} = nc;
+            continue
+        end
+        % ragged group (e.g. EIGEN-5S carries ONE gfc line with a
+        % trailing epoch among 11k uniform ones): split by numeric
+        % width and bulk-parse each subgroup separately
+        w = cellfun(@(s) nnz(diff([false, ...
+            ~isspace(strrep(s, kk{ki}, ''))]) == 1), L);
+        uw = unique(w);
+        Vs = cell(1, numel(uw)); ok2 = true;
+        for wi = 1:numel(uw)
+            Ls = L(w == uw(wi));
+            Js = sprintf('%s\n', Ls{:});
+            Js = strrep(Js, kk{ki}, '');
+            Js = strrep(strrep(Js, 'D', 'E'), 'd', 'e');
+            [V2, ~, em2, ni2] = sscanf(Js, '%f', [uw(wi), Inf]);
+            V2 = V2';
+            if ~isempty(em2) || size(V2, 1) ~= numel(Ls) || ...
+                    ~all(isstrprop(Js(min(ni2, end):end), 'wspace'))
+                ok2 = false; break
+            end
+            Vs{wi} = V2;
+        end
+        if ~ok2
+            okBulk = false;                     % genuinely dirty
             break
         end
-        Gv{ki} = V; Gn(ki) = nc;
+        Gv{ki} = Vs; Gn{ki} = uw;
     end
     if okBulk && isempty(Gv{1}) && isempty(Gv{2})
         fclose(fid);
@@ -131,55 +157,61 @@ if fastPath                                     %#ok<ALIGN>
     varT = cell(0, 1);
     if okBulk
         for ki = 1:5
-            V = Gv{ki};
-            if isempty(V) || ~okBulk, continue, end
-            nc = Gn(ki); N2 = size(V, 1);
-            nmax = max(nmax, max(V(:, 1)));
-            if ki <= 2 && ~(ki == 2 && isV2f)
-                % gfc, and gfct under ICGEM 1.0: the constant part
-                r = nan(N2, 6);
-                r(:, 1:min(nc, 6)) = V(:, 1:min(nc, 6));
-                rows = [rows; r]; %#ok<AGROW>
-                if ki == 2 && nc >= 7           % parts>=8: t0 = V(:,7)
-                    gfctT0 = [gfctT0; V(:, 1:2), ...
-                        shLowLevel.icgemDate2Year(V(:, 7))]; %#ok<AGROW>
+            if isempty(Gv{ki}) || ~okBulk, continue, end
+            for si = 1:numel(Gv{ki})
+                V = Gv{ki}{si}; nc = Gn{ki}(si); N2 = size(V, 1);
+                % sanity net: n, m integer, 0 <= m <= n, n bounded -
+                % catches any aligned-but-shifted parse before it can
+                % request a (date x date) coefficient matrix
+                if ~all(V(:, 1) == round(V(:, 1))) || ...
+                        ~all(V(:, 2) == round(V(:, 2))) || ...
+                        any(V(:, 2) < 0 | V(:, 2) > V(:, 1)) || ...
+                        max(V(:, 1)) > 1e5
+                    okBulk = false; break
                 end
-                continue
-            end
-            t0 = nan(N2, 1); t1 = t0; per = t0;
-            if ki == 2                          % gfct, ICGEM 2.0 piece
-                if nc < 8, okBulk = false; continue, end
-                t0 = shLowLevel.icgemDate2Year(V(:, 7));
-                t1 = shLowLevel.icgemDate2Year(V(:, 8));
-            elseif isV2f
-                % 2.0: trnd -> ... t0 t1 ; acos/asin -> ... per t0 t1
-                if ki == 3
-                    if nc < 8, okBulk = false; continue, end
+                nmax = max(nmax, max(V(:, 1)));
+                if ki <= 2 && ~(ki == 2 && isV2f)
+                    % gfc, and gfct under ICGEM 1.0: the constant part
+                    r = nan(N2, 6);
+                    r(:, 1:min(nc, 6)) = V(:, 1:min(nc, 6));
+                    rows = [rows; r]; %#ok<AGROW>
+                    if ki == 2 && nc >= 7       % parts>=8: t0 = V(:,7)
+                        gfctT0 = [gfctT0; V(:, 1:2), ...
+                            shLowLevel.icgemDate2Year(V(:, 7))]; %#ok<AGROW>
+                    end
+                    continue
+                end
+                t0 = nan(N2, 1); t1 = t0; per = t0;
+                if ki == 2                      % gfct, ICGEM 2.0 piece
+                    if nc < 8, okBulk = false; break, end
                     t0 = shLowLevel.icgemDate2Year(V(:, 7));
                     t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                elseif isV2f
+                    % 2.0 real-world layout: ... t0 t1 [period last]
+                    if ki == 3
+                        if nc < 8, okBulk = false; break, end
+                        t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                        t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                    else
+                        if nc < 9, okBulk = false; break, end
+                        t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                        t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                        per = V(:, 9);
+                    end
                 else
-                    % 2.0 real-world layout: ... t0 t1 period (verified
-                    % against CNES_GRGS.RL05MF; the pre-v3.1.1 line
-                    % parser assumed period-first and mis-parsed these)
-                    if nc < 9, okBulk = false; continue, end
-                    t0 = shLowLevel.icgemDate2Year(V(:, 7));
-                    t1 = shLowLevel.icgemDate2Year(V(:, 8));
-                    per = V(:, 9);
+                    % 1.0 disambiguation (per subgroup width, matching
+                    % the line parser's per-line rules exactly)
+                    if nc >= 8
+                        t0 = shLowLevel.icgemDate2Year(V(:, 7));
+                        t1 = shLowLevel.icgemDate2Year(V(:, 8));
+                        if ki > 3, per = ones(N2, 1); end
+                    elseif nc == 7 && ki > 3
+                        per = V(:, 7);
+                    end
                 end
-            else
-                % 1.0 disambiguation (documented in the line parser):
-                % parts>=9 (nc>=8): t0/t1 = V(:,7:8), period 1 yr for
-                % acos/asin; parts==8 & ~trnd (nc==7): V(:,7) = period
-                if nc >= 8
-                    t0 = shLowLevel.icgemDate2Year(V(:, 7));
-                    t1 = shLowLevel.icgemDate2Year(V(:, 8));
-                    if ki > 3, per = ones(N2, 1); end
-                elseif nc == 7 && ki > 3
-                    per = V(:, 7);
-                end
+                varNum = [varNum; V(:, 1:2), V(:, 3:4), t0, t1, per]; %#ok<AGROW>
+                varT = [varT; repmat(kk(ki), N2, 1)]; %#ok<AGROW>
             end
-            varNum = [varNum; V(:, 1:2), V(:, 3:4), t0, t1, per]; %#ok<AGROW>
-            varT = [varT; repmat(kk(ki), N2, 1)]; %#ok<AGROW>
         end
     end
     if okBulk

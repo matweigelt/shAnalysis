@@ -3,6 +3,17 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.1.1] - Unreleased
+
+### Fixed
+- `shReadGFC` bulk parser survives ragged record groups: EIGEN-5S/5C
+  carry a single gfc line with a trailing epoch among thousands of
+  uniform ones, which silently misaligned the rectangular sscanf and
+  requested a (date x date) coefficient matrix. Groups are now checked
+  for rectangularity (rows out == lines in), split by numeric width
+  when ragged, and guarded by an n/m integer/bound sanity net; dirty
+  groups still fall back to the line parser.
+
 ## [3.1.0] - Unreleased
 
 ### Fixed
