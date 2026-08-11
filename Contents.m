@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.2.2 (R2026a-compatible) 11-Aug-2026
+% Version 3.3.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,15 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.3.0 (GRAVIS Level-2B reader)
+%   shLowLevel.readSHM reads the GRAVIS/GRACE SHM format - YAML header
+%     plus GRCOF2 (field) or GRDOTA (rate, 1/yr) records, gzip
+%     transparent, GM/R from the header. GravIS Level-2B products are a
+%     major public data source the toolbox previously could not ingest
+%     at all; a GRDOTA result feeds standardChain(GIA=) directly.
+%   Fixtures for both record types plus the GravIS Greenland drainage
+%     basins ship in tests/test_data (CC-BY-4.0, see NOTICE).
 %
 % New in v3.2.2 (fixes found by running on a full 24-year series)
 %   standardChain no longer stops when the TN-13/TN-14 tables trail the

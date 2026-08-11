@@ -3,6 +3,20 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.3.0] - 2026-08-11
+
+### Added
+- `shLowLevel.readSHM`: the GRAVIS/GRACE SHM format - a YAML header
+  followed by `GRCOF2` (a field) or `GRDOTA` (a rate in 1/yr) records,
+  gzip transparent, GM and the reference radius taken from the header.
+  GravIS Level-2B products - monthly solutions, mean fields, the
+  ICE-6G_D (VM5a) GIA model - are a major public data source the
+  toolbox could not read at all. A `GRDOTA` result feeds
+  `standardChain(GIA=)` directly, which is what it always wanted.
+  Python-validated first (`tools/dev/validate_shm.py`).
+- Fixtures for both record types, and the GravIS Greenland drainage
+  basin geometries, under CC-BY-4.0 with attribution in NOTICE.
+
 ## [3.2.2] - 2026-08-11
 
 ### Fixed

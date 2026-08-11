@@ -490,6 +490,11 @@
   "run": false
  },
  {
+  "name": "shLowLevel.readSHM",
+  "example": "gia = shLowLevel.readSHM(\"GRAVIS-2B_..._GIA_ICE-6G_D_VM5a.gz\", Nmax = 96);\ng   = shCoefficients(gia.C, gia.S, GM = gia.GM, R = gia.R);   % rates [1/yr]",
+  "run": false
+ },
+ {
   "name": "shLowLevel.readSINEX",
   "example": "snx = shLowLevel.readSINEX(\"ITSG-Grace2018_n96_2008-04_head12.snx\");\nfprintf(\"%s with %d params\\n\", snx.kind, numel(snx.x))",
   "run": true
