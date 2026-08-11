@@ -3,6 +3,23 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.1.4] - 2026-08-11
+
+### Added
+- `shLowLevel.safeMove`: the `.part` -> target swap every fetcher ends
+  with, now with verification and exponential-backoff retries
+  (0.25/0.5/1/2/4 s). Windows antivirus and cloud-sync clients open a
+  just-written file to scan it and hold it briefly; a plain `movefile`
+  hits that window and reports a download failure for a file that
+  downloaded perfectly. Each attempt checks that the destination exists
+  and the source is gone rather than trusting the status flag, because
+  synced and network volumes have been observed reporting success early.
+  All six call sites in fetchICGEM (2), fetchITSG, fetchTN,
+  fetchLoveNumbers and fetchDDK go through it.
+- `shLowLevel:safeMove:locked` names the usual cause and the two fixes
+  (exclude the data folder from on-access scanning, or move it off the
+  synced drive) instead of surfacing a bare OS message.
+
 ## [3.1.3] - 2026-08-11
 
 ### Added

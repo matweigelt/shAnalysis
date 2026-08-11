@@ -43,6 +43,25 @@ F = shLowLevel.listICGEM(Type="temporal", ...
         Series="03_other/ITSG/ITSG-Grace2018/monthly");
 websave("m1.gfc", F.url(1));                    % one monthly file</pre>
 <p>For ITSG monthly files <a href="fetchITSG.html">shLowLevel.fetchITSG</a> remains the convenient route, whose default target is dataFolder/itsg_series.</p>
+<h2>Safe swaps: why downloads land atomically <span class="tag">v3.1.4</span></h2>
+<p>Every <code class="inline">shLowLevel.fetch*</code> function downloads to
+<code class="inline">&lt;target&gt;.part</code>, <b>parses the fresh file to verify it</b>, and only
+then swaps it into place. A half-downloaded or corrupt file therefore never replaces a good one, and
+an interrupted fetch is resumable.</p>
+<p>The swap itself goes through <code class="inline">shLowLevel.safeMove</code>, which retries with
+exponential backoff (0.25/0.5/1/2/4 s by default). This is not defensive padding: on Windows an
+antivirus or a cloud-sync client (OneDrive, Dropbox, DLP agents) opens a just-written file to scan
+it and holds it briefly, so a plain <code class="inline">movefile</code> reports a download failure
+for a file that downloaded perfectly. Each attempt verifies that the destination exists and the
+source is gone rather than trusting the status flag, because synced and network volumes have been
+seen reporting success too early.</p>
+<pre>n = shLowLevel.safeMove(tmpf, target);            % n = attempts used
+n = shLowLevel.safeMove(tmpf, target, Retries = 8, Pause = 0.5);</pre>
+<div class="note">If a fetch still fails with
+<code class="inline">shLowLevel:safeMove:locked</code>, the file is fine &mdash; the folder is the
+problem. Exclude the data folder from on-access scanning, or point
+<a href="dataManagement.html">shLowLevel.dataFolder</a> at a location outside the synced drive.</div>
+
 <h2>See also</h2><p class="seealso"><a href="fetchITSG.html">fetchITSG</a> <a href="shGaussianFilter.html">DDK filtering</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4.1 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
