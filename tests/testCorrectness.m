@@ -1884,8 +1884,16 @@ cb = A \ squeeze(bad.Cs(3,1,:));
 verifyGreaterThan(testCase, norm(cb(7:8)), 1e-11, ...
     'ignoring the offset must leave the alias only partly removed');
 
-% too short a record cannot separate the terms and must say so
+% Too short a record must be refused. Note this is NOT a rank or
+% conditioning failure: a one-year span gives a full-rank design with a
+% condition number of 38 and a completely meaningless fit, so the guard
+% has to test degrees of freedom and alias cycles instead.
 short = ts.select(t < 2005);
+verifyEqual(testCase, short.nEpochs, 12);
 verifyError(testCase, @() short.removeAlias(), ...
-    'shSeries:removeAlias:rankDeficient');
+    'shSeries:removeAlias:tooShort');
+% and a record long enough in span but too sparse is refused too
+sparse5 = ts.select(ismember(t, t(1:40:end)));
+verifyError(testCase, @() sparse5.removeAlias(), ...
+    'shSeries:removeAlias:tooShort');
 end
