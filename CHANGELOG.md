@@ -3,6 +3,28 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.2] - 2026-08-11
+
+### Added
+- Opt-in test of `readMascon` against a REAL mascon product, via
+  `SHX_MASCON_FILE`. Verified on the JPL RL06.3Mv04 CRI file (0.5 deg,
+  257 months, 46 MB), which reads correctly in 0.8 s.
+- The test checks GEOGRAPHY, not dimensions. The synthetic fixture
+  writes `lwe_thickness(lon, lat, time)` while the real JPL file writes
+  `(time, lat, lon)` - a size check passes either way, and a transposed
+  grid would sail through it. Greenland must LOSE mass over the GRACE
+  era: measured -124 cm between 2003 and 2024, with the largest change
+  at 76 N / 291 E (northwest Greenland), which is the right place.
+
+### Documented
+- The verified JPL layout, and that the reader permutes whatever order
+  it finds to (lat, lon, time).
+- Mascon latitudes are conventionally GEODETIC while this toolbox
+  synthesises on GEOCENTRIC ones. The difference peaks near 45 deg at
+  0.19 deg - about 21 km, or 0.4 of a 0.5-degree mascon cell. The help
+  said "typically geodetic" before; it now says what that costs and
+  where to convert.
+
 ## [3.8.1] - 2026-08-11
 
 ### Changed
