@@ -386,7 +386,7 @@
  },
  {
   "name": "shLowLevel.leakageCorrect",
-  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);\n[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...\n    Filter = \"gauss300\", Mask = basinMask);",
+  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);\n[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...\n    Filter = \"gauss300\", Mask = basinMask, NoiseLevel = oceanRMS);",
   "run": false
  },
  {

@@ -1681,6 +1681,10 @@ function testLeakageCorrectRecoversAKnownDisc(testCase)
 %   Python-validated properties (tools/dev/validate_leakage.py): with an
 %   exact mask the iteration recovers the disc, removes the leakage
 %   outside it entirely, and beats the filtered field by a wide margin.
+% noise-free synthetic data: the unregularised warning is expected
+% here and would otherwise clutter every CI log
+ws = warning('off', 'shLowLevel:leakageCorrect:unregularised');
+cw = onCleanup(@() warning(ws)); %#ok<NASGU>
 [lat, lon, ~, obs, mask, nmax] = leakageFixture();
 verifyLessThan(testCase, max(obs(:)), 0.9, ...
     'the fixture must actually lose signal, or it tests nothing');
@@ -1757,6 +1761,10 @@ end
 
 function testLeakageCorrectContract(testCase)
 %TESTLEAKAGECORRECTCONTRACT Identity, zero, divergence, bad input.
+% noise-free synthetic data: the unregularised warning is expected
+% here and would otherwise clutter every CI log
+ws = warning('off', 'shLowLevel:leakageCorrect:unregularised');
+cw = onCleanup(@() warning(ws)); %#ok<NASGU>
 [lat, lon, ~, obs, mask, nmax] = leakageFixture();
 
 % Filter = "none" makes the chain the identity: one step, exact
@@ -1792,6 +1800,10 @@ function testGridScalingFactors(testCase)
 %   PATTERN, not its scale) and must be NaN where the model carries no
 %   signal, rather than a ratio of two numerical zeros multiplying the
 %   user's data.
+% noise-free synthetic data: the unregularised warning is expected
+% here and would otherwise clutter every CI log
+ws = warning('off', 'shLowLevel:leakageCorrect:unregularised');
+cw = onCleanup(@() warning(ws)); %#ok<NASGU>
 [lat, lon, truth, ~, mask, nmax] = leakageFixture();
 amp = 1 + 0.4 * sin(2 * pi * (0:23) / 12);
 model = truth .* reshape(amp, 1, 1, []);

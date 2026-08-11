@@ -79,6 +79,24 @@ observation that has energy outside it &mdash; so the residual settles at a nonz
 solution is perfectly converged. Stopping on the residual would report failure on exactly the case
 the mask exists for.</div>
 
+<h3>Stopping is regularisation <span class="tag">v3.5.0</span></h3>
+<p>This is an ill-posed inverse problem, and the iteration <b>semiconverges</b>: the error against
+the truth falls, reaches a minimum, then <em>rises</em> as the iteration starts fitting noise. The
+residual meanwhile keeps shrinking &mdash; so "iterate until nothing changes" is exactly the wrong
+instruction. On the reference problem the final solution is <b>361&times;</b> worse than the best
+one, and a step tolerance of 1e-3 stops <b>89&times;</b> past the optimum (1e-4 never triggers).</p>
+<p>Pass <code class="inline">NoiseLevel</code> and the run stops on the <b>discrepancy principle</b>
+(Morozov): once the residual reaches the noise level of the data, fitting it more closely is fitting
+noise. On the reference problem that lands within 2% of the best attainable solution.</p>
+<pre>noise = rms(field(openOcean));            % > 1000 km from any coast
+[m, info] = shLowLevel.leakageCorrect(obs, lat, lon, Filter = "gauss300", ...
+    Mask = unionMask, NoiseLevel = noise);
+info.stoppedBy      % "discrepancy" | "step" | "maxIter" - always check</pre>
+<div class="note">Without <code class="inline">NoiseLevel</code> the iteration is
+<b>unregularised</b>, the answer depends on <code class="inline">MaxIter</code>, and a warning says
+so. On a noisy version of the reference disc the unregularised run took 239 iterations and was
+<b>4.3&times;</b> further from the truth than the run stopped at the noise level after 2.</div>
+
 <h3>Gain and iteration count</h3>
 <p>Small regions under a strong filter converge slowly: the 6&deg; disc needs about 260 iterations at
 <code class="inline">Gain = 1</code> and about 170 at <code class="inline">Gain = 2</code>. Values

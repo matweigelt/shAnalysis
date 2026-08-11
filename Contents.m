@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.4.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.5.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,19 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.5.0 (stopping is regularisation)
+%   leakageCorrect solves an ill-posed problem and SEMICONVERGES: the
+%     error against the truth falls, then RISES, while the residual
+%     keeps shrinking. Iterating until nothing changes is therefore the
+%     wrong rule - on the reference problem the final solution is 361x
+%     worse than the best, and a step tolerance of 1e-3 stops 89x past
+%     the optimum (1e-4 never triggers at all).
+%   NoiseLevel= enables the discrepancy principle (Morozov): stop once
+%     the residual reaches the noise level of the data. Lands within 2%
+%     of the optimum. Tau= (1.2) is the safety factor. Without it the
+%     run is unregularised, info.stoppedBy says so, and a warning is
+%     raised. Python-validated in tools/dev/validate_stopping.py.
 %
 % New in v3.4.1 (the GravIS comparison closed to 1.6 %)
 %   leakageCorrect: the Filter= you declare must be the filter the
