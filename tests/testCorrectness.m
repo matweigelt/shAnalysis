@@ -2113,3 +2113,65 @@ verifyError(testCase, @() shLowLevel.estimateDegree1(ts, ...
     false(size(LA)), kn = kn, LatDeg = lat, LonDeg = lon), ...
     'shLowLevel:estimateDegree1:emptyOcean');
 end
+
+% ------------------------------------------- tailored sensitivity kernels
+function testSensitivityKernelTradeOff(testCase)
+%TESTSENSITIVITYKERNELTRADEOFF Alpha must be a real dial, not a knob.
+%   Pinned against tools/dev/validate_senskernel.py: the two limits are
+%   exact, leakage rises and noise falls monotonically with Alpha, and
+%   at matched noise the tailored kernel leaks less than a Gaussian.
+idx = shLowLevel.shIndex(30, MinDegree = 0);
+cap = @(la, lo) double(acosd(min(1, max(-1, sind(15) * sind(la) + ...
+    cosd(15) * cosd(la) .* cosd(lo - 300)))) <= 10);
+
+% Alpha = 0 returns the exact indicator
+[k0, i0] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 0);
+verifyEqual(testCase, k0, i0.kExact, 'AbsTol', 1e-14);
+verifyEqual(testCase, i0.leakage, 0, 'AbsTol', 1e-14);
+verifyEqual(testCase, i0.gain, 1, 'RelTol', 1e-12);
+
+% a huge Alpha shrinks the kernel towards zero
+kBig = shLowLevel.sensitivityKernel(idx, cap, Alpha = 1e12);
+verifyLessThan(testCase, norm(kBig), 1e-3 * norm(k0));
+
+% monotone in both directions: that is what makes Alpha a trade-off
+alphas = logspace(-2, 6, 9);
+L = zeros(size(alphas)); S = zeros(size(alphas));
+for j = 1:numel(alphas)
+    [~, inf1] = shLowLevel.sensitivityKernel(idx, cap, Alpha = alphas(j));
+    L(j) = inf1.leakage; S(j) = inf1.noise;
+end
+verifyTrue(testCase, all(diff(L) > 0), 'leakage must grow with Alpha');
+verifyTrue(testCase, all(diff(S) < 0), 'noise must fall with Alpha');
+
+% at matched noise it must leak less than a Gaussian - the whole claim
+[kt, it] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 1e3);
+mVec = 1 ./ (idx.n(:) + 1);
+nVec = (1 + (idx.n(:) / 8).^3).^2;
+best = inf; bestL = inf;
+for r = 100:50:3000
+    wg = shLowLevel.shGaussianWeights(idx.Lmax, r);
+    kg = i0.kExact .* wg(idx.n + 1);
+    sg = sqrt(sum(nVec .* kg.^2));
+    if abs(sg - it.noise) < best
+        best = abs(sg - it.noise);
+        bestL = sqrt(sum(mVec .* (kg - i0.kExact).^2));
+    end
+end
+verifyLessThan(testCase, it.leakage, bestL, ...
+    'the tailored kernel must leak less than a Gaussian at equal noise');
+
+% a full covariance is accepted and gives the same answer as its
+% diagonal when it IS diagonal
+Nd = diag(nVec);
+[kf, ifu] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 10, Noise = Nd);
+[kv, ivu] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 10, ...
+    Noise = sqrt(nVec));
+verifyEqual(testCase, kf, kv, 'RelTol', 1e-10);
+verifyEqual(testCase, ifu.noise, ivu.noise, 'RelTol', 1e-10);
+
+verifyError(testCase, @() shLowLevel.sensitivityKernel(idx, cap, ...
+    Noise = ones(3, 1)), 'shLowLevel:sensitivityKernel:badNoise');
+verifyError(testCase, @() shLowLevel.sensitivityKernel(idx, cap, ...
+    FarField = ones(3, 1)), 'shLowLevel:sensitivityKernel:badFarField');
+end
