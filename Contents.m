@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.2.0 (R2026a-compatible) 11-Aug-2026
+% Version 3.2.1 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,18 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.2.1 (scientific regression suite - roadmap item 9)
+%   tests/testScience.m checks the toolbox against values published
+%   OUTSIDE it - the WGS84/GRS80 defining constants, the Gegout97 (PREM)
+%   load Love numbers, the closed-form EWH kernel of Wahr et al. (1998),
+%   the GRACE-minus-SLR C20 discrepancy, geocenter amplitudes from the
+%   providers' technical notes, and the Gaussian half-weight relation.
+%   The other suites verify that the code does what the code intends and
+%   stay green if a formula is CONSISTENTLY wrong; these do not.
+%   A trend regression needs a monthly series, which is too large to
+%   ship: set SHX_SERIES_FOLDER to opt in, otherwise that one test is
+%   filtered (it deliberately does not touch the persistent data folder).
 %
 % New in v3.2.0 (leakage correction - roadmap item 8)
 %   shLowLevel.leakageCorrect - iterative forward modelling: recover the
