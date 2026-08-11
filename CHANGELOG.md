@@ -3,6 +3,29 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.5] - 2026-08-11
+
+### Fixed
+- `html/shAnalysis.html`, the page a user reaches from `doc shAnalysis`,
+  announced **v3.0.0** - eight releases stale. Nothing caught it because
+  the version gate only compared pages that already carried a version,
+  and this one carried an old one in prose. It now has an explicit
+  version stamp and `doc_sync_audit` checks it; a negative test confirms
+  the gate fires when the two disagree.
+- `NOTICE` listed the GFZ TN-13 fixture as `TN-13_GEOC_GFZ_RL06.3.txt`.
+  It ships as `RL06_3.txt` - the same underscore/dot confusion that kept
+  `testStandardChain` filtered out for four releases.
+
+### Audited, no change needed
+- Every `shLowLevel.*` function named in the README exists; every path
+  it names exists or is documented as generated output.
+- Every fixture listed in NOTICE is present (after the correction
+  above).
+- No dangling cross-references in the in-file help of the 84 package
+  functions and 3 classes.
+- Version strings agree across Contents.m, CITATION.cff, CHANGELOG.md,
+  apiReference.html, the guide cover and the overview page.
+
 ## [3.8.4] - 2026-08-11
 
 ### Fixed

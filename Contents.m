@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.4 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.5 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,15 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.5 (documentation audit)
+%   html/shAnalysis.html - the page a user lands on from `doc
+%   shAnalysis` - said v3.0.0 for eight releases. Nothing checked it:
+%   the version gate only looked at pages that already carried one. It
+%   now carries a stamp AND is gated, with a negative test confirming
+%   the gate fires.
+%   NOTICE listed the GFZ TN-13 fixture as RL06.3.txt; it ships as
+%   RL06_3.txt. Same typo that kept testStandardChain filtered.
 %
 % New in v3.8.4 (a test that was never running)
 %   testStandardChain asked for TN-13_GEOC_GFZ_RL06.3.txt while the
