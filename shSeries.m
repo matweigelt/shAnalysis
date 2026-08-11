@@ -456,6 +456,109 @@ methods
         out = shSeries(arr);
     end
 
+    function out = removeAlias(obj, opts)
+        %REMOVEALIAS Remove a tidal alias harmonic from every epoch.
+        %   TS2 = ts.removeAlias() fits, per coefficient, a harmonic at
+        %   the S2 tidal alias period (161 days) TOGETHER WITH bias,
+        %   trend, annual and semi-annual, and subtracts only that
+        %   harmonic. This is the correction GravIS applies to its
+        %   Level-2B products (https://gravis.gfz.de/corrections):
+        %   errors in the ocean-tide background model alias into the
+        %   monthly fields at this period, and leaving them in puts a
+        %   spurious ~161-day signal into every derived series.
+        %
+        %   Fitting the alias jointly with the deterministic terms
+        %   matters: fitted alone it absorbs part of the trend and the
+        %   annual cycle, and subtracting that would damage both.
+        %
+        %   PHASE OFFSET. Across the GRACE / GRACE-FO boundary the nodal
+        %   planes are not aligned, so one harmonic cannot describe both
+        %   missions. Landerer et al. (2020) prescribe a fixed 100 degree
+        %   offset for the later mission; PhaseOffset/SplitEpoch apply
+        %   it. The offset is FIXED, so the model gains no free
+        %   parameters - it only gains the ability to fit both spans.
+        %   Ignoring it mis-estimates the amplitude badly (validated in
+        %   tools/dev/validate_alias.py: 0.41 error on a unit-scale
+        %   synthetic). On a series that lies entirely on one side of
+        %   SplitEpoch the offset has no effect.
+        %
+        %   Inputs
+        %     (none beyond the object)
+        %
+        %   Options
+        %     Period (161/365.25)  alias period [years]. The default is
+        %             the S2 alias; the K2 and K1 aliases (3.66 and 7.48
+        %             years) are longer than most records and are better
+        %             handled as climatology Periods
+        %     PhaseOffset (100)  phase offset [degrees] applied to epochs
+        %             at or after SplitEpoch
+        %     SplitEpoch (2018.0)  mission boundary [decimal year]; the
+        %             GRACE-FO record starts mid-2018
+        %     T0 (NaN)  reference epoch of the fit (NaN: the mean epoch)
+        %
+        %   Outputs
+        %     out        (1,1) shSeries  copy with the alias harmonic
+        %                removed from every epoch; the operation is
+        %                appended to the history
+        %
+        %   Example
+        %     ts = ts.removeAlias();                   % S2, 100 deg offset
+        %     ts = ts.removeAlias(SplitEpoch = 2018.4);
+        %
+        %   See also shSeries.climatology, shLowLevel.standardChain.
+        %
+        %   Developed by Matthias Weigelt with the help of Claude
+        %   (Opus 5), 2026-08-11 (v3.4.0).
+        arguments
+            obj
+            opts.Period (1,1) double {mustBePositive} = 161/365.25
+            opts.PhaseOffset (1,1) double = 100
+            opts.SplitEpoch (1,1) double = 2018.0
+            opts.T0 (1,1) double = NaN
+        end
+        obj.assertClean('removeAlias');
+        t = obj.epochs(:);
+        if any(~isfinite(t))
+            error('shSeries:noEpoch', ...
+                'removeAlias requires finite epochs for every entry.');
+        end
+        t0 = opts.T0;
+        if ~isfinite(t0), t0 = mean(t); end
+        w = 2 * pi;
+        a = w * t / opts.Period + deg2rad(opts.PhaseOffset) * ...
+            (t >= opts.SplitEpoch);
+        A = [ones(numel(t), 1), t - t0, cos(w*t), sin(w*t), ...
+             cos(2*w*t), sin(2*w*t), cos(a), sin(a)];
+        % A short record does NOT show up as rank deficiency or bad
+        % conditioning - a one-year span gives a full-rank design with a
+        % condition number of 38, and a fit that means nothing. The real
+        % requirements are degrees of freedom and enough alias cycles to
+        % separate the harmonic from the seasonal terms.
+        nPar = size(A, 2);
+        span = max(t) - min(t);
+        if numel(t) < 2 * nPar || span < 2 * opts.Period || rank(A) < nPar
+            error('shSeries:removeAlias:tooShort', ...
+                ['%d epochs spanning %.2f yr cannot support the ' ...
+                 '%d-term fit (bias, trend, annual, semi-annual, ' ...
+                 'alias). At least %d epochs and %.2f yr (two alias ' ...
+                 'periods) are required, and in practice several years ' ...
+                 'are needed before the estimate is stable.'], ...
+                numel(t), span, nPar, 2 * nPar, 2 * opts.Period);
+        end
+        n1 = obj.nmax + 1;
+        Y = [reshape(obj.Cs, [], obj.nEpochs); ...
+             reshape(obj.Ss, [], obj.nEpochs)].';      % T x 2*n1^2
+        coef = A \ Y;
+        alias = A(:, 7:8) * coef(7:8, :);              % ONLY the harmonic
+        Z = (Y - alias).';
+        out = obj;
+        out.Cs = reshape(Z(1:n1^2, :), n1, n1, obj.nEpochs);
+        out.Ss = reshape(Z(n1^2+1:end, :), n1, n1, obj.nEpochs);
+        out.history(end+1) = sprintf( ...
+            "alias removed (%.1f d, %.0f deg offset from %.2f)", ...
+            opts.Period * 365.25, opts.PhaseOffset, opts.SplitEpoch);
+    end
+
     function out = removeGIA(obj, gia, opts)
         %REMOVEGIA Subtract a glacial isostatic adjustment model.
         %   OUT = ts.removeGIA(GIA, T0 (NaN)=mean(epochs)) subtracts the linear

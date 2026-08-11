@@ -1840,3 +1840,60 @@ verifyError(testCase, @() shLowLevel.readSHM(fullfile(dd, 'nope.shm')), ...
 gia = shCoefficients(G.C, G.S, GM = G.GM, R = G.R);
 verifyEqual(testCase, gia.C(3, 1), G.C(3, 1));
 end
+
+% ------------------------------------------------- S2 tidal alias removal
+function testRemoveAliasRecoversAKnownHarmonic(testCase)
+%TESTREMOVEALIASRECOVERSAKNOWNHARMONIC The 161-day alias, phase offset and all.
+%   Pinned against tools/dev/validate_alias.py: the harmonic is removed
+%   exactly, the deterministic terms it was fitted with survive
+%   untouched, and the GRACE/GRACE-FO phase offset demonstrably matters.
+n1 = 5;
+t = [(2004:1/12:2016.99)'; (2018.6:1/12:2025.99)'];   % with the gap
+T = numel(t);
+P = 161/365.25;
+split = 2018.0;
+a = 2*pi*t/P + deg2rad(100)*(t >= split);
+Cs = zeros(n1, n1, T); Ss = Cs;
+trend = 3e-11; ampC = 7e-11; ampS = -4e-11;
+for k = 1:T
+    Cs(3,1,k) = 1e-9 + trend*(t(k)-2015) + ampC*cos(a(k)) + ampS*sin(a(k)) ...
+        + 5e-10*cos(2*pi*t(k));
+    Cs(4,2,k) = ampC*cos(a(k));
+end
+ts = shSeries(Cs, Ss = Ss, Epochs = t);
+
+out = ts.removeAlias();
+% the alias is gone: refitting finds nothing left at that period
+A = [ones(T,1), t-mean(t), cos(2*pi*t), sin(2*pi*t), ...
+     cos(4*pi*t), sin(4*pi*t), cos(a), sin(a)];
+c = A \ squeeze(out.Cs(3,1,:));
+verifyEqual(testCase, c(7:8), [0; 0], 'AbsTol', 1e-22, ...
+    'no alias may remain after removal');
+% and the trend survives exactly
+verifyEqual(testCase, c(2), trend, 'RelTol', 1e-8, ...
+    'removing the alias must not touch the trend');
+% a coefficient that was pure alias is now zero
+verifyEqual(testCase, max(abs(out.Cs(4,2,:))), 0, 'AbsTol', 1e-22);
+% history records the parameters actually used
+verifyTrue(testCase, any(contains(out.history, "alias removed")));
+verifyTrue(testCase, any(contains(out.history, "161.0 d")));
+
+% the phase offset matters: removing with the wrong one leaves residual
+bad = ts.removeAlias(PhaseOffset = 0);
+cb = A \ squeeze(bad.Cs(3,1,:));
+verifyGreaterThan(testCase, norm(cb(7:8)), 1e-11, ...
+    'ignoring the offset must leave the alias only partly removed');
+
+% Too short a record must be refused. Note this is NOT a rank or
+% conditioning failure: a one-year span gives a full-rank design with a
+% condition number of 38 and a completely meaningless fit, so the guard
+% has to test degrees of freedom and alias cycles instead.
+short = ts.select(t < 2005);
+verifyEqual(testCase, short.nEpochs, 12);
+verifyError(testCase, @() short.removeAlias(), ...
+    'shSeries:removeAlias:tooShort');
+% and a record long enough in span but too sparse is refused too
+sparse5 = ts.select(ismember(t, t(1:40:end)));
+verifyError(testCase, @() sparse5.removeAlias(), ...
+    'shSeries:removeAlias:tooShort');
+end

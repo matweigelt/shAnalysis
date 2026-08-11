@@ -760,6 +760,11 @@
   "run": true
  },
  {
+  "name": "shSeries.removeAlias",
+  "example": "ts = ts.removeAlias();                 % S2 161-day alias, 100 deg offset\nts = ts.removeAlias(SplitEpoch = 2018.4);",
+  "run": false
+ },
+ {
   "name": "shSeries.removeGIA",
   "example": "ts = ts.removeGIA(giaModel);           % e.g. ICE-6G trend gfc",
   "run": true

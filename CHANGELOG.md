@@ -3,6 +3,30 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.4.0] - 2026-08-11
+
+### Added
+- `shSeries.removeAlias`: fits a tidal-alias harmonic (S2, 161 days by
+  default) jointly with bias, trend, annual and semi-annual and
+  subtracts only that harmonic - the correction GravIS applies to its
+  Level-2B products. Across the GRACE/GRACE-FO boundary the nodal
+  planes are not aligned, so a FIXED 100 degree phase offset applies to
+  the later mission (Landerer et al. 2020). The offset adds no free
+  parameters and ignoring it mis-estimates the amplitude badly
+  (validated in `tools/dev/validate_alias.py`).
+- Guide chapter "Validation against GravIS": the complete worked
+  comparison against the published Greenland basin averages - the
+  reference and why it must be recomputed over the span actually used,
+  all four Level-2B corrections, the basin average, the results table,
+  and what each step is worth.
+
+### Measured
+- Removing the S2 alias moves a twenty-year Greenland trend by
+  **0.2 Gt/yr**, i.e. nothing: a 161-day harmonic is very nearly
+  orthogonal to a linear trend over two decades. It remains a real
+  correction for the monthly series. Recorded because it was expected to
+  explain part of the residual gap and did not.
+
 ## [3.3.1] - 2026-08-11
 
 ### Fixed (documentation)

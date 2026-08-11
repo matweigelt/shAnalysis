@@ -111,6 +111,14 @@ before the MATLAB port, against known truth: exact analysis/synthesis round trip
 zero out, monotone residual, the divergence bound, amplitude invariance of <code class="inline">k</code>
 to 1e-15, and error reduction on a field whose mixture differs from the model's.</p>
 
+<h2>Validated against GravIS</h2>
+<p>The full worked comparison against the published GravIS Greenland basin averages &mdash; every
+processing step, the code, and what each step is worth &mdash; is chapter <b>"Validation against
+GravIS"</b> of the workflow guide. Summary: matching the four GravIS Level-2B corrections and using
+a union mask reaches <b>&minus;240.0 Gt/yr</b> against a published <b>&minus;231.1</b>, i.e. 4%,
+with the remaining gap attributable to the joint seven-basin inversion GravIS uses, coarse neighbour
+outlines and an iteration that has not fully converged.</p>
+
 <h2>See also</h2>
 <p class="seealso"><a href="basinKernel.html">basinDeconvolve</a>
 <a href="basinScaling.html">basinScaling</a> <a href="readDDK.html">readDDK / applyDDK</a>

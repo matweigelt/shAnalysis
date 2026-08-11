@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.3.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.4.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,16 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.4.0 (tidal alias removal; the GravIS validation written up)
+%   shSeries.removeAlias - fit a tidal-alias harmonic (S2, 161 d by
+%     default) jointly with bias/trend/annual/semi-annual and subtract
+%     ONLY that harmonic, as GravIS does for Level-2B. A fixed 100 deg
+%     phase offset applies across the GRACE/GRACE-FO boundary (Landerer
+%     et al. 2020); ignoring it mis-estimates the amplitude badly.
+%   Guide chapter "Validation against GravIS": the whole comparison with
+%     the executed code, the results table and an honest account of the
+%     remaining 4%.
 %
 % New in v3.3.1 (leakage masks, validated against GravIS)
 %   leakageCorrect: THE MASK MUST COVER EVERY REGION THAT CAN HOLD MASS,
