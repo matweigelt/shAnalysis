@@ -1537,7 +1537,7 @@ n = nn(keep); m = mm(keep);
 C = 1e-9 * randn(size(n)); S = 1e-9 * randn(size(n)); S(m == 0) = 0;
 sC = 1e-12 * (1 + rand(size(n))); sS = sC * 0.9;
 tmp = tempname; mkdir(tmp);
-cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 head = sprintf(['product_type gravity_field\nmodelname eqtest\n' ...
     'earth_gravity_constant 3.986004415e14\nradius 6378136.3\n' ...
     'max_degree %d\nerrors formal\ntide_system zero_tide\nend_of_head\n'], L);

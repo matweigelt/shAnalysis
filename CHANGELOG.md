@@ -3,6 +3,35 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.2.1] - 2026-08-11
+
+### Added
+- `tests/testScience.m`: regression against values published OUTSIDE the
+  toolbox - WGS84 and GRS80 J2 from the defining constants, the Gegout97
+  (PREM) load Love numbers including the CM-frame `k'_1 = 0`, the
+  closed-form EWH kernel of Wahr et al. (1998) evaluated with the
+  shipped Love numbers, the GRACE-minus-SLR C20 discrepancy, TN-13
+  geocenter amplitudes for all three providers, and the Gaussian
+  half-weight relation. The existing suites check that the code does
+  what the code intends, and stay green if a formula is consistently
+  wrong; these have somewhere to fail. Verified that the kernel test
+  catches both a missing `rho_water` (factor 1000) and a `k_n` sign
+  error.
+- The trend regression is opt-in via `SHX_SERIES_FOLDER`, because a
+  trend needs a monthly series that is far too large to ship. It
+  deliberately does NOT read the persistent data folder, so a routine
+  acceptance run never touches a network or archive drive.
+
+### Fixed
+- Test cleanups no longer throw from `onCleanup` destructors. `d =
+  tempname` invents a NAME, so a test whose code path did not reach the
+  `mkdir` left `rmdir` with nothing to remove: every CI log carried a
+  destructor warning that MATLAB cannot attach to any test, and which
+  can mask the real failure that ended the test early. All 30 sites now
+  use `tests/rmIfFolder.m`, and one genuinely dead variable in
+  `testRobustness` (a `tempname` that was never used for anything) is
+  gone.
+
 ## [3.2.0] - 2026-08-11
 
 ### Added

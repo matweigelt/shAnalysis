@@ -155,7 +155,7 @@ L = 300;
 [nn, mm] = ndgrid(0:L, 0:L); keep = mm <= nn;
 n = nn(keep); m = mm(keep);
 tmp = tempname; mkdir(tmp);
-cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 f = fullfile(tmp, 'bench.gfc');
 fid = fopen(f, 'w');
 fprintf(fid, ['product_type gravity_field\nmodelname bench\n' ...

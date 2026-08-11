@@ -508,7 +508,7 @@ d = testCase.TestData.dataDir;
 tmp = tempname; mkdir(tmp);
 old = cd(tmp);
 cleanup = onCleanup(@() cd(old));
-cleanup2 = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup2 = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 % bare-filename fixtures into the cwd
 for f = ["ITSG-Grace2018_n60_2008-04.gfc", ...
          "ITSG-Grace_operational_n60_2025-12.gfc", ...
@@ -683,7 +683,7 @@ function testProvenanceSidecars(testCase)
 rng(22); L = 6;
 C = 1e-9 * randn(L+1); S = 1e-9 * randn(L+1); S(:, 1) = 0;
 tmp = tempname; mkdir(tmp);
-cl = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 fg = fullfile(tmp, 'out.gfc');
 shLowLevel.writeGFC(fg, C, S, 3.986004415e14, 6378136.3);
 sj = [fg '.provenance.json'];
@@ -720,7 +720,7 @@ tn14 = fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt');
 tn13 = fullfile(d, 'TN-13_GEOC_GFZ_RL06.3.txt');
 assumeTrue(testCase, isfile(src) && isfile(tn14) && isfile(tn13));
 fol = tempname; mkdir(fol);
-cl = onCleanup(@() rmdir(fol, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(fol)); %#ok<NASGU>
 copyfile(src, fullfile(fol, 'ITSG-Grace2018_n60_2008-04.gfc'));
 copyfile(src, fullfile(fol, 'ITSG-Grace2018_n60_2008-05.gfc'));
 [ts, rep] = shLowLevel.standardChain(fol, TN14File = tn14, ...
@@ -1031,7 +1031,7 @@ function testSafeMoveContract(testCase)
 %   identifier rather than a bare OS message.
 d = fullfile(tempdir, sprintf('shx_move_%d', randi(1e9)));
 mkdir(d);
-cl = onCleanup(@() rmdir(d, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(d)); %#ok<NASGU>
 src = fullfile(d, 'a.bin');
 dst = fullfile(d, 'b.bin');
 
@@ -1082,7 +1082,7 @@ assumeTrue(testCase, ispc, ...
     'file locking during a move is Windows behaviour');
 d = fullfile(tempdir, sprintf('shx_lock_%d', randi(1e9)));
 mkdir(d);
-cl = onCleanup(@() rmdir(d, 's')); %#ok<NASGU>
+cl = onCleanup(@() rmIfFolder(d)); %#ok<NASGU>
 src = fullfile(d, 'a.bin');
 dst = fullfile(d, 'b.bin');
 writematrix(magic(4), src, 'FileType', 'text');
