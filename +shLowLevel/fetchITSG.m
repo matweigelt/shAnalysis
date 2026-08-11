@@ -28,7 +28,9 @@ function [files, info] = fetchITSG(months, opts)
 %   Options
 %     Dest (fullfile(shLowLevel.dataFolder(), "itsg_series"))  target folder
 %              (set a shared location once via shLowLevel.dataFolder(path))
-%     Nmax (96)      60 | 96 (server folder monthly_nXX)
+%     Nmax (NaN)     monthly: 60 | 96 | 120 (server folder monthly_nXX;
+%                    NaN resolves to 96). Daily solutions are n40 only
+%                    and NaN resolves to 40; any other value errors
 %     Timeout (60)   [s] per file
 %     Quiet (false)  suppress per-file progress
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)

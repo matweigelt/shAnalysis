@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.1.2 (R2026a-compatible) 11-Aug-2026
+% Version 3.1.3 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,13 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.1.3 (documentation sync gate)
+%   tools/doc_sync_audit.py gates the three documentation sources against
+%   each other in CI: doc snippets against the parsed contracts (option
+%   value TYPES included), API-reference freshness, helptoc reachability,
+%   version consistency, help placeholders and defaults, narrative
+%   coverage. tools/dev/README.md documents the toolchain.
 %
 % New in v3.1.2 (documentation coverage)
 %   Narrative help pages for the v3.x features that previously existed
