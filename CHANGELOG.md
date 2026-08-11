@@ -3,6 +3,31 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.1] - 2026-08-11
+
+### Changed
+- README rewritten. It still described `compat/` and `tests/legacy/`,
+  both removed in v3.0.0, and its newest feature section was "New in
+  v2.5" - nine releases behind. It now describes the current toolbox,
+  the six documentation gates, the GravIS validation result, and a
+  table of where each data source actually comes from. Cut from 404 to
+  ~175 lines: the per-release history belongs in the CHANGELOG, which
+  has it.
+
+### Removed from the roadmap
+- **COST-G SINEX fetcher.** There is no such source to fetch from.
+  COST-G combines on the normal-equation level internally and publishes
+  the combined SOLUTIONS through ICGEM, but does not distribute
+  per-month SINEX normal equations or covariance matrices as a public
+  product; Dahle et al. (2025) state that the variance-covariance
+  information is not available for the combined solutions. The roadmap
+  item traced back to a v2.5 note recording an AIUB 503 during a
+  download attempt - a retry reminder that had hardened into a planned
+  feature. For a full covariance use ITSG, which does publish monthly
+  SINEX normal equations, or the GravIS VDK-filtered Level-2B products
+  when the filtered result is what is wanted. Documented on the
+  readSINEX page.
+
 ## [3.8.0] - 2026-08-11
 
 ### Added

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.0 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.1 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,18 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.1 (README rewritten; the COST-G SINEX question settled)
+%   The README still described compat/ and tests/legacy - both removed in
+%   v3.0.0 - and its newest section was "New in v2.5", nine releases
+%   behind. Rewritten against the current state.
+%   COST-G SINEX fetcher: DROPPED from the roadmap, no such source
+%   exists. COST-G combines on the normal-equation level internally and
+%   publishes combined SOLUTIONS through ICGEM, but does not distribute
+%   per-month SINEX or covariances; Dahle et al. (2025) state the
+%   variance-covariance information is not available for the combined
+%   solutions. Use ITSG (which does publish monthly SINEX) or the GravIS
+%   VDK-filtered Level-2B products. Documented on the readSINEX page.
 %
 % New in v3.8.0 (Live Script tutorials - roadmap item 10)
 %   shLowLevel.makeTutorials writes one Live Script per demo case into
