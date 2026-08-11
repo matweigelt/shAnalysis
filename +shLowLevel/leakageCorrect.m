@@ -46,6 +46,11 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %             returned
 %     MaxIter (50)  iteration cap
 %     Tol (1e-4)  stop when max|residual| / max|grid| falls below this
+%     GM (3.986004415e14)  reference constants used to convert the grid
+%             to coefficients and back. They CANCEL in the chain, so the
+%             result does not depend on them; they exist so an unusual
+%             pair can be matched to the data
+%     R (6378136.3)  reference radius [m], see GM
 %     Quiet (false)  suppress the per-run summary
 %
 %   Outputs
@@ -86,6 +91,8 @@ arguments
     opts.Gain (1,1) double {mustBePositive} = 1
     opts.MaxIter (1,1) double {mustBeInteger, mustBePositive} = 50
     opts.Tol (1,1) double {mustBePositive} = 1e-4
+    opts.GM (1,1) double = 3.986004415e14
+    opts.R (1,1) double = 6378136.3
     opts.Quiet (1,1) logical = false
 end
 latDeg = latDeg(:).';
@@ -126,7 +133,7 @@ if useMask, m(~mask) = 0; end
 hist = zeros(1, opts.MaxIter);
 converged = false;
 for k = 1:opts.MaxIter
-    r = grid - applyChain(m, latDeg, lonDeg, nmax, wFilt);
+    r = grid - applyChain(m, latDeg, lonDeg, nmax, wFilt, opts.GM, opts.R);
     m = m + opts.Gain * r;
     if useMask, m(~mask) = 0; end
     hist(k) = max(abs(r(:))) / scale;
@@ -162,9 +169,16 @@ end
 end
 
 % ------------------------------------------------------------- helpers
-function out = applyChain(field, latDeg, lonDeg, nmax, wFilt)
+function out = applyChain(field, latDeg, lonDeg, nmax, wFilt, GM, R)
 %APPLYCHAIN analysis -> filter -> synthesis, the operator the data saw.
-[C, S] = shLowLevel.shAnalysisGrid(field, latDeg, lonDeg, nmax);
+%   GM and R must be the SAME on both sides: shAnalysisGrid converts a
+%   quantity into Stokes coefficients using them, and shSynthesis
+%   converts back. They therefore cancel exactly and the result does not
+%   depend on their values - but mismatching them (or leaving synthesis
+%   at GM = R = 1) scales the field by ~1e-7 and silently ruins the
+%   iteration.
+[C, S] = shLowLevel.shAnalysisGrid(field, latDeg, lonDeg, nmax, ...
+    GM = GM, R = R);
 if ~isempty(wFilt)
     if isstruct(wFilt)
         [C, S] = shLowLevel.applyDDK(C, S, wFilt);
@@ -173,7 +187,7 @@ if ~isempty(wFilt)
         S = S .* wFilt(:);
     end
 end
-out = shLowLevel.shSynthesis(C, S, 1, 1, latDeg, lonDeg);
+out = shLowLevel.shSynthesis(C, S, GM, R, latDeg, lonDeg);
 end
 
 function w = resolveFilter(F, nmax)
