@@ -45,7 +45,12 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %             on the reference problem), which is detected rather than
 %             returned
 %     MaxIter (50)  iteration cap
-%     Tol (1e-4)  stop when max|residual| / max|grid| falls below this
+%     Tol (1e-4)  stop when the relative CHANGE OF THE SOLUTION between
+%             two iterations falls below this. Not the residual: with a
+%             mask the problem is inconsistent (no field confined to the
+%             region reproduces an observation that has energy outside
+%             it), so the residual plateaus at a nonzero floor while the
+%             solution is converged
 %     GM (3.986004415e14)  reference constants used to convert the grid
 %             to coefficients and back. They CANCEL in the chain, so the
 %             result does not depend on them; they exist so an unusual
@@ -57,9 +62,12 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %     mCorr      (nLat x nLon) double   leakage-corrected field, same
 %                units and grid as GRID
 %     info       (1,1) struct  fields: iterations (1,1 double),
-%                residual (1,1 double, final relative residual),
+%                residual (1,1 double, final relative residual - with a
+%                mask this floors above Tol and that is correct),
 %                history (1,K double, the residual per iteration - plot
 %                it, a rising curve means Gain is too large),
+%                step (1,K double, the relative change of the solution
+%                per iteration; this is what Tol tests),
 %                converged (1,1 logical), nmax (1,1 double),
 %                filter (1,1 string), masked (1,1 logical)
 %
@@ -123,7 +131,7 @@ scale = max(abs(grid(:)));
 if scale == 0                            % nothing to correct
     mCorr = grid;
     info = struct('iterations', 0, 'residual', 0, 'history', [], ...
-        'converged', true, 'nmax', nmax, ...
+        'step', [], 'converged', true, 'nmax', nmax, ...
         'filter', string(filterName(opts.Filter)), 'masked', useMask);
     return
 end
@@ -131,12 +139,21 @@ end
 m = grid;
 if useMask, m(~mask) = 0; end
 hist = zeros(1, opts.MaxIter);
+step = zeros(1, opts.MaxIter);
 converged = false;
 for k = 1:opts.MaxIter
     r = grid - applyChain(m, latDeg, lonDeg, nmax, wFilt, opts.GM, opts.R);
+    prev = m;
     m = m + opts.Gain * r;
     if useMask, m(~mask) = 0; end
     hist(k) = max(abs(r(:))) / scale;
+    % Convergence is judged on the CHANGE IN THE SOLUTION, not on the
+    % residual. With a mask the problem is inconsistent - no field
+    % confined to the region reproduces an observation that has energy
+    % outside it - so the residual plateaus at a nonzero floor while the
+    % solution is perfectly converged. Stopping on the residual would
+    % report failure on exactly the case the mask exists for.
+    step(k) = max(abs(m(:) - prev(:))) / max(max(abs(m(:))), eps);
     % a growing residual means Gain is past the stability bound; say so
     % instead of returning a field that looks like a result
     if ~isfinite(hist(k)) || (k > 2 && hist(k) > 10 * hist(1))
@@ -146,24 +163,25 @@ for k = 1:opts.MaxIter
              'filter; 1 is safe and values above ~3 are not.'], ...
             k, hist(k), hist(1), opts.Gain);
     end
-    if hist(k) < opts.Tol
+    if step(k) < opts.Tol
         converged = true;
         break
     end
 end
 hist = hist(1:k);
+step = step(1:k);
 mCorr = m;
 info = struct('iterations', k, 'residual', hist(end), 'history', hist, ...
-    'converged', converged, 'nmax', nmax, ...
+    'step', step, 'converged', converged, 'nmax', nmax, ...
     'filter', string(filterName(opts.Filter)), 'masked', useMask);
 if ~opts.Quiet
     if converged
         fprintf(['leakageCorrect: converged in %d iterations ' ...
-                 '(residual %.2e)\n'], k, hist(end));
+                 '(step %.2e, residual %.2e)\n'], k, step(end), hist(end));
     else
-        fprintf(['leakageCorrect: STOPPED at MaxIter = %d with ' ...
-                 'residual %.2e > Tol = %.1e - raise MaxIter or Gain\n'], ...
-                k, hist(end), opts.Tol);
+        fprintf(['leakageCorrect: STOPPED at MaxIter = %d with step ' ...
+                 '%.2e > Tol = %.1e - raise MaxIter or Gain\n'], ...
+                k, step(end), opts.Tol);
     end
 end
 end
