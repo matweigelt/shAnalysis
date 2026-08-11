@@ -794,6 +794,15 @@ methods
         %   results, tractable to Lmax ~ 120). The filtered series carries
         %   per-coefficient posterior 1-sigma stacks in OUT.sigmaCs/Ss
         %   (from info.sigmaXfres; degrees below MinDegree are NaN).
+        %   v3.1.1: the three noise-covariance tuning options of
+        %   shLowLevel.tvANSFilter are forwarded, so the class method is the
+        %   full single point of access: Shrinkage ([])=empirical noise-
+        %   covariance shrinkage, VCEMinDegree ([])=first degree entering
+        %   the variance-component estimation, VCEBands ([])=order-band
+        %   edges for per-band monthly VCE factors (block path only).
+        %   [] means "leave the shLowLevel.tvANSFilter default in place"
+        %   (0.1, round(2/3*Lmax) and no banding respectively) - the
+        %   defaults are NOT duplicated here, they have exactly one home.
         %
         %   Inputs
         %     method  (1,1) string  filter chain to run; currently "tvANS"
@@ -815,6 +824,9 @@ methods
             opts.MinDegree (1,1) double = 2
             opts.Blocks (1,1) string ...
                 {mustBeMember(opts.Blocks, ["auto","on","off"])} = "auto"
+            opts.Shrinkage double {mustBeScalarOrEmpty} = []
+            opts.VCEMinDegree double {mustBeScalarOrEmpty} = []
+            opts.VCEBands (1,:) double = []
         end
         obj.assertClean('filter');
         if any(~isfinite(obj.epochs))
@@ -826,11 +838,26 @@ methods
         for k = 1:obj.nEpochs
             X(:,k) = shLowLevel.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
         end
-        [Xf, op, info] = shLowLevel.tvANSFilter(X, obj.epochs, idx, ...
-            NoiseCov = opts.NoiseCov, Constraints = opts.Constraints, ...
-            SignalMode = char(opts.SignalMode), ...
-            NIterSignal = opts.NIterSignal, Robust = opts.Robust, ...
-            Blocks = char(opts.Blocks));
+        % forward the tuning options only when the caller set them, so the
+        % single home of their defaults stays shLowLevel.tvANSFilter.
+        % NOTE: everything goes through ONE 'Name', value cell - MATLAB
+        % forbids following name=value syntax with a cell expansion.
+        fwd = {'NoiseCov', opts.NoiseCov, ...
+               'Constraints', opts.Constraints, ...
+               'SignalMode', char(opts.SignalMode), ...
+               'NIterSignal', opts.NIterSignal, ...
+               'Robust', opts.Robust, ...
+               'Blocks', char(opts.Blocks)};
+        if ~isempty(opts.Shrinkage)
+            fwd = [fwd, {'Shrinkage', opts.Shrinkage}];
+        end
+        if ~isempty(opts.VCEMinDegree)
+            fwd = [fwd, {'VCEMinDegree', opts.VCEMinDegree}];
+        end
+        if ~isempty(opts.VCEBands)
+            fwd = [fwd, {'VCEBands', opts.VCEBands}];
+        end
+        [Xf, op, info] = shLowLevel.tvANSFilter(X, obj.epochs, idx, fwd{:});
         out = obj;
         out.sigmaCs = nan(size(obj.Cs));
         out.sigmaSs = nan(size(obj.Ss));
@@ -898,6 +925,22 @@ methods
     end
 
     function disp(obj)
+        %DISP Compact display: months, span, gaps, processing history.
+        %   disp(TS) prints the product type, the number of epochs, the
+        %   maximum degree and the covered epoch range, followed by the
+        %   processing history. Called automatically when an shSeries
+        %   object is shown without a semicolon.
+        %
+        %   Inputs
+        %     obj  (1,1) shSeries  the series to display
+        %   Outputs
+        %     none - the summary is written to the command window
+        %
+        %   Example
+        %     ts = shSeries.read("ITSG-Grace2018_n60_*.gfc");
+        %     disp(ts)
+        %
+        %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
         fprintf('  shSeries: %s | T=%d epochs | nmax=%d | %.4f..%.4f\n', ...
             obj.productType, obj.nEpochs, obj.nmax, ...
             min(obj.epochs), max(obj.epochs));

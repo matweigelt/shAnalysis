@@ -1,8 +1,14 @@
-% shAnalysis v3.1.0 - Spherical harmonic (Stokes coefficient) analysis for
-% Version 3.1.0 (R2026a-compatible) 10-Aug-2026
-% GRACE/GRACE-FO, GOCE, and static gravity field models: class-based,
-% with time-series support, GAX background handling, climatology, and
-% the tvANS time-variable anisotropic Wiener filter.
+% shAnalysis - Spherical harmonic analysis toolbox
+% Version 3.1.1 (R2026a-compatible) 11-Aug-2026
+%
+% The line above is what ver('shAnalysis') reports as the product name:
+% keep it a SHORT name, not a sentence and not a version string (pinned
+% by testVersionMetadataIsConsistent).
+%
+% Spherical harmonic (Stokes coefficient) analysis for GRACE/GRACE-FO,
+% GOCE and static gravity field models: class-based, with time-series
+% support, GAX background handling, climatology, and the tvANS
+% time-variable anisotropic Wiener filter.
 %
 % Classes (single point of access)
 %   shCoefficients  - One coefficient set: I/O, arithmetic, TN-14, destripe,
@@ -47,14 +53,14 @@
 %   shLowLevel.readLoveNumbers (v2.5), shLowLevel.fetchTN (v2.5), setup_shAnalysis (v2.5),
 %   shLowLevel.readSINEX, shLowLevel.icgemDate2Year, shLowLevel.kernelFactors, ...
 %
-% Backward compatibility (folder compat/, add to path if needed)
-%   shReadGFC, shSynthesis, shDestripe, shGaussianFilter, shGaussianWeights,
-%   shDegreeRMS, shSpectralCrossover, shEvalGFCT, legendreALF,
-%   plotSHSpectrum, plotSHCoeffTriangle - v1 signatures, delegating to +shLowLevel.
+% Backward compatibility
+%   NONE. v3.0.0 removed compat/ and the v1 legacy suite for good. The v1
+%   function names live on inside the package: call shLowLevel.shReadGFC,
+%   shLowLevel.shSynthesis, shLowLevel.shDestripe etc., or use the classes.
 %
 % Tests and documentation
 %   runAllTests     - full validation suite (correctness, contract,
-%                     robustness, legacy v1, performance).
+%                     robustness, performance).
 %   doc shAnalysis  - HTML overview (html/ subfolder on the path).
 %
 % New in v2.2 (all Python-validated before MATLAB implementation)
@@ -204,7 +210,32 @@
 %     filename epochs parse automatically; real fixture file shipped)
 %   shLowLevel.listICGEM / shLowLevel.fetchICGEM - ICGEM static-model catalogue
 %     (fixture-tested parser) and .gfc download by name; temporal
-%     section returns series roots with an honest JS/ZIP note
+%     section returns series roots (superseded in v3.1.1 - the series are
+%     downloadable now, see below)
 %
-% Claude (Fable 5), 2026-08-07 (v2.1 through v2.4.1 same day).
+% New in v3.1.1 (ICGEM time series and real-world file layouts)
+%   shLowLevel.fetchICGEM Type="temporal" - a temporal-catalogue row now
+%     downloads the WHOLE monthly series to
+%     <dataFolder>/icgem/series/<group>_<center>_<series>/.
+%     Mode="auto" (default) takes the server's whole-series ZIP in ONE
+%     request and falls back to resumable per-file fetching; "archive"
+%     and "files" force either. Files= filters, FileList= injects a
+%     catalogue (offline mirrors, subsets), Pause=/Retries= carry the
+%     rate-limit discipline, info.mode reports what actually happened.
+%     The result folder feeds shSeries.fromFolder and standardChain.
+%   shLowLevel.shReadGFC - group-wise bulk parsing for ALL files, static
+%     and variable (GRGS mean fields: 73.6 MB / 674k terms in ~7 s,
+%     previously a multi-minute stall; EIGEN-6C4 177.7 MB / n2190 in
+%     ~5 s). FORTRAN D-exponents are read correctly (str2double returns
+%     NaN for them - such files were silently corrupted above the
+%     degree at which providers switch notation). The ICGEM 2.0
+%     acos/asin column order is ... t0 t1 period (period LAST, verified
+%     against real CNES/GRGS files); ragged groups (EIGEN-5S/5C) are
+%     subgrouped by width with an n/m sanity net.
+%   ts.filter("tvANS", ...) forwards Shrinkage/VCEMinDegree/VCEBands to
+%     shLowLevel.tvANSFilter - the class method is the full single point
+%     of access again.
+%
+% Claude (Fable 5), 2026-08-07 (v2.1 through v2.4.1 same day);
+%   v3.1.1 documentation sync 2026-08-11 by Claude (Opus 5).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).

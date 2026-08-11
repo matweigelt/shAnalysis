@@ -277,6 +277,24 @@ methods
     end
 
     function disp(obj)
+        %DISP Compact display: fitted components, reference epoch, note.
+        %   disp(CLIM) prints the maximum degree and the reference epoch
+        %   t0, the list of fitted components (bias, trend, annual and
+        %   semi-annual cosine/sine, plus any extra Periods) and the
+        %   processing history including the GIA note. Called
+        %   automatically when an shClimatology object is shown without
+        %   a semicolon.
+        %
+        %   Inputs
+        %     obj  (1,1) shClimatology  the fitted model to display
+        %   Outputs
+        %     none - the summary is written to the command window
+        %
+        %   Example
+        %     clim = ts.climatology();
+        %     disp(clim)
+        %
+        %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
         fprintf('  shClimatology: nmax=%d | t0=%.4f\n', obj.nmax, obj.t0);
         fprintf('    components: bias, trend, annual (cos/sin), semi-annual (cos/sin)\n');
         fprintf('    history:\n');

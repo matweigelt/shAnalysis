@@ -221,7 +221,7 @@ story += tbl(["", ""], [
                      "gz streaming"],
     ["Validation", "every numerical method independently validated in "
                    "Python (numpy/scipy) before MATLAB implementation; "
-                   "179 unit tests"],
+                   "169 unit tests"],
     ["License", "MIT (see LICENSE; bundled DDK3 Wbd file MIT from its "
                 "upstream repository; ITSG/GFZ fixtures remain their "
                 "providers' property)"],

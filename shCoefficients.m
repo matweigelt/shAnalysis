@@ -905,6 +905,24 @@ methods
     end
 
     function disp(obj)
+        %DISP Compact display: size, epoch, GM/R, processing history.
+        %   disp(G) prints one header line with the model name, one
+        %   contract line (nmax, epoch, product type, tide system, GM,
+        %   R), whether formal sigmas are attached and how many gfct
+        %   variable terms are carried, followed by the processing
+        %   history. Called automatically when an shCoefficients object
+        %   is shown without a semicolon.
+        %
+        %   Inputs
+        %     obj  (1,1) shCoefficients  the coefficient set to display
+        %   Outputs
+        %     none - the summary is written to the command window
+        %
+        %   Example
+        %     g = shCoefficients.read("ITSG-Grace2018_n60_2008-04.gfc");
+        %     disp(g)                            % degree, epoch, history
+        %
+        %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
         fprintf('  shCoefficients: %s\n', obj.name);
         fprintf('    nmax=%d | epoch=%.4f | product=%s | tide=%s | GM=%.6e | R=%.1f\n', ...
             obj.nmax, obj.epoch, obj.productType, obj.tideSystem, obj.GM, obj.R);

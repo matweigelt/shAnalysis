@@ -426,7 +426,7 @@
  },
  {
   "name": "runAllTests",
-  "example": "runAllTests            % 180 tests; acceptance gate on R2026a",
+  "example": "runAllTests            % 169 tests; acceptance gate on R2026a",
   "run": false
  },
  {

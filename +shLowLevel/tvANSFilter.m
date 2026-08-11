@@ -59,7 +59,11 @@ function [Xf, op, info] = tvANSFilter(X, tYears, idx, opts)
 %   Claude (Fable 5), 2026-08-07.
 %
 %   Options
-%     VCEBands ([])  see arguments block
+%     VCEBands ([]) (1,:) double  order-band edges, e.g. [0 16 33 61]:
+%         one monthly VCE factor per order band instead of a single
+%         s(t) for the whole field. Requires the block path
+%         (Blocks="on"/"auto"); the edges must be ascending and cover
+%         0..Lmax. [] (default) = one factor per month (v2.2).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 
 arguments
