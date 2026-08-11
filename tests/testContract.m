@@ -1112,3 +1112,52 @@ verifyGreaterThanOrEqual(testCase, toc(t0), 0.15);   % backoff was spent
 verifyTrue(testCase, isfile(dst));
 verifyFalse(testCase, isfile(src));
 end
+
+% ------------------------------------- correction tables trail the data
+function testStandardChainHandlesTrailingCorrectionTables(testCase)
+%TESTSTANDARDCHAINHANDLESTRAILINGCORRECTIONTABLES The newest months.
+%   TN-13 and TN-14 are published weeks after the monthly solutions, so
+%   the newest one or two epochs of a fresh series are ALWAYS uncovered.
+%   The chain used to stop with "No TN-13 entry within 0.050 yr", which
+%   made routine use of an up-to-date series impossible. Uncovered
+%   epochs are now dropped and the fact recorded in the report.
+dd = fullfile(fileparts(fileparts(mfilename('fullpath'))), ...
+    'tests', 'test_data');
+fol = fullfile(tempdir, sprintf('shx_chain_%d', randi(1e9)));
+mkdir(fol);
+cl = onCleanup(@() rmIfFolder(fol)); %#ok<NASGU>
+
+% one solution the tables cover, and one far in the future that no
+% table can reach - the situation a fresh download produces
+g = shCoefficients.read(fullfile(dd, 'ITSG-Grace2018_n60_2008-04.gfc'));
+g.write(fullfile(fol, 'sol_2008-04.gfc'));
+gFuture = g;
+gFuture.epoch = 2099.5;
+gFuture.write(fullfile(fol, 'sol_2099-07.gfc'));
+
+tn14 = fullfile(dd, 'TN-14_C30_C20_SLR_GSFC.txt');
+tn13 = fullfile(dd, 'TN-13_GEOC_CSR_RL06.3.txt');
+
+[ts, rep] = shLowLevel.standardChain(fol, TN14File = tn14, ...
+    Degree1File = tn13, Filter = "none", Quiet = true);
+verifyEqual(testCase, ts.nEpochs, 1, ...
+    'the uncovered epoch must be dropped, not carried uncorrected');
+verifyLessThan(testCase, ts.epochs, 2099);
+verifyTrue(testCase, any(contains(rep.steps, "dropped")), ...
+    'a dropped epoch must be visible in the provenance report');
+
+% the old behaviour is still available for anyone who wants it
+verifyError(testCase, @() shLowLevel.standardChain(fol, ...
+    TN14File = tn14, Degree1File = tn13, Filter = "none", ...
+    OnMissing = "error", Quiet = true), ...
+    'shLowLevel:standardChain:uncoveredEpochs');
+
+% a series with no overlap at all is a different mistake and says so
+folF = fullfile(tempdir, sprintf('shx_chain_f_%d', randi(1e9)));
+mkdir(folF);
+clF = onCleanup(@() rmIfFolder(folF)); %#ok<NASGU>
+gFuture.write(fullfile(folF, 'sol_2099-07.gfc'));
+verifyError(testCase, @() shLowLevel.standardChain(folF, ...
+    TN14File = tn14, Degree1File = tn13, Filter = "none", ...
+    Quiet = true), 'shLowLevel:standardChain:noCoveredEpochs');
+end
