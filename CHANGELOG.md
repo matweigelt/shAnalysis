@@ -15,6 +15,13 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   fixture checks are now `verifyTrue`: a missing fixture is a failure,
   not a shrug. An audit of every fixture filename referenced in the
   suite found no other case.
+- With the test running for the first time, CI found one assertion in it
+  that had never been exercised: the GIA epoch check demanded RelTol
+  1e-10 on a value that survives a gfc write/read round trip. The epoch
+  is stored as a decimal year in text, so the observed agreement is
+  5.3e-10 - the format's precision, not MATLAB's. Relaxed to 1e-8, which
+  still catches any real error in the GIA scaling (those are of order 1
+  in relative terms). Nothing wrong with standardChain itself.
 
 ### Checked, not changed
 - The workflow guide's demo-gallery figures were carried on the roadmap
