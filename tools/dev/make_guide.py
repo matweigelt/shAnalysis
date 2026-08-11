@@ -1220,6 +1220,108 @@ story += [para("The practical rule: when a new provider or a new release "
 story += [PageBreak()]
 
 # ======================================================== demo gallery
+story += [para("Validation against GravIS", "h1")]
+story += [para("This chapter is a worked, reproducible comparison of the "
+               "toolbox against a PUBLISHED product: the GravIS "
+               "Greenland ice-mass basin averages "
+               "(https://gravis.gfz.de/gis). It is written out in full "
+               "because the numbers only mean something together with "
+               "the choices behind them &mdash; and because two of those "
+               "choices cost a factor that would otherwise have been "
+               "mistaken for a bug in the toolbox.")]
+
+story += [para("V1. The reference", "h2")]
+story += [para("GravIS publishes seven Greenland drainage basins as "
+               "ASCII time series in Gt. Summing them and fitting bias, "
+               "trend, annual and semi-annual gives the reference "
+               "trend. It must be recomputed over the SPAN YOU ACTUALLY "
+               "USE: over the full record COST-G RL02 gives "
+               "&minus;220.8 Gt/yr, but over the shorter span for which "
+               "the auxiliary correction tables were available it is "
+               "&minus;231.1 Gt/yr. Comparing against the wrong span is "
+               "a 5% error before any processing starts.")]
+
+story += [para("V2. Matching the GravIS processing", "h2")]
+story += [para("GravIS Level-3 basin averages come from Level-2B "
+               "coefficients, which are Level-2 plus four corrections "
+               "(https://gravis.gfz.de/corrections). Applying anything "
+               "less makes the comparison meaningless. All four are "
+               "read with <font face='Courier'>shLowLevel.readSHM</font> "
+               "or as plain tables:")]
+story += code("""
+% (1) their low-degree replacement: C20, C30, C21, S21
+% (2) their geocenter (Swenson approximation, NOT TN-13)
+% (3) their mean field, 2002/04-2020/03
+% (4) GIA: ICE-6G_D (VM5a), a GRDOTA rate model in 1/yr
+Mn  = shLowLevel.readSHM("GRAVIS-2B_..._MEAN_2002095-2020091_NFIL.gz", Nmax = 90);
+Gi  = shLowLevel.readSHM("GRAVIS-2B_..._GIA_ICE-6G_D_VM5a.gz", Nmax = 90);
+
+ts = shSeries.fromFolder(costgFolder);
+ts = ts.select(ts.epochs <= maxTableEpoch + 0.05);   % tables trail the data
+% ... insert their C20/C30/C21/S21 and C10/C11/S11 per epoch ...
+for k = 1:ts.nEpochs                    % mean field and GIA, per epoch
+    Cs(:,:,k) = Cs(:,:,k) - Mn.C - (ts.epochs(k) - 2011) * Gi.C;
+    Ss(:,:,k) = Ss(:,:,k) - Mn.S - (ts.epochs(k) - 2011) * Gi.S;
+end
+ts = ts.removeAlias();                  % (5) the S2 161-day alias
+""")
+
+story += [para("V3. The basin average", "h2")]
+story += code("""
+idx  = shLowLevel.shIndex(ts.nmax, MinDegree = 0);
+[b, info] = shLowLevel.basinKernel(idx, gisPolygon);   % NaN-separated rings
+area = info.areaFraction * 4*pi*6371^2;                % NOT b(1)
+kf   = shLowLevel.kernelFactors("ewh", ts.nmax, GM, R, kn = kn);
+avg  = (b .* kf(idx.n+1))' * X / (b'*b);               % EWH [m] per epoch
+mass = avg(:) * area * 1e6 * 1000 / 1e12;              % -> Gt
+""")
+
+story += [para("V4. Results, and what each step is worth", "h2")]
+story += tbl(["Method", "Gt/yr", "vs published"], [
+    ["naive kernel average", "&minus;196.4", "&minus;15%"],
+    ["naive grid integral", "&minus;170.3", "&minus;26%"],
+    ["forward modelling, <b>Greenland-only</b> mask", "&minus;259.8", "+12%"],
+    ["forward modelling, <b>union</b> mask", "&minus;240.2", "+4%"],
+    ["union mask + S2 alias removed", "&minus;240.0", "+4%"],
+    ["<b>GravIS COST-G RL02, matching span</b>", "<b>&minus;231.1</b>", "&mdash;"],
+], [7.2*cm, 3.2*cm, 3.2*cm])
+
+story += [para("V5. The two lessons", "h2")]
+story += [para("<b>The mask must cover every region that can hold mass, "
+               "not only the one you are measuring.</b> A Greenland-only "
+               "mask tells the inversion that mass exists nowhere else, "
+               "so Canadian Arctic, Iceland and Svalbard signal is "
+               "forced into Greenland: +12% instead of +4%. In the union "
+               "solution the neighbours absorb &minus;112 Gt/yr &mdash; "
+               "mass the first mask had nowhere to put. The union mask "
+               "also converges faster. This is a usage rule, not a bug: "
+               "<font face='Courier'>Mask=</font> always accepted a "
+               "union.")]
+story += [para("<b>The S2 alias removal is worth 0.2 Gt/yr on a "
+               "twenty-year trend &mdash; that is, nothing.</b> A "
+               "161-day harmonic is very nearly orthogonal to a linear "
+               "trend over two decades, so removing it barely moves the "
+               "trend even though it is a real and necessary correction "
+               "for the MONTHLY series. Reported here because it was "
+               "expected to explain part of the residual and did not: a "
+               "hypothesis removed is worth as much as one confirmed.")]
+
+story += [para("V6. What the remaining 4% is, honestly", "h2")]
+story += bullets([
+    "GravIS inverts SEVEN drainage basins jointly (Sasgen et al. 2012); "
+    "this recipe constrains one region against coarse neighbour boxes.",
+    "The basin outline used here is decimated to 97.4% of the published "
+    "area, and the neighbour outlines are rectangles.",
+    "The iteration has not converged: step 3.2e-4 against Tol 1e-4 after "
+    "900 iterations, and the estimate was still drifting "
+    "(&minus;240.2 at 300, &minus;242.5 at 900). Call it &plusmn;5 Gt/yr.",
+    "Nothing here was tuned to close the gap. A 4% agreement with an "
+    "independently produced product, reached by matching its documented "
+    "processing step for step, is the result; making it smaller by "
+    "adjusting a mask until the number matched would not be.",
+])
+story += [PageBreak()]
+
 story += [para("Demo gallery", "h1"),
           para("<font face='Courier'>demo_shAnalysis</font> is a case "
                "registry: <font face='Courier'>demo_shAnalysis(\"list\")"
