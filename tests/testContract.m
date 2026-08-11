@@ -1192,3 +1192,43 @@ verifyEqual(testCase, sort(ts.epochs(:)), [2008.292; 2009.292], ...
 g.write(fullfile(fol, 'plain.gfc'), Sidecar = false);
 verifyFalse(testCase, isfile(fullfile(fol, 'plain.gfc.provenance.json')));
 end
+
+% ------------------------------------------------- generated tutorials
+function testMakeTutorialsFollowsTheRegistry(testCase)
+%TESTMAKETUTORIALSFOLLOWSTHEREGISTRY Tutorials are generated, not curated.
+%   demo_shAnalysis is the single source of truth for what the toolbox
+%   demonstrates. A parallel set of hand-written tutorials would drift
+%   from it within a release - and .mlx is a binary zip, so the drift
+%   would not even show in a diff. Pin that every case gets a tutorial
+%   and that the content comes from the registry.
+d = fullfile(tempdir, sprintf('shx_tut_%d', randi(1e9)));
+cl = onCleanup(@() rmIfFolder(d)); %#ok<NASGU>
+
+out = shLowLevel.makeTutorials(Dest = d, Cases = ["D01" "D05"], ...
+    Convert = false, Quiet = true);
+verifyEqual(testCase, numel(out.files), 2);
+verifyEmpty(testCase, out.mlx);
+verifyTrue(testCase, all(isfile(out.files)));
+
+reg = demo_shAnalysis("list");
+r1 = reg(string({reg.id}) == "D01");
+txt = string(fileread(out.files(1)));
+verifyTrue(testCase, contains(txt, r1.title), ...
+    'the title must come from the registry');
+verifyTrue(testCase, contains(txt, r1.fns), ...
+    'the function list must come from the registry');
+verifyTrue(testCase, contains(txt, "demo_shAnalysis(""D01"""), ...
+    'the tutorial must actually run its case');
+verifyTrue(testCase, startsWith(txt, "%%"), ...
+    'Live Editor section markers are what make this a live script');
+verifyTrue(testCase, contains(txt, "overwritten on the next run"), ...
+    'a generated file must say it is generated');
+
+% "all" covers every registered case, one file each
+outAll = shLowLevel.makeTutorials(Dest = d, Convert = false, Quiet = true);
+verifyEqual(testCase, numel(outAll.files), numel(reg));
+
+verifyError(testCase, @() shLowLevel.makeTutorials(Dest = d, ...
+    Cases = "D99", Convert = false, Quiet = true), ...
+    'shLowLevel:makeTutorials:unknownCase');
+end

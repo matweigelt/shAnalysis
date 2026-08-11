@@ -36,6 +36,12 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    # The whole job normally finishes in about three minutes. A cap well
+    # above that turns a hung step into a fast, visible failure instead
+    # of a run that sits pending until somebody notices: the MathWorks
+    # 'Set up MATLAB' step hung four times in one session, taking 5-10
+    # minutes against its usual 1.2 before being cancelled by hand.
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -47,6 +53,9 @@ jobs:
         run: python3 tools/doc_sync_audit.py
 
       - name: Set up MATLAB
+        # this is the step that hangs; cap it tightly so a retry costs
+        # eight minutes rather than the whole job budget
+        timeout-minutes: 8
         uses: matlab-actions/setup-matlab@v3
         with:
           release: R2026a
