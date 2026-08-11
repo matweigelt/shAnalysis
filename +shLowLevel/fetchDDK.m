@@ -71,7 +71,7 @@ for k = unique(which(:)')
         end
         rethrow(err);                           % new file: surface the error
     end
-    movefile(tmpf, fp, 'f');
+    shLowLevel.safeMove(tmpf, fp);
     files(end+1) = string(fp); %#ok<AGROW>
     if present
         updated(end+1) = string(fp); %#ok<AGROW>

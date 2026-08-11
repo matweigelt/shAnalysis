@@ -124,7 +124,7 @@ for k = 1:numel(names)
         failed(end+1) = names(k) + " (" + err.message + ")"; %#ok<AGROW>
     end
     if ok
-        movefile(tmpf, fp, 'f');
+        shLowLevel.safeMove(tmpf, fp);
         files(end+1) = string(fp); %#ok<AGROW>
         if present
             updated(end+1) = names(k); %#ok<AGROW>
