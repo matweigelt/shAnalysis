@@ -62,6 +62,21 @@ n = shLowLevel.safeMove(tmpf, target, Retries = 8, Pause = 0.5);</pre>
 problem. Exclude the data folder from on-access scanning, or point
 <a href="dataManagement.html">shLowLevel.dataFolder</a> at a location outside the synced drive.</div>
 
+<h2>GRAVIS Level-2B: the SHM format <span class="tag">v3.3.0</span></h2>
+<p>GravIS Level-2B products &mdash; monthly solutions, the mean field, the ICE-6G_D (VM5a) GIA rate
+model, the low-degree and geocenter tables &mdash; are <b>not</b> in ICGEM <code class="inline">.gfc</code>
+layout. They use a YAML header followed by keyword records:</p>
+<pre>GRCOF2  n  m  C  S  sigC  sigS  t0  t1  flags     a FIELD
+GRDOTA  n  m  Cdot  Sdot                          a RATE [1/yr]</pre>
+<p><code class="inline">shLowLevel.readSHM</code> reads both, transparently through gzip, taking GM
+and the reference radius from the header. The keyword is the only thing distinguishing a rate model
+from a field, which is why a rate must never be read by a parser that assumes a field.</p>
+<pre>gia = shLowLevel.readSHM("GRAVIS-2B_..._GIA_ICE-6G_D_VM5a_0001.gz", Nmax = 96);
+g   = shCoefficients(gia.C, gia.S, GM = gia.GM, R = gia.R);
+[ts, rep] = shLowLevel.standardChain(folder, GIA = g, Filter = "DDK3");</pre>
+<div class="note">A GIA model at degree 256 against a solution at 96 wastes memory and time; pass
+<code class="inline">Nmax=</code> to truncate while reading.</div>
+
 <h2>See also</h2><p class="seealso"><a href="fetchITSG.html">fetchITSG</a> <a href="shGaussianFilter.html">DDK filtering</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4.1 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>

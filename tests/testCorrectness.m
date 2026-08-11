@@ -1785,3 +1785,58 @@ verifyError(testCase, @() shLowLevel.gridScaling(model, lat, lon, ...
     Clip = [2 1], Nmax = nmax, Quiet = true), ...
     'shLowLevel:gridScaling:badClip');
 end
+
+% ------------------------------------------------ GRAVIS SHM (roadmap 9)
+function testReadSHMFieldAndRate(testCase)
+%TESTREADSHMFIELDANDRATE The GRAVIS Level-2B format, both record types.
+%   GRAVIS products are not ICGEM gfc: a YAML header, then GRCOF2
+%   records for a FIELD or GRDOTA records for a RATE in 1/yr. The
+%   keyword is the only thing telling the two apart, so reading them
+%   with the wrong assumption is how a rate silently becomes a field.
+%   Values pinned from tools/dev/validate_shm.py against the full files.
+dd = testCase.TestData.dataDir;
+
+M = shLowLevel.readSHM(fullfile(dd, 'GRAVIS-2B_MEAN_n10_trimmed.shm'));
+verifyEqual(testCase, M.kind, "GRCOF2");
+verifyEqual(testCase, M.GM, 3.9860044150E+14, 'RelTol', 1e-12);
+verifyEqual(testCase, M.R, 6.3781364600E+06, 'RelTol', 1e-12);
+verifyEqual(testCase, M.nmax, 10);
+verifyEqual(testCase, M.C(1, 1), 1, 'AbsTol', 1e-15, ...
+    'C00 of a field is 1 by definition');
+verifyEqual(testCase, M.C(3, 1), -4.841651265210E-04, 'RelTol', 1e-12);
+verifyEqual(testCase, M.sigmaC(3, 1), 3.0810E-13, 'RelTol', 1e-4);
+verifyTrue(testCase, istriu(M.C') && all(M.C(1, 2:end) == 0), ...
+    'the C(n+1,m+1) layout must be lower triangular');
+
+G = shLowLevel.readSHM(fullfile(dd, ...
+    'GRAVIS-2B_GIA_ICE-6G_D_VM5a_n10_trimmed.shm'));
+verifyEqual(testCase, G.kind, "GRDOTA");
+verifyEmpty(testCase, G.sigmaC, 'a rate model carries no sigmas');
+verifyEqual(testCase, G.C(3, 1), 1.381730030000E-11, 'RelTol', 1e-12);
+verifyEqual(testCase, G.C(3, 2), -2.519201320000E-12, 'RelTol', 1e-12);
+verifyEqual(testCase, G.S(3, 2), 1.185349120000E-11, 'RelTol', 1e-12);
+% degrees 0 and 1 vanish in this GIA model
+verifyEqual(testCase, G.C(1:2, 1:2), zeros(2), 'AbsTol', 1e-20);
+
+% the gzip path must give the identical result
+Gz = shLowLevel.readSHM(fullfile(dd, ...
+    'GRAVIS-2B_GIA_ICE-6G_D_VM5a_n10_trimmed.shm.gz'));
+verifyEqual(testCase, Gz.C, G.C);
+verifyEqual(testCase, Gz.S, G.S);
+
+% Nmax truncates while reading
+G4 = shLowLevel.readSHM(fullfile(dd, ...
+    'GRAVIS-2B_GIA_ICE-6G_D_VM5a_n10_trimmed.shm'), Nmax = 4);
+verifyEqual(testCase, G4.nmax, 4);
+verifyEqual(testCase, G4.C, G.C(1:5, 1:5));
+
+% a gfc is not an SHM file and must say so rather than return nonsense
+verifyError(testCase, @() shLowLevel.readSHM(fullfile(dd, ...
+    'ITSG-Grace2018_n60_2008-04.gfc')), 'shLowLevel:readSHM:noHeaderEnd');
+verifyError(testCase, @() shLowLevel.readSHM(fullfile(dd, 'nope.shm')), ...
+    'shLowLevel:readSHM:noFile');
+
+% and a GIA rate drops straight into the chain's GIA option
+gia = shCoefficients(G.C, G.S, GM = G.GM, R = G.R);
+verifyEqual(testCase, gia.C(3, 1), G.C(3, 1));
+end

@@ -53,6 +53,26 @@ conditioned: the iteration must then explain the observation with mass <em>insid
 so leakage outside is removed rather than redistributed. On a synthetic disc with an exact mask the
 correction recovers 0.9998 of the truth and leaves exactly zero outside.</p>
 
+<div class="note"><b>The mask must cover every region that can hold mass, not only the one you are
+measuring.</b> A mask drawn around the target alone tells the iteration that mass exists nowhere
+else, so signal from neighbouring sources is forced into the target and the answer comes out too
+large. Include the neighbours, then integrate the corrected field over the target.</div>
+
+<h3>How much this matters</h3>
+<p>Against the published GravIS Greenland basin-average series (COST-G RL02, &minus;231.1 Gt/yr over
+the matching span), with all four GravIS corrections applied to the same Level-2 input:</p>
+<table>
+<tr><th>Method</th><th>Gt/yr</th><th>vs published</th></tr>
+<tr><td>naive grid integral, no correction</td><td>&minus;170.3</td><td>&minus;26%</td></tr>
+<tr><td>forward modelling, <b>Greenland-only</b> mask</td><td>&minus;259.8</td><td>+12%</td></tr>
+<tr><td>forward modelling, <b>union</b> mask (+ Canadian Arctic, Iceland, Svalbard)</td><td>&minus;242.5</td><td>+5%</td></tr>
+</table>
+<p>The neighbouring regions absorb &minus;112 Gt/yr in the union solution &mdash; mass the
+Greenland-only mask had nowhere to put and therefore piled onto Greenland. The union mask also
+converges faster. The residual +5% is consistent with what is still missing here: the S2 161-day
+alias is not removed, the neighbour outlines are coarse boxes, and GravIS inverts seven drainage
+basins jointly rather than one region.</p>
+
 <div class="note"><b>Convergence is judged on the change of the solution, not on the residual.</b>
 With a mask the problem is inconsistent &mdash; no field confined to the region can reproduce an
 observation that has energy outside it &mdash; so the residual settles at a nonzero floor while the

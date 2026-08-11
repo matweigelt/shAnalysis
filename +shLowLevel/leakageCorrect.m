@@ -23,6 +23,19 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %   explain the observation with mass inside the region, so leakage into
 %   the surroundings is removed rather than redistributed.
 %
+%   THE MASK MUST COVER EVERY REGION THAT CAN HOLD MASS, NOT ONLY THE
+%   ONE YOU ARE MEASURING. This is the mistake that costs most: a mask
+%   drawn around the target alone tells the iteration that mass exists
+%   nowhere else, so signal from neighbouring sources is forced into the
+%   target and the result is biased HIGH. Include the neighbours in the
+%   mask and integrate the corrected field over the target afterwards.
+%   Measured against the published GravIS Greenland series (COST-G RL02,
+%   -231.1 Gt/yr over the matching span): a Greenland-only mask gives
+%   -259.8 Gt/yr (+12%), while a mask that also admits the Canadian
+%   Arctic, Iceland and Svalbard gives -242.5 Gt/yr (+5%) - with the
+%   neighbours absorbing -112 Gt/yr that the first mask had nowhere to
+%   put. The union mask also converges faster.
+%
 %   Inputs
 %     grid       (nLat x nLon) double   observed FILTERED field, in the
 %                units you want back (EWH [m], mass, ...)

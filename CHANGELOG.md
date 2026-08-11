@@ -3,6 +3,42 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.3.1] - 2026-08-11
+
+### Fixed (documentation)
+- `leakageCorrect`: the mask must cover EVERY region that can hold mass,
+  not only the one being measured. A target-only mask tells the
+  iteration that mass exists nowhere else, so neighbouring signal is
+  forced into the target and the result is biased high. Validated
+  against the published GravIS Greenland basin-average series (COST-G
+  RL02, -231.1 Gt/yr over the matching span, all four GravIS
+  corrections applied to the same Level-2 input):
+
+  | mask | Gt/yr | vs published |
+  |---|---|---|
+  | none (naive grid integral) | -170.3 | -26% |
+  | Greenland only | -259.8 | +12% |
+  | union with Canadian Arctic, Iceland, Svalbard | -242.5 | +5% |
+
+  The neighbours absorb -112 Gt/yr in the union solution, and it
+  converges faster. No API change: `Mask=` already accepts any union -
+  the error was in how it was used, which is exactly why it needed
+  saying in the help rather than fixing in code.
+
+## [3.3.0] - 2026-08-11
+
+### Added
+- `shLowLevel.readSHM`: the GRAVIS/GRACE SHM format - a YAML header
+  followed by `GRCOF2` (a field) or `GRDOTA` (a rate in 1/yr) records,
+  gzip transparent, GM and the reference radius taken from the header.
+  GravIS Level-2B products - monthly solutions, mean fields, the
+  ICE-6G_D (VM5a) GIA model - are a major public data source the
+  toolbox could not read at all. A `GRDOTA` result feeds
+  `standardChain(GIA=)` directly, which is what it always wanted.
+  Python-validated first (`tools/dev/validate_shm.py`).
+- Fixtures for both record types, and the GravIS Greenland drainage
+  basin geometries, under CC-BY-4.0 with attribution in NOTICE.
+
 ## [3.2.2] - 2026-08-11
 
 ### Fixed
