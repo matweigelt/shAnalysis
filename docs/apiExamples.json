@@ -540,6 +540,11 @@
   "run": false
  },
  {
+  "name": "shLowLevel.sensitivityKernel",
+  "example": "k = shLowLevel.sensitivityKernel(idx, basin, Alpha = 10, Noise = sigmaVec);\navg = (k' * X) / (k' * k);       % use like any other basin kernel",
+  "run": false
+ },
+ {
   "name": "shLowLevel.shAnalysisGrid",
   "example": "g2 = shLowLevel.shAnalysisGrid(grid, lat, lon, 10);   % exact on ring grids",
   "run": true

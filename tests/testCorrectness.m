@@ -2130,9 +2130,15 @@ verifyEqual(testCase, k0, i0.kExact, 'AbsTol', 1e-14);
 verifyEqual(testCase, i0.leakage, 0, 'AbsTol', 1e-14);
 verifyEqual(testCase, i0.gain, 1, 'RelTol', 1e-12);
 
-% a huge Alpha shrinks the kernel towards zero
-kBig = shLowLevel.sensitivityKernel(idx, cap, Alpha = 1e12);
-verifyLessThan(testCase, norm(kBig), 1e-3 * norm(k0));
+% the unit-response constraint holds at every Alpha. Without it the
+% cheapest way to cut noise is to shrink the kernel to nothing: gain
+% fell to 0.28 at Alpha = 0.1 during development, i.e. the "optimal"
+% kernel measured almost none of the basin it was averaging.
+for a = [0.01 1 100 1e6]
+    [~, iG] = shLowLevel.sensitivityKernel(idx, cap, Alpha = a);
+    verifyEqual(testCase, iG.gain, 1, 'RelTol', 1e-10, ...
+        sprintf('gain must stay 1 at Alpha = %g', a));
+end
 
 % monotone in both directions: that is what makes Alpha a trade-off
 alphas = logspace(-2, 6, 9);
@@ -2144,14 +2150,19 @@ end
 verifyTrue(testCase, all(diff(L) > 0), 'leakage must grow with Alpha');
 verifyTrue(testCase, all(diff(S) < 0), 'noise must fall with Alpha');
 
-% at matched noise it must leak less than a Gaussian - the whole claim
-[kt, it] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 1e3);
+% At matched noise AND matched gain it must leak less than a Gaussian -
+% the whole claim of the method. The Gaussian has to be renormalised to
+% unit gain too, or the comparison comes out backwards for the trivial
+% reason that a shrunken kernel is quiet.
+[~, it] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 1);
 mVec = 1 ./ (idx.n(:) + 1);
 nVec = (1 + (idx.n(:) / 8).^3).^2;
+kk = i0.kExact' * i0.kExact;
 best = inf; bestL = inf;
-for r = 100:50:3000
+for r = 50:25:4000
     wg = shLowLevel.shGaussianWeights(idx.Lmax, r);
     kg = i0.kExact .* wg(idx.n + 1);
+    kg = kg * kk / (kg' * i0.kExact);          % renormalise to unit gain
     sg = sqrt(sum(nVec .* kg.^2));
     if abs(sg - it.noise) < best
         best = abs(sg - it.noise);

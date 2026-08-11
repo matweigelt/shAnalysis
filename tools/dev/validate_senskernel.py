@@ -65,7 +65,17 @@ def setup(lmax=20, seed=2):
 
 
 def kernel(alpha, k_exact, M, N):
-    return np.linalg.solve(M + alpha * N, M @ k_exact)
+    """Minimise J subject to the UNIT-RESPONSE constraint k'kex = kex'kex.
+
+    Without the constraint the cheapest way to cut noise is to shrink k
+    towards zero, so the 'optimal' kernel measures nothing. One Lagrange
+    multiplier restores it.
+    """
+    A = M + alpha * N
+    k0 = np.linalg.solve(A, M @ k_exact)
+    v = np.linalg.solve(A, k_exact)
+    lam = (k_exact @ k_exact - k_exact @ k0) / (k_exact @ v)
+    return k0 + lam * v
 
 
 def metrics(k, k_exact, M, N):
@@ -98,10 +108,10 @@ def main():
     # the two limits
     k0 = kernel(0.0, kex, M, N)
     assert np.allclose(k0, kex, atol=1e-12), "alpha=0 must give the indicator"
-    kbig = kernel(1e30, kex, M, N)
-    assert np.linalg.norm(kbig) < 1e-3 * np.linalg.norm(kex), \
-        "huge alpha must shrink the kernel towards zero"
-    print("limits: alpha=0 -> exact indicator; alpha->inf -> kernel -> 0")
+    for a in (1e14, 1e20, 1e26):
+        g = kernel(a, kex, M, N) @ kex / (kex @ kex)
+        assert abs(g - 1.0) < 1e-8, (a, g)
+    print("limits: alpha=0 -> exact indicator; gain stays 1 at every alpha")
 
     # an L-curve corner exists (maximum curvature in log-log)
     lx, ly = np.log(L), np.log(S)
@@ -121,6 +131,7 @@ def main():
         b = np.log(2) / (1 - np.cos(r / 6371.0))
         w = np.exp(-n * (n + 1) / (2 * b))       # smooth Gaussian-like taper
         kg = kex * w
+        kg = kg * (kex @ kex) / (kg @ kex)      # match the unit gain too
         lg, sg = metrics(kg, kex, M, N)
         if best is None or abs(sg - target) < abs(best[2] - target):
             best = (r, lg, sg)
@@ -129,13 +140,38 @@ def main():
     assert L[ic] < best[1], "the tailored kernel must beat a Gaussian"
     print("  tailored leaks %.1f%% less at the same noise"
           % (100 * (1 - L[ic] / best[1])))
-    print("  NOTE the margin depends strongly on the far-field weighting:")
-    print("  sweeping M over 1/(n+1)^2, 1/(n+1), 1 and (n+1) gives 32%%, "
-          "14%%, 6%% and 2%% at lmax 40. The method is not magic - it wins "
-          "most when leakage is dominated by LOW degrees, which is the "
-          "case for a compact basin, and least when the far field is "
-          "broadband. Report the number for YOUR weighting, not a "
-          "headline.")
+    print("\n  The margin depends strongly on the far-field weighting:")
+    for label, Mv in (("1/(n+1)^2", np.diag(1.0 / (n + 1.0) ** 2)),
+                      ("1/(n+1)", M),
+                      ("1", np.diag(np.ones_like(n, dtype=float))),
+                      ("n+1", np.diag(n + 1.0))):
+        Lw, Sw = [], []
+        for a2 in alphas:
+            kk = kernel(a2, kex, Mv, N)
+            lw, sw = metrics(kk, kex, Mv, N)
+            Lw.append(lw); Sw.append(sw)
+        Lw, Sw = np.array(Lw), np.array(Sw)
+        lxw, lyw = np.log(Lw), np.log(Sw)
+        g1x, g1y = np.gradient(lxw), np.gradient(lyw)
+        g2x, g2y = np.gradient(g1x), np.gradient(g1y)
+        cw = np.abs(g1x * g2y - g1y * g2x) / (g1x ** 2 + g1y ** 2) ** 1.5
+        iw = int(np.argmax(cw[1:-1])) + 1
+        bb = None
+        for r in np.linspace(50, 4000, 400):
+            bq = np.log(2) / (1 - np.cos(r / 6371.0))
+            w2 = np.exp(-n * (n + 1) / (2 * bq))
+            kg2 = kex * w2
+            kg2 = kg2 * (kex @ kex) / (kg2 @ kex)
+            l2, s2 = metrics(kg2, kex, Mv, N)
+            if bb is None or abs(s2 - Sw[iw]) < abs(bb[1] - Sw[iw]):
+                bb = (l2, s2)
+        print("    M = %-10s tailored %.3e vs gauss %.3e -> %.1f%% less"
+              % (label, Lw[iw], bb[0], 100 * (1 - Lw[iw] / bb[0])))
+    print("  The method is not magic: 2-16% here, and the ordering is "
+          "not the intuitive one - the largest margin comes with the "
+          "HIGH-degree weighting M = n+1, where a Gaussian's fixed "
+          "shape is furthest from optimal. Report the number for YOUR "
+          "weighting, measured, not a headline.")
 
     print("\nvalidate_senskernel: trade-off monotone, limits correct, "
           "beats a Gaussian at matched noise")
