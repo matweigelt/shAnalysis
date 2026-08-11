@@ -97,6 +97,21 @@ info.stoppedBy      % "discrepancy" | "step" | "maxIter" - always check</pre>
 so. On a noisy version of the reference disc the unregularised run took 239 iterations and was
 <b>4.3&times;</b> further from the truth than the run stopped at the noise level after 2.</div>
 
+<h3>Where NoiseLevel comes from <span class="tag">v3.5.1</span></h3>
+<p><code class="inline">shLowLevel.oceanRMS</code> gives the standard estimate: the area-weighted
+RMS of the field over the <b>open ocean</b>, i.e. ocean points more than 1000 km from any coast.
+Far from land a GRACE field should contain almost no real signal, so what remains is error &mdash;
+which is why processing centres quote this number to compare filters and solutions.</p>
+<pre>noise = shLowLevel.oceanRMS(ewh, lat, lon, isOcean);   % MinDistanceKm = 1000
+m = shLowLevel.leakageCorrect(ewh, lat, lon, Filter = "gauss300", ...
+        Mask = unionMask, NoiseLevel = noise);</pre>
+<p>The ocean mask is <b>user-supplied</b>, like Love numbers: base MATLAB's
+<code class="inline">coastlines</code> data set is not present in every installation, and a wrong
+mask silently changes the number. The average is area-weighted by default, because an unweighted RMS
+over a lat/lon grid over-counts the polar rows &mdash; on white noise the two agree, which is exactly
+why the difference is easy to miss until the field has structure. Plot
+<code class="inline">info.mask</code> once before trusting the value.</p>
+
 <h3>Gain and iteration count</h3>
 <p>Small regions under a strong filter converge slowly: the 6&deg; disc needs about 260 iterations at
 <code class="inline">Gain = 1</code> and about 170 at <code class="inline">Gain = 2</code>. Values

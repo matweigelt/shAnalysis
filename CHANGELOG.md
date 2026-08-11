@@ -3,6 +3,28 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.5.1] - 2026-08-11
+
+### Added
+- `shLowLevel.oceanRMS`: area-weighted RMS of a field over the OPEN
+  ocean - ocean points more than `MinDistanceKm` (default 1000) from the
+  nearest non-ocean point. Far from land a GRACE field should contain
+  almost no real signal, so what remains is error; this is the standard
+  noise metric processing centres quote, and the value `leakageCorrect`
+  needs for `NoiseLevel`. Without it, v3.5.0's discrepancy principle had
+  no natural input.
+- The ocean mask is USER-SUPPLIED, deliberately. Base MATLAB's
+  `coastlines` data set is not present in every installation (it is
+  absent on the acceptance machine, which is why `plotSHMap` carries a
+  fallback), and a wrong mask silently changes the number.
+- Area weighting is on by default: an unweighted RMS over a lat/lon grid
+  over-counts the polar rows. On white noise the weighted and unweighted
+  values agree, which is exactly why the difference goes unnoticed until
+  the field has structure - the test pins both cases.
+- Python-validated (`tools/dev/validate_oceanrms.py`): the erosion moves
+  the boundary by exactly d/R against an analytic spherical cap, and the
+  weighted mean of cos^2 over the sphere comes out 0.6666 against 2/3.
+
 ## [3.5.0] - 2026-08-11
 
 ### Fixed (correctness of a shipped result)

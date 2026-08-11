@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.5.0 (R2026a-compatible) 11-Aug-2026
+% Version 3.5.1 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,16 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.5.1 (the open-ocean noise metric)
+%   shLowLevel.oceanRMS - area-weighted RMS of a field over the open
+%     ocean (> 1000 km from any coast), the standard GRACE noise metric
+%     and the natural value for leakageCorrect's NoiseLevel. The ocean
+%     mask is USER-SUPPLIED, like Love numbers: base MATLAB's
+%     'coastlines' is absent from some installations and a wrong mask
+%     silently changes the number. Area weighting is on by default -
+%     unweighted over-counts the polar rows, which white noise hides.
+%     Python-validated in tools/dev/validate_oceanrms.py.
 %
 % New in v3.5.0 (stopping is regularisation)
 %   leakageCorrect solves an ill-posed problem and SEMICONVERGES: the
