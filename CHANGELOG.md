@@ -5,6 +5,17 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 
 ## [3.1.1] - Unreleased
 
+### Added
+- `fetchICGEM` fetches TIME SERIES: temporal-catalogue rows (from
+  `listICGEM(Type="temporal")`) download a whole monthly series into
+  `<dataFolder>/icgem/series/<group>_<center>_<series>/` - per file
+  (resumable, throttled, each file verified before swap; `Files=`
+  filter, `FileList=` injection for subsets/mirrors) or as the
+  server's whole-series zip (`Archive=true`, one request). `Type=`
+  mirrors listICGEM so numeric/name selection works on either
+  catalogue; the result folder feeds `shSeries.fromFolder` and
+  `standardChain` directly.
+
 ### Fixed
 - `shReadGFC` bulk parser survives ragged record groups: EIGEN-5S/5C
   carry a single gfc line with a trailing epoch among thousands of
