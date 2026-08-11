@@ -420,6 +420,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.makeTutorials",
+  "example": "shLowLevel.makeTutorials(Cases = [\"D01\" \"D05\"]);\nedit(fullfile(\"tutorials\", \"T_D01_read_spectral_diagnostics.m\"))",
+  "run": false
+ },
+ {
   "name": "shLowLevel.mcPropagate",
   "example": "out = shLowLevel.mcPropagate(@(gs) gs.C(3, 1), g, N = 200);   % any functional of g",
   "run": true

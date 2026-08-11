@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.7.0 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,19 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.0 (Live Script tutorials - roadmap item 10)
+%   shLowLevel.makeTutorials writes one Live Script per demo case into
+%     tutorials/, GENERATED from the demo registry rather than hand
+%     written: demo_shAnalysis is the single source of truth, and a
+%     parallel set of .mlx (a binary zip) would drift invisibly.
+%     Conversion uses an internal MATLAB API; when it is unavailable the
+%     .m files are still written and a warning says how to convert by
+%     hand.
+%   CI: timeout-minutes on the job (20) and on the MATLAB setup step
+%     (8). The MathWorks setup step hung four times in one session,
+%     taking 5-10 minutes against its usual 1.2, each time needing a
+%     manual cancel; now it fails fast and visibly.
 %
 % New in v3.7.0 (tailored sensitivity kernels)
 %   shLowLevel.sensitivityKernel - a basin kernel that trades leakage
