@@ -3,6 +3,32 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.5.0] - 2026-08-11
+
+### Fixed (correctness of a shipped result)
+- `leakageCorrect` solves an ill-posed inverse problem and therefore
+  SEMICONVERGES: the error against the truth falls, reaches a minimum,
+  then rises as the iteration begins to fit noise - while the residual
+  keeps shrinking. The previous stopping rule chased a small solution
+  step, which is exactly wrong. Measured on the reference problem
+  (`tools/dev/validate_stopping.py`): the final solution is **361x**
+  worse than the best one, `Tol = 1e-3` stops **89x** past the optimum,
+  and the shipped default `Tol = 1e-4` never triggers at all.
+- `NoiseLevel=` enables the discrepancy principle (Morozov): stop once
+  the residual reaches the noise level of the data, since fitting more
+  closely than the noise is fitting noise. It lands within 2% of the
+  optimum. `Tau=` (1.2) is the safety factor; 1.2-1.5 is best, 1.0
+  slightly overfits. The natural estimate for `NoiseLevel` is the
+  open-ocean RMS of the field, which is what processing centres use.
+- On a noisy version of the reference disc, verified on the acceptance
+  machine: the discrepancy principle stopped after 2 iterations and was
+  **4.3x closer to the truth** than the unregularised run, which took
+  239.
+- `info.stoppedBy` ("discrepancy" | "step" | "maxIter" | "zeroField")
+  plus `residualRMS` and `noiseLevel` make the regularisation state
+  inspectable. Without `NoiseLevel` a warning states that the result
+  depends on `MaxIter`.
+
 ## [3.4.1] - 2026-08-11
 
 ### Documented

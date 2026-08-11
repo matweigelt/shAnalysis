@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.4.1)</h1>
+<h1>shAnalysis API reference (v3.5.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -477,14 +477,14 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <p class="h1line">Iterative forward modelling of filter leakage/attenuation.</p>
 <p>[MCORR, INFO] = shLowLevel.leakageCorrect(GRID, LATDEG, LONDEG, Filter = ...) recovers the mass field that, pushed through the SAME processing chain the data saw, reproduces the observed filtered GRID. The chain F is analysis -&gt; filter -&gt; synthesis, and the correction is the fixed-point iteration</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>grid</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>latDeg</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>lonDeg</code></td><td>-</td><td>double</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Mask</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Gain</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>200</td></tr><tr><td><code>Tol</code></td><td>1 x 1</td><td>double</td><td>1e-4</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Mask</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Gain</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>NoiseLevel</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>Tau</code></td><td>1 x 1</td><td>double</td><td>1.2</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>200</td></tr><tr><td><code>Tol</code></td><td>1 x 1</td><td>double</td><td>1e-4</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>mCorr</code></td><td>(nLat x nLon) double   leakage-corrected field, same units and grid as GRID</td></tr>
-<tr><td><code>info</code></td><td>(1,1) struct  fields: iterations (1,1 double), residual (1,1 double, final relative residual - with a mask this floors above Tol and that is correct), history (1,K double, the residual per iteration - plot it, a rising curve means Gain is too large), step (1,K double, the relative change of the solution per iteration; this is what Tol tests), converged (1,1 logical), nmax (1,1 double), filter (1,1 string), masked (1,1 logical)</td></tr>
+<tr><td><code>info</code></td><td>(1,1) struct  fields: iterations (1,1 double), residual (1,1 double, final relative residual - with a mask this floors above Tol and that is correct), history (1,K double, the residual per iteration - plot it, a rising curve means Gain is too large), step (1,K double, the relative change of the solution per iteration; this is what Tol tests), stoppedBy (1,1 string: &quot;discrepancy&quot; | &quot;step&quot; | &quot;maxIter&quot; | &quot;zeroField&quot; - always check this, it says whether the result was regularised), residualRMS (1,1 double) and noiseLevel (1,1 double, as given), so the discrepancy ratio is inspectable, converged (1,1 logical), nmax (1,1 double), filter (1,1 string), masked (1,1 logical)</td></tr>
 </table>
 <b>Example</b><pre>ewh = g.synthesis(-89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);
 [m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
-    Filter = &quot;gauss300&quot;, Mask = basinMask);</pre>
+    Filter = &quot;gauss300&quot;, Mask = basinMask, NoiseLevel = oceanRMS);</pre>
 </div>
 <div class="entry" id="shLowLevel.legendreALF">
 <h3><code>shLowLevel.legendreALF(nmax, lat)</code></h3>
@@ -1896,4 +1896,4 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 </table>
 <b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.4.1). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.5.0). Generated by tools - do not edit.</p></body></html>
