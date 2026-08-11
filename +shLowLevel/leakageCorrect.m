@@ -64,6 +64,14 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %             from any signal (> 1000 km from the coast), which is what
 %             GRACE processing centres use as a noise metric. 0 disables
 %             the discrepancy principle and falls back to Tol
+%     ResidualRegion ([])  where the discrepancy principle measures the
+%             residual. [] uses MASK when one is given, and the whole
+%             grid otherwise. This matters: with a mask the model
+%             describes ONE region while the data contains every other
+%             mass signal on the globe, so a global residual never falls
+%             to the noise level and the principle never fires. On the
+%             GravIS Greenland case the residual was 0.0085 globally
+%             against 0.0008 near the mask, with a noise level of 0.0024
 %     Tau (1.2)  safety factor in the discrepancy principle; stop when
 %             rms(residual) <= Tau * NoiseLevel. Values of 1.2 to 1.5
 %             land nearest the optimum, 1.0 slightly overfits
@@ -115,8 +123,10 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %                stoppedBy (1,1 string: "discrepancy" | "step" |
 %                "maxIter" | "zeroField" - always check this, it says
 %                whether the result was regularised),
-%                residualRMS (1,1 double) and noiseLevel (1,1 double,
-%                as given), so the discrepancy ratio is inspectable,
+%                residualRMS (1,1 double, over ResidualRegion),
+%                residualRMSGlobal (1,1 double, over the whole grid - a
+%                large gap between the two means unmodelled signal
+%                elsewhere) and noiseLevel (1,1 double, as given),
 %                converged (1,1 logical), nmax (1,1 double),
 %                filter (1,1 string), masked (1,1 logical)
 %
@@ -147,6 +157,7 @@ arguments
     opts.Nmax (1,1) double = NaN
     opts.Gain (1,1) double {mustBePositive} = 1
     opts.NoiseLevel (1,1) double {mustBeNonnegative} = 0
+    opts.ResidualRegion = []
     opts.Tau (1,1) double {mustBePositive} = 1.2
     opts.MaxIter (1,1) double {mustBeInteger, mustBePositive} = 200
     opts.Tol (1,1) double {mustBePositive} = 1e-4
@@ -177,13 +188,38 @@ if useMask
         'Mask selects no pixels - nothing to solve for.');
 end
 wFilt = resolveFilter(opts.Filter, nmax);
+% Where the discrepancy principle looks. The residual must be measured
+% WHERE THE MODEL IS RESPONSIBLE. With a mask the model describes one
+% region while the data contains every other mass signal on the globe -
+% Antarctica, Alaska, land hydrology - so a GLOBAL residual can never
+% fall to the noise level however long the iteration runs, and the
+% principle silently never fires. Measured on the GravIS Greenland case:
+% residual 0.0085 globally against 0.0008 near the mask and a noise
+% level of 0.0024.
+resReg = opts.ResidualRegion;
+if isempty(resReg)
+    resReg = mask;                     % [] when unmasked -> global
+else
+    assert(isequal(size(resReg), size(grid)), ...
+        'shLowLevel:leakageCorrect:badResidualRegion', ...
+        'ResidualRegion must have the same size as grid.');
+    resReg = logical(resReg);
+    assert(any(resReg(:)), 'shLowLevel:leakageCorrect:emptyResidualRegion', ...
+        'ResidualRegion selects no pixels.');
+end
+if isempty(resReg)
+    resSel = true(size(grid));
+else
+    resSel = resReg;
+end
 
 scale = max(abs(grid(:)));
 if scale == 0                            % nothing to correct
     mCorr = grid;
     info = struct('iterations', 0, 'residual', 0, 'history', [], ...
         'step', [], 'converged', true, 'stoppedBy', "zeroField", ...
-        'residualRMS', 0, 'noiseLevel', opts.NoiseLevel, 'nmax', nmax, ...
+        'residualRMS', 0, 'residualRMSGlobal', 0, ...
+        'noiseLevel', opts.NoiseLevel, 'nmax', nmax, ...
         'filter', string(filterName(opts.Filter)), 'masked', useMask);
     return
 end
@@ -200,7 +236,7 @@ for k = 1:opts.MaxIter
     m = m + opts.Gain * r;
     if useMask, m(~mask) = 0; end
     hist(k) = max(abs(r(:))) / scale;
-    rmsR = sqrt(mean(r(:).^2));
+    rmsR = sqrt(mean(r(resSel).^2));
     % DISCREPANCY PRINCIPLE (Morozov): once the residual has reached the
     % noise level of the data, further iterations fit noise. This is the
     % regularisation; see the note on semiconvergence in the help.
@@ -236,9 +272,10 @@ step = step(1:k);
 mCorr = m;
 info = struct('iterations', k, 'residual', hist(end), 'history', hist, ...
     'step', step, 'converged', converged, 'stoppedBy', stoppedBy, ...
-    'residualRMS', sqrt(mean((grid(:) - ...
-        reshape(applyChain(m, latDeg, lonDeg, nmax, wFilt, opts.GM, ...
-        opts.R), [], 1)).^2)), ...
+    'residualRMS', rmsOver(grid - applyChain(m, latDeg, lonDeg, ...
+        nmax, wFilt, opts.GM, opts.R), resSel), ...
+    'residualRMSGlobal', rmsOver(grid - applyChain(m, latDeg, lonDeg, ...
+        nmax, wFilt, opts.GM, opts.R), true(size(grid))), ...
     'noiseLevel', opts.NoiseLevel, 'nmax', nmax, ...
     'filter', string(filterName(opts.Filter)), 'masked', useMask);
 if opts.NoiseLevel == 0
@@ -263,6 +300,10 @@ end
 end
 
 % ------------------------------------------------------------- helpers
+function v = rmsOver(F, sel)
+v = sqrt(mean(F(sel).^2));
+end
+
 function out = applyChain(field, latDeg, lonDeg, nmax, wFilt, GM, R)
 %APPLYCHAIN analysis -> filter -> synthesis, the operator the data saw.
 %   GM and R must be the SAME on both sides: shAnalysisGrid converts a
