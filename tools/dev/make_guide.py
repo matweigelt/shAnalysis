@@ -1142,7 +1142,42 @@ story += [para("The released DDK filters are built from a specific "
                "way to get a filter that looks plausible and smooths by "
                "the square root of what you intended.")]
 
-story += [para("G12. What real provider files look like", "h2")]
+story += [para("G12. Correcting leakage", "h2")]
+story += code("""
+% forward modelling: only the FILTER has to be known
+ewh = g.synthesis(-89:89, 0:359, quantity = "ewh", kn = kn);
+[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
+    Filter = "gauss300", Mask = basinMask, Gain = 2);
+
+% or scaling factors, if you trust a model's spatial PATTERN
+k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = "gauss300");
+corrected = k .* ewh;                 % NaN where the model is blind
+""")
+story += [para("A filter removes real signal and spreads the rest across "
+               "basin boundaries; a 6&deg; disc under a 500 km Gaussian "
+               "keeps about half its peak. The two corrections differ in "
+               "what you have to BELIEVE, which is how to choose between "
+               "them. Forward modelling "
+               "(<font face='Courier'>leakageCorrect</font>) needs only "
+               "the filter and, usefully, a mask saying where mass can "
+               "exist &mdash; it then has to explain the observation with "
+               "mass inside that region, so leakage outside is removed "
+               "rather than redistributed. Scaling factors "
+               "(<font face='Courier'>gridScaling</font>) need a model "
+               "series, and inherit the correctness of its spatial "
+               "pattern: the factors are invariant to the model&rsquo;s "
+               "amplitude but not to its shape.")]
+story += [para("Two behaviours worth knowing before you read the output. "
+               "Convergence is judged on the change of the SOLUTION, not "
+               "on the residual: with a mask the problem is inconsistent, "
+               "so the residual settles at a floor while the solution is "
+               "converged. And <font face='Courier'>gridScaling</font> "
+               "returns NaN where the model carries no signal instead of "
+               "a ratio of two numerical zeros &mdash; a model that does "
+               "not reach your basin shows up as missing coverage rather "
+               "than as noise multiplying your data.")]
+
+story += [para("G13. What real provider files look like", "h2")]
 story += [para("Format specifications describe what files ought to "
                "contain. The reader is written against what they "
                "actually contain, and three separate field failures are "

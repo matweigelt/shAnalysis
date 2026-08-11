@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.1.4 (R2026a-compatible) 11-Aug-2026
+% Version 3.2.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,21 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.2.0 (leakage correction - roadmap item 8)
+%   shLowLevel.leakageCorrect - iterative forward modelling: recover the
+%     mass field that, pushed through the SAME chain the data saw,
+%     reproduces the observation. Mask= confines the solution to where
+%     mass can exist, which is the well-conditioned variant and removes
+%     leakage instead of redistributing it. Convergence is judged on the
+%     change of the SOLUTION, since a masked problem is inconsistent and
+%     its residual floors above any tolerance.
+%   shLowLevel.gridScaling - per-pixel scaling factors k from a model
+%     series pushed through the same chain. Amplitude-invariant (k is a
+%     property of the model's PATTERN) and NaN where the model carries
+%     no signal, so a model that does not reach your region is visible
+%     rather than silently multiplying data by noise.
+%   Both Python-validated first (tools/dev/validate_leakage.py).
 %
 % New in v3.1.4 (robust safe swaps)
 %   shLowLevel.safeMove - the fetchers' final .part -> target swap, with

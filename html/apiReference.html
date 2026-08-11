@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.1.4)</h1>
+<h1>shAnalysis API reference (v3.2.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -44,8 +44,10 @@ code itself.</p>
 <a href="#shLowLevel.gaussLegendre">gaussLegendre</a>
 <a href="#shLowLevel.geocentric2geodetic">geocentric2geodetic</a>
 <a href="#shLowLevel.geodetic2geocentric">geodetic2geocentric</a>
+<a href="#shLowLevel.gridScaling">gridScaling</a>
 <a href="#shLowLevel.icgemDate2Year">icgemDate2Year</a>
 <a href="#shLowLevel.kernelFactors">kernelFactors</a>
+<a href="#shLowLevel.leakageCorrect">leakageCorrect</a>
 <a href="#shLowLevel.legendreALF">legendreALF</a>
 <a href="#shLowLevel.legendreALFDeriv">legendreALFDeriv</a>
 <a href="#shLowLevel.legendreCached">legendreCached</a>
@@ -435,6 +437,19 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 </table>
 <b>Example</b><pre>latGc = shLowLevel.geodetic2geocentric(latGd);   % before synthesis</pre>
 </div>
+<div class="entry" id="shLowLevel.gridScaling">
+<h3><code>shLowLevel.gridScaling(model, latDeg, lonDeg, opts)</code></h3>
+<p class="h1line">Per-pixel leakage/attenuation scaling factors from a model.</p>
+<p>[K, INFO] = shLowLevel.gridScaling(MODEL, LATDEG, LONDEG, Filter = ...) computes the classic gridded scaling factors: push a MODEL field series through the SAME processing chain the data saw and regress, per pixel, the true value on the filtered one,</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>latDeg</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>lonDeg</code></td><td>-</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>MinSignal</code></td><td>1 x 1</td><td>double</td><td>1e-3</td></tr><tr><td><code>Clip</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>k</code></td><td>(nLat x nLon) double  scaling factors; NaN where the model carries too little signal to define one</td></tr>
+<tr><td><code>info</code></td><td>(1,1) struct  fields: covered (1,1 double, fraction of the grid with a finite k), kMedian / kMin / kMax (1,1 double, over the pixels the MODEL gives mass to - not over all finite pixels, where pure-leakage k = 0 would dominate), onSignal (1,1 double, how many those are), clipped (1,1 double, number of clamped pixels), nmax (1,1 double), filter (1,1 string), epochs (1,1 double)</td></tr>
+</table>
+<b>Example</b><pre>k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = &quot;gauss300&quot;);
+corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
+</div>
 <div class="entry" id="shLowLevel.icgemDate2Year">
 <h3><code>shLowLevel.icgemDate2Year(d)</code></h3>
 <p class="h1line">Convert ICGEM/GRACE yyyymmdd(.hhmm) epochs to decimal years.</p>
@@ -455,6 +470,20 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 <tr><td><code>kernel</code></td><td>(nmax+1,1) double  (zeros where the quantity carries no information, e.g. n=1 for gravity_anomaly)</td></tr>
 </table>
 <b>Example</b><pre>kf = shLowLevel.kernelFactors(&quot;ewh&quot;, 60, GM, R, kn = kn);</pre>
+</div>
+<div class="entry" id="shLowLevel.leakageCorrect">
+<h3><code>shLowLevel.leakageCorrect(grid, latDeg, lonDeg, opts)</code></h3>
+<p class="h1line">Iterative forward modelling of filter leakage/attenuation.</p>
+<p>[MCORR, INFO] = shLowLevel.leakageCorrect(GRID, LATDEG, LONDEG, Filter = ...) recovers the mass field that, pushed through the SAME processing chain the data saw, reproduces the observed filtered GRID. The chain F is analysis -&gt; filter -&gt; synthesis, and the correction is the fixed-point iteration</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>grid</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>latDeg</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>lonDeg</code></td><td>-</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Mask</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Gain</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>200</td></tr><tr><td><code>Tol</code></td><td>1 x 1</td><td>double</td><td>1e-4</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>mCorr</code></td><td>(nLat x nLon) double   leakage-corrected field, same units and grid as GRID</td></tr>
+<tr><td><code>info</code></td><td>(1,1) struct  fields: iterations (1,1 double), residual (1,1 double, final relative residual - with a mask this floors above Tol and that is correct), history (1,K double, the residual per iteration - plot it, a rising curve means Gain is too large), step (1,K double, the relative change of the solution per iteration; this is what Tol tests), converged (1,1 logical), nmax (1,1 double), filter (1,1 string), masked (1,1 logical)</td></tr>
+</table>
+<b>Example</b><pre>ewh = g.synthesis(-89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);
+[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
+    Filter = &quot;gauss300&quot;, Mask = basinMask);</pre>
 </div>
 <div class="entry" id="shLowLevel.legendreALF">
 <h3><code>shLowLevel.legendreALF(nmax, lat)</code></h3>
@@ -1841,4 +1870,4 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 </table>
 <b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.1.4). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.2.0). Generated by tools - do not edit.</p></body></html>
