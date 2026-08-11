@@ -55,7 +55,9 @@ function [d1, info] = estimateDegree1(ts, ocean, opts)
 %                shLowLevel.readTN13 returns, so it drops straight into
 %                shSeries.addDegree1 / shCoefficients.addDegree1
 %     info       (1,1) struct  fields: cond (T,1 double, condition
-%                number of the design matrix per epoch - a rising value
+%                number of the column-equilibrated design matrix per
+%                epoch (equilibrated so the number reflects the GEOMETRY
+%                of the ocean domain, not the units of the columns) - a rising value
 %                warns that the ocean domain is too small or too
 %                lopsided BEFORE the noise shows it), oceanFraction
 %                (1,1 double, area fraction used), nPixels, hasModel
@@ -135,6 +137,14 @@ w = cosd(LA);
 % is a nuisance parameter: estimated, then discarded.
 A = [B{1}(isOc), B{2}(isOc), B{3}(isOc), ones(nnz(isOc), 1)] ...
     .* sqrt(w(isOc));
+% Column-equilibrate before solving. The constant column has a completely
+% different scale from the three basis patterns, and an unscaled cond(A)
+% then reports the units rather than the geometry (3.8e7 on a problem
+% whose geometry is fine). Scaling is undone on the solution, so the
+% answer is unchanged and the diagnostic becomes meaningful.
+colScale = vecnorm(A, 2, 1);
+colScale(colScale == 0) = 1;
+A = A ./ colScale;
 
 C10 = zeros(T, 1); C11 = zeros(T, 1); S11 = zeros(T, 1);
 cnd = zeros(T, 1); rms = zeros(T, 1);
@@ -148,10 +158,10 @@ for k = 1:T
         d = -obs;
     end
     b = d(isOc) .* sqrt(w(isOc));
-    x = A \ b;
+    x = (A \ b) ./ colScale(:);            % undo the equilibration
     C10(k) = x(1); C11(k) = x(2); S11(k) = x(3);   % x(4): mass nuisance
     cnd(k) = cond(A);
-    rms(k) = sqrt(mean((A * x - b).^2));
+    rms(k) = sqrt(mean((A * (x .* colScale(:)) - b).^2));
 end
 d1 = struct('epoch', ts.epochs(:), 'C10', C10, 'C11', C11, 'S11', S11);
 info = struct('cond', cnd, 'oceanFraction', sum(w(isOc)) / sum(w(:)), ...
