@@ -991,6 +991,17 @@ methods (Static)
                     char(files));
             end
             list = string(fullfile({d.folder}, {d.name}))';
+            % writeGFC drops "<file>.gfc.provenance.json" next to each
+            % export, and the natural pattern "*.gfc*" (which has to be
+            % loose enough for ".gfc.gz") matches those too - so a folder
+            % written BY the toolbox could not be read back BY the
+            % toolbox. Sidecars are metadata, never solutions.
+            list = list(~endsWith(list, ".provenance.json"));
+            if isempty(list)
+                error('shSeries:noFiles', ...
+                    'Pattern matched only provenance sidecars: %s', ...
+                    char(files));
+            end
         else
             list = string(files); list = list(:);
         end
