@@ -101,16 +101,18 @@ if isnumeric(model) || ...
             'each;\npresent files are skipped, so an interrupted run ' ...
             'simply resumes)\n'], K);
     end
-    file = strings(1, K); infos = cell(1, K); failed = strings(1, 0);
+    fileC = repmat({strings(1, 0)}, 1, K);
+    infos = cell(1, K); failed = strings(1, 0);
     for k = 1:K
         if ~opts.Quiet, fprintf('[%d/%d] ', k, K); end
         try
-            [file(k), infos{k}] = shLowLevel.fetchICGEM(rows(k, :), ...
+            [fk, infos{k}] = shLowLevel.fetchICGEM(rows(k, :), ...
                 Dest = opts.Dest, Timeout = opts.Timeout, ...
                 Proxy = opts.Proxy, Update = opts.Update, ...
                 Quiet = opts.Quiet, Retries = opts.Retries, ...
                 Type = opts.Type, Files = opts.Files, ...
                 Mode = opts.Mode, List = T);
+            fileC{k} = reshape(fk, 1, []);      % series return many files
             if k < K && ~infos{k}.skipped
                 pause(opts.Pause);              % ICGEM rate limit
             end
@@ -124,17 +126,17 @@ if isnumeric(model) || ...
             end
             failed(end+1) = nm + ": " + err.message; %#ok<AGROW>
             infos{k} = struct('url', rows.url(k), 'skipped', false, ...
-                'updated', false, 'failed', true);
+                'updated', false, 'failed', true, 'mode', "");
             if ~opts.Quiet
                 fprintf('  FAILED %s (%s)\n', nm, err.message);
             end
         end
     end
     info = [infos{:}];
-    keep = strlength(file) > 0;
-    file = file(keep);
+    file = [fileC{:}];
     if ~opts.Quiet
-        fprintf('done: %d ok, %d failed.\n', nnz(keep), numel(failed));
+        fprintf('done: %d of %d selections ok (%d files), %d failed.\n', ...
+            K - numel(failed), K, numel(file), numel(failed));
         if ~isempty(failed), fprintf('  %s\n', failed); end
     end
     return
@@ -186,7 +188,7 @@ if ~isfolder(dest), mkdir(dest); end
 file = string(fullfile(dest, [base, ext]));
 present = isfile(file);
 info = struct('url', row.url, 'skipped', present && ~opts.Update, ...
-    'updated', false, 'failed', false);
+    'updated', false, 'failed', false, 'mode', "model");
 if present && ~opts.Update
     return
 end
@@ -279,7 +281,8 @@ listF = @() string(reshape({dir(fullfile(char(dest), '**', ...
     string(reshape({dir(fullfile(char(dest), '**', char(opts.Files))).name}, [], 1));
 have = listF();
 if ~isempty(have) && ~opts.Update
-    files = have; info.skipped = true;
+    files = reshape(have, 1, []); info.skipped = true;
+    info.mode = "present";
     if ~opts.Quiet
         fprintf('  %s: %d files present, skipped\n', row.series, numel(have));
     end
@@ -297,7 +300,7 @@ if opts.Mode ~= "files"
         fetchWithBackoff(row.zip, tmpf, opts);
         unzip(tmpf, char(dest));
         delete(tmpf);
-        files = listF();
+        files = reshape(listF(), 1, []);
         assert(~isempty(files), 'shLowLevel:fetchICGEM:emptySeries', ...
             'Archive of "%s" contained no files matching %s.', ...
             row.series, opts.Files);
@@ -331,11 +334,11 @@ keep = ~cellfun('isempty', regexp(cellstr(F.name), ['^' pat '$'], 'once'));
 F = F(keep, :);
 assert(height(F) > 0, 'shLowLevel:fetchICGEM:emptySeries', ...
     'Series "%s" has no files matching %s.', row.series, opts.Files);
-files = strings(0, 1); nFetched = 0; nSkip = 0;
+files = strings(1, 0); nFetched = 0; nSkip = 0;
 for j = 1:height(F)
     fp = fullfile(char(dest), char(F.name(j)));
     if isfile(fp) && ~opts.Update
-        files(end+1, 1) = string(fp); %#ok<AGROW>
+        files(1, end+1) = string(fp); %#ok<AGROW>
         nSkip = nSkip + 1;
         continue
     end
@@ -348,7 +351,7 @@ for j = 1:height(F)
         fetchWithBackoff(F.url(j), tmpf, opts);
         shLowLevel.shReadGFC(tmpf);             % verify BEFORE swap
         movefile(tmpf, fp, 'f');
-        files(end+1, 1) = string(fp); %#ok<AGROW>
+        files(1, end+1) = string(fp); %#ok<AGROW>
         nFetched = nFetched + 1;
     catch err
         if isfile(tmpf), delete(tmpf), end

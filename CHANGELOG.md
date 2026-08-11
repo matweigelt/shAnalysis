@@ -19,6 +19,12 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   `standardChain` directly.
 
 ### Fixed
+- `fetchICGEM` bulk selection of temporal series: the multi-selection
+  loop assumed one file per row and crashed assigning a 283-file
+  series into `strings(1,K)` - AFTER the download had succeeded. File
+  outputs are now collected per selection and concatenated; `info`
+  carries a uniform `mode` field ("model"|"archive"|"files") across
+  all paths; the summary reports selections and files separately.
 - `shReadGFC` bulk parser survives ragged record groups: EIGEN-5S/5C
   carry a single gfc line with a trailing epoch among thousands of
   uniform ones, which silently misaligned the rectangular sscanf and
