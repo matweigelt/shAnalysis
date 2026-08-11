@@ -3,6 +3,35 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.4] - 2026-08-11
+
+### Fixed
+- `testStandardChain` had been silently SKIPPING since v3.1.0. It asked
+  for `TN-13_GEOC_GFZ_RL06.3.txt`; the shipped GFZ fixture spells the
+  release with an underscore (`RL06_3`), unlike the CSR and JPL ones.
+  The `assumeTrue` guard turned that typo into a filtered test, which in
+  the summary looks exactly like a passing one - so the canonical
+  pipeline entry point went unverified through four releases and every
+  CI run. The fixture checks are `verifyTrue` now: a missing fixture is
+  a failure, not a shrug. An audit of every fixture filename referenced
+  in the suite found no other case.
+- With the test running for the first time, CI immediately found an
+  assertion inside it that had never been exercised: the GIA epoch check
+  demanded `RelTol 1e-10` on a value that survives a gfc write/read
+  round trip. Epochs are stored as decimal years in text, so the
+  observed agreement is 5.3e-10 - the format's precision, not MATLAB's.
+  Relaxed to 1e-8, which still catches any real error in the GIA
+  scaling (those are of order 1 in relative terms). Nothing wrong with
+  `standardChain` itself.
+
+### Checked, not changed
+- The workflow guide's demo-gallery figures were carried on the roadmap
+  as "Edition-2 placeholders". They are not: all ten are real rendered
+  figures from real data (the ITSG month, the DDK3 Wbd binary, the
+  GRACE-FO minus GRACE difference), and all ten are present in
+  `tools/dev/guide_assets/`. The roadmap entry was stale, like the
+  COST-G SINEX fetcher removed in 3.8.1. Removed.
+
 ## [3.8.3] - 2026-08-11
 
 ### Added

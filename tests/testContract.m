@@ -717,8 +717,15 @@ function testStandardChain(testCase)
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 tn14 = fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt');
-tn13 = fullfile(d, 'TN-13_GEOC_GFZ_RL06.3.txt');
-assumeTrue(testCase, isfile(src) && isfile(tn14) && isfile(tn13));
+% the shipped GFZ fixture spells the release with an UNDERSCORE
+% (RL06_3), unlike CSR and JPL. A dot here made assumeTrue filter this
+% whole test out silently for four releases - a skipped test looks
+% exactly like a green one in the summary, so verify the fixtures exist
+% rather than assuming them away.
+tn13 = fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt');
+verifyTrue(testCase, isfile(src), 'missing fixture: ' + string(src));
+verifyTrue(testCase, isfile(tn14), 'missing fixture: ' + string(tn14));
+verifyTrue(testCase, isfile(tn13), 'missing fixture: ' + string(tn13));
 fol = tempname; mkdir(fol);
 cl = onCleanup(@() rmIfFolder(fol)); %#ok<NASGU>
 copyfile(src, fullfile(fol, 'ITSG-Grace2018_n60_2008-04.gfc'));
@@ -739,8 +746,14 @@ gT = gT.setCoefficient(2, 0, 1e-9, NaN);
     Filter = "none", Quiet = true);
 dt = t2.epochs(2) - t2.epochs(1);
 g2 = t2.at(2); g0 = t0.at(2);
+% t0 = mean epoch. RelTol 1e-10 was never exercised (this whole test was
+% filtered out by a fixture-name typo until v3.8.2) and is too tight for
+% a value that survives a gfc write/read round trip: the epoch is stored
+% as a decimal year in text, so dt carries the format's precision, not
+% MATLAB's. Observed agreement 5.3e-10; 1e-8 still catches any real
+% error in the GIA scaling, which would be a relative change of order 1.
 verifyEqual(testCase, g0.C(3, 1) - g2.C(3, 1), (dt / 2) * 1e-9, ...
-    'RelTol', 1e-10);                            % t0 = mean epoch
+    'RelTol', 1e-8);
 % custom W path (designFilter output drops in)
 g1 = t0.at(1);
 sc = 3e-11 * ones(61);

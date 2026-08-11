@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.3 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.4 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,16 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.4 (a test that was never running)
+%   testStandardChain asked for TN-13_GEOC_GFZ_RL06.3.txt while the
+%   shipped fixture is RL06_3 (underscore). assumeTrue turned the typo
+%   into a filtered test - indistinguishable from a passing one - so the
+%   canonical pipeline went unverified from v3.1.0 to v3.8.3. Fixture
+%   checks are verifyTrue now, and the newly-running test immediately
+%   exposed a RelTol of its own that had never been exercised. Guide
+%   gallery figures: checked, all ten are real, the "placeholder"
+%   roadmap item was stale.
 %
 % New in v3.8.3 (opt-in test data, documented and settable)
 %   setup_shAnalysis SeriesFolder= and MasconFile= export
