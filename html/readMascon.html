@@ -27,6 +27,22 @@ th { background: #f5f7fa; }
 <h2>Description</h2>
 <p>Base-MATLAB <code class="inline">ncread</code>-based reader with auto-detection of the common variable layouts (<code class="inline">lwe_thickness</code> / <code class="inline">lwe</code> / <code class="inline">water_thickness</code>; lat/latitude; lon/longitude; time with &ldquo;days since&rdquo; units &rarr; decimal years). Returns <code class="inline">lat (nlat,1)</code>, <code class="inline">lon (nlon,1, 0..360)</code>, <code class="inline">epoch (T,1)</code> decimal years, <code class="inline">ewh (nlat,nlon,T)</code> as stored (check <code class="inline">mas.units</code>), <code class="inline">units</code>, <code class="inline">name</code>.</p>
 <div class="note"><b>Latitude convention:</b> mascon grids are typically <i>geodetic</i>. Synthesize SH fields on the mascon grid with <code class="inline">LatType="geodetic"</code> (or convert via <code class="inline">shLowLevel.geodetic2geocentric</code>) before differencing &mdash; skipping this biases mid-latitudes by up to ~21&nbsp;km of latitude. Full comparison workflow: guide, &ldquo;Comparing against mascons&rdquo;.</div>
+<h2>Real files, and the two traps <span class="tag">v3.8.2</span></h2>
+<p>Verified against the JPL RL06.3Mv04 CRI product (0.5&deg;, 257 months, 46 MB):
+<code class="inline">lwe_thickness(time, lat, lon)</code>, latitudes ascending
+&minus;89.75..89.75, longitudes 0.25..359.75, time in <em>days since 2002-01-01</em>, units cm.
+The reader permutes to (lat, lon, time) whatever order it finds.</p>
+<div class="note"><b>Dimension order differs between products.</b> The synthetic test fixture writes
+<code class="inline">(lon, lat, time)</code>; the real JPL file writes
+<code class="inline">(time, lat, lon)</code>. A size check passes either way, so the only honest
+test is a geographic one &mdash; Greenland must <em>lose</em> mass over the GRACE era. Set
+<code class="inline">SHX_MASCON_FILE</code> to run that check against your own download.</div>
+<div class="note"><b>Latitudes are returned as stored, and mascon grids are conventionally
+GEODETIC.</b> This toolbox synthesises on GEOCENTRIC latitudes. The difference peaks near 45&deg; at
+0.19&deg; &mdash; about 21 km, or 0.4 of a mascon cell. Convert with
+<a href="geodetic2geocentric.html">shLowLevel.geodetic2geocentric</a> before comparing, or the
+comparison carries a mid-latitude shift that looks like a real discrepancy.</div>
+
 <h2>See also</h2><p class="seealso"><a href="geodetic2geocentric.html">geodetic2geocentric</a> <a href="shSynthesis.html">shSynthesis</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>

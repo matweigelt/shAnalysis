@@ -945,6 +945,56 @@ verifyEqual(tc, mas.units, "cm");
 verifyEqual(tc, mas.lon(1), 0.25, 'AbsTol', 0);
 end
 
+function testMasconReaderOnARealFile(tc)
+%TESTMASCONREADERONAREALFILE The layouts a synthetic fixture cannot show.
+%   The synthetic test above writes lwe_thickness as (lon, lat, time).
+%   The real JPL RL06.3Mv04 file writes (TIME, LAT, LON) - a different
+%   permutation entirely - so the synthetic round trip cannot tell
+%   whether the reader orients real data correctly. A mascon series is
+%   hundreds of megabytes and cannot ship as a fixture, so this test is
+%   opt-in: point SHX_MASCON_FILE at a downloaded .nc.
+%
+%   Sources: CSR (www2.csr.utexas.edu/grace, no login), GSFC
+%   (earth.gsfc.nasa.gov/geo/data/grace-mascons), JPL (PO.DAAC, needs a
+%   free Earthdata login).
+f = getenv('SHX_MASCON_FILE');
+assumeNotEmpty(tc, f, ...
+    'set SHX_MASCON_FILE to a mascon .nc to run this');
+assumeTrue(tc, isfile(f), sprintf('not a file: %s', f));
+
+mas = shLowLevel.readMascon(f);
+verifyTrue(tc, isfield(mas, 'ewh') && isfield(mas, 'lat') && ...
+    isfield(mas, 'lon') && isfield(mas, 'epoch'));
+verifySize(tc, mas.ewh, [numel(mas.lat), numel(mas.lon), numel(mas.epoch)]);
+
+% a global mascon grid, longitudes wrapped into [0, 360)
+verifyGreaterThanOrEqual(tc, min(mas.lon), 0);
+verifyLessThan(tc, max(mas.lon), 360);
+verifyGreaterThanOrEqual(tc, min(mas.lat), -90);
+verifyLessThanOrEqual(tc, max(mas.lat), 90);
+
+% epochs inside the GRACE/GRACE-FO era and increasing
+verifyGreaterThan(tc, mas.epoch(1), 2001);
+verifyLessThan(tc, mas.epoch(1), 2010);
+verifyTrue(tc, all(diff(mas.epoch) > 0), 'epochs must be sorted');
+
+% GEOGRAPHY: the permutation must survive. Greenland loses mass over the
+% GRACE era - a transposed or flipped grid puts that signal somewhere
+% else, which no dimension check would catch.
+assumeGreaterThan(tc, numel(mas.epoch), 24);
+[~, i1] = min(abs(mas.epoch - (mas.epoch(1) + 1)));
+[~, i2] = min(abs(mas.epoch - (mas.epoch(end) - 1)));
+D = mas.ewh(:, :, i2) - mas.ewh(:, :, i1);
+[LO, LA] = meshgrid(mas.lon, mas.lat);
+lonW = mod(LO + 180, 360) - 180;
+gis = LA > 60 & LA < 84 & lonW > -73 & lonW < -20;
+assumeTrue(tc, any(gis(:)), 'grid does not cover Greenland');
+verifyLessThan(tc, mean(D(gis), 'omitnan'), 0, ...
+    'Greenland must LOSE mass - a mis-oriented grid fails here');
+% and it must be a large loss, not noise
+verifyLessThan(tc, mean(D(gis), 'omitnan'), -10 * abs(mean(D(:), 'omitnan')));
+end
+
 function testSINEXStreamingEstimateOnly(tc)
 % streaming Only="estimate" == full-read estimates on the real fixture
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n96_2008-04_head12.snx');

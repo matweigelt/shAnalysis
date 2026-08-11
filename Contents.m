@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.2 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.3 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -213,7 +213,7 @@
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
 %
-% New in v3.8.2 (opt-in test data, documented and settable)
+% New in v3.8.3 (opt-in test data, documented and settable)
 %   setup_shAnalysis SeriesFolder= and MasconFile= export
 %   SHX_SERIES_FOLDER and SHX_MASCON_FILE for the session (startup.m to
 %   keep them) and report them in summary.testData. Documented in the
@@ -223,6 +223,16 @@
 %   SHX_SERIES_FOLDER stays deliberately unwired from the persistent
 %   data folder - a routine acceptance run must never reach for a
 %   network or archive drive.
+%
+% New in v3.8.2 (readMascon verified against a real product)
+%   The synthetic fixture writes lwe_thickness(lon, lat, time); the real
+%   JPL RL06.3Mv04 file writes (time, lat, lon). A size check passes
+%   either way, so the opt-in test (SHX_MASCON_FILE) checks GEOGRAPHY:
+%   Greenland must lose mass over the GRACE era. Verified: -124 cm, with
+%   the largest change at 76 N / 291 E, northwest Greenland.
+%   Also documented: mascon latitudes are GEODETIC by convention while
+%   this toolbox synthesises on GEOCENTRIC ones - 0.19 deg apart near
+%   45 deg, about 21 km or 0.4 of a mascon cell.
 %
 % New in v3.8.1 (README rewritten; the COST-G SINEX question settled)
 %   The README still described compat/ and tests/legacy - both removed in
