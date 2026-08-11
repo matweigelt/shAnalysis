@@ -1654,3 +1654,128 @@ sd2 = shLowLevel.shDegreeRMS(C, S, 'n0', 2);
 so2 = shLowLevel.shOrderRMS(C, S, n0 = 2);
 verifyEqual(testCase, sum(so2.ordVariance), sum(sd2.degVariance), 'RelTol', 1e-14);
 end
+
+% ------------------------------------------------------ leakage (roadmap 8)
+function [lat, lon, truth, obs, mask, nmax] = leakageFixture()
+%LEAKAGEFIXTURE A 6-degree disc, filtered with a 500 km Gaussian.
+%   The reference problem of tools/dev/validate_leakage.py: a cap near
+%   the resolution limit, where a Gaussian removes about half the peak
+%   and spreads the rest across the boundary.
+nmax = 24;
+nlat = 2 * nmax + 1;
+nlon = 2 * nmax + 2;
+lat = linspace(-89, 89, nlat);
+lon = (0:nlon - 1) * (360 / nlon);          % uniform, full circle
+[LO, LA] = meshgrid(lon, lat);
+psi = acosd(sind(15) * sind(LA) + cosd(15) * cosd(LA) .* cosd(LO - 300));
+truth = double(psi <= 6);
+mask = truth > 0;
+GM = 3.986004415e14; R = 6378136.3;
+[C, S] = shLowLevel.shAnalysisGrid(truth, lat, lon, nmax, GM = GM, R = R);
+w = shLowLevel.shGaussianWeights(nmax, 500);
+obs = shLowLevel.shSynthesis(C .* w(:), S .* w(:), GM, R, lat, lon);
+end
+
+function testLeakageCorrectRecoversAKnownDisc(testCase)
+%TESTLEAKAGECORRECTRECOVERSAKNOWNDISC Known truth in, known truth out.
+%   Python-validated properties (tools/dev/validate_leakage.py): with an
+%   exact mask the iteration recovers the disc, removes the leakage
+%   outside it entirely, and beats the filtered field by a wide margin.
+[lat, lon, ~, obs, mask, nmax] = leakageFixture();
+verifyLessThan(testCase, max(obs(:)), 0.9, ...
+    'the fixture must actually lose signal, or it tests nothing');
+
+[m, info] = shLowLevel.leakageCorrect(obs, lat, lon, ...
+    Filter = "gauss500", Mask = mask, Nmax = nmax, ...
+    MaxIter = 80, Quiet = true);
+verifyTrue(testCase, info.converged);
+verifyEqual(testCase, mean(m(mask)), 1, 'AbsTol', 0.02);
+verifyEqual(testCase, max(abs(m(~mask))), 0, 'AbsTol', 1e-12);
+
+% the correction must be a large improvement, not a small one
+errRaw = mean(abs(obs(mask) - 1));
+errCor = mean(abs(m(mask) - 1));
+verifyLessThan(testCase, errCor, errRaw / 5);
+
+% info is the record of what happened
+verifyEqual(testCase, info.nmax, nmax);
+verifyEqual(testCase, info.filter, "gauss500");
+verifyTrue(testCase, info.masked);
+verifyEqual(testCase, numel(info.history), info.iterations);
+verifyLessThan(testCase, info.history(end), info.history(1), ...
+    'the residual must fall');
+end
+
+function testLeakageCorrectContract(testCase)
+%TESTLEAKAGECORRECTCONTRACT Identity, zero, divergence, bad input.
+[lat, lon, ~, obs, mask, nmax] = leakageFixture();
+
+% Filter = "none" makes the chain the identity: one step, exact
+[mi, ii] = shLowLevel.leakageCorrect(obs, lat, lon, Filter = "none", ...
+    Nmax = nmax, Quiet = true);
+verifyEqual(testCase, ii.iterations, 1);
+verifyEqual(testCase, mi, obs, 'AbsTol', 1e-12);
+
+% no mass in, no mass invented
+z = shLowLevel.leakageCorrect(zeros(size(obs)), lat, lon, ...
+    Filter = "gauss500", Nmax = nmax, Quiet = true);
+verifyEqual(testCase, max(abs(z(:))), 0, 'AbsTol', 1e-15);
+
+% a gain past the stability bound must be REFUSED, not returned: a
+% diverged field looks like a result and would be used as one
+verifyError(testCase, @() shLowLevel.leakageCorrect(obs, lat, lon, ...
+    Filter = "gauss500", Mask = mask, Nmax = nmax, Gain = 40, ...
+    Quiet = true), 'shLowLevel:leakageCorrect:diverged');
+
+verifyError(testCase, @() shLowLevel.leakageCorrect(obs(1:3, :), lat, ...
+    lon, Nmax = nmax, Quiet = true), 'shLowLevel:leakageCorrect:badSize');
+verifyError(testCase, @() shLowLevel.leakageCorrect(obs, lat, lon, ...
+    Mask = false(size(obs)), Nmax = nmax, Quiet = true), ...
+    'shLowLevel:leakageCorrect:emptyMask');
+verifyError(testCase, @() shLowLevel.leakageCorrect(obs, lat, lon, ...
+    Filter = "bogus", Nmax = nmax, Quiet = true), ...
+    'shLowLevel:leakageCorrect:badFilter');
+end
+
+function testGridScalingFactors(testCase)
+%TESTGRIDSCALINGFACTORS Per-pixel k: > 1 on signal, NaN where blind.
+%   Python-validated: k is amplitude-invariant (it depends on the model
+%   PATTERN, not its scale) and must be NaN where the model carries no
+%   signal, rather than a ratio of two numerical zeros multiplying the
+%   user's data.
+[lat, lon, truth, ~, mask, nmax] = leakageFixture();
+amp = 1 + 0.4 * sin(2 * pi * (0:23) / 12);
+model = truth .* reshape(amp, 1, 1, []);
+
+[k, info] = shLowLevel.gridScaling(model, lat, lon, ...
+    Filter = "gauss500", Nmax = nmax, Quiet = true);
+
+% a smoother attenuates, so restoring it needs k > 1 inside the basin
+verifyGreaterThan(testCase, median(k(mask), 'omitnan'), 1);
+verifyEqual(testCase, info.epochs, 24);
+verifyEqual(testCase, info.filter, "gauss500");
+verifyGreaterThan(testCase, info.onSignal, 0);
+verifyGreaterThan(testCase, info.kMedian, 1, ...
+    'the summary must describe the pixels the model gives mass to');
+
+% amplitude invariance to machine precision
+k2 = shLowLevel.gridScaling(model * 1000, lat, lon, ...
+    Filter = "gauss500", Nmax = nmax, Quiet = true);
+verifyEqual(testCase, k2(mask), k(mask), 'AbsTol', 1e-12);
+
+% blind pixels are NaN, never a number
+verifyTrue(testCase, any(isnan(k(:))), ...
+    'pixels the model cannot see must be NaN');
+verifyFalse(testCase, any(isnan(k(mask))), ...
+    'the basin the model describes must have finite factors');
+
+% Clip bounds the factors and counts what it touched
+[kc, ic] = shLowLevel.gridScaling(model, lat, lon, Filter = "gauss500", ...
+    Nmax = nmax, Clip = [0.5 1.2], Quiet = true);
+verifyLessThanOrEqual(testCase, max(kc(:)), 1.2);
+verifyGreaterThan(testCase, ic.clipped, 0);
+
+verifyError(testCase, @() shLowLevel.gridScaling(model, lat, lon, ...
+    Clip = [2 1], Nmax = nmax, Quiet = true), ...
+    'shLowLevel:gridScaling:badClip');
+end
