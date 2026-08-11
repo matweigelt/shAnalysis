@@ -45,8 +45,14 @@ function [file, info] = fetchICGEM(model, opts)
 %       ts = shSeries.fromFolder(fileparts(fs(1)), Pattern = "*.gfc*");
 %
 %   Outputs
-%     file  string   local path
-%     info  struct: url, skipped (true if already present)
+%     file  string   local path(s): one per model, or every file of the
+%              series in temporal mode (bulk selections are concatenated)
+%     info  struct: url, skipped (true if already present) and mode
+%              (1,1) string reporting the path that actually ran -
+%              "model" (single static model) | "archive" (whole-series
+%              ZIP in one request) | "files" (per-file fallback) |
+%              "present" (nothing to do); a script can tell a fresh
+%              download from a no-op by this field
 %
 %   Cite the model's reference (listICGEM carries it in 'data'/ICGEM
 %   pages) when publishing.

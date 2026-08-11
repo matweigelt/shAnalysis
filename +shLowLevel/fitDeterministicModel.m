@@ -26,7 +26,9 @@ function [model, Xres, coef, A, coefSigma, resVar, ar1] = fitDeterministicModel(
 %              trend scatter by 2.0x; corrected ratio 1.06 (the residual
 %              slight underestimate stems from the downward-biased sample
 %              r1 - documented approximation).
-%     Breaks (double.empty(1,0))  see arguments block
+%     Breaks (double.empty(1,0))  epochs [decimal years] of continuous
+%         piecewise-linear trend hinges; each adds a max(0, t - tb)
+%         column to the design matrix
 %
 %   Outputs
 %     model      P x T          fitted deterministic part

@@ -3,6 +3,36 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.1.2] - 2026-08-11
+
+### Added
+- Narrative documentation for the v3.x features that existed only in the
+  generated API reference: new help pages `standardChain.html`,
+  `designFilter.html` and `icgemSeries.html`, plus sections for
+  `poleTideConvert` (referenceSystems), `synthesisPoints` (shSynthesis),
+  `listITSG` (fetchITSG) and `fetchLoveNumbers` (readLoveNumbers). All
+  reachable from `helptoc.xml` (46/46 pages).
+- Workflow guide Edition 5: the ICGEM time-series workflow and why
+  `Mode="auto"` fetches one archive rather than 300 files, the standard
+  chain and why its order is not negotiable, custom filter design, and a
+  section on what real provider files actually contain (FORTRAN
+  D-exponents, the ICGEM 2.0 column order, ragged record groups).
+
+### Fixed
+- The guide's figures were read from a container path that does not
+  survive a session, so the PDF was not reproducible and `make_figs.py`
+  could only regenerate 3 of the 10. The assets were recovered from the
+  shipped PDF and now live in `tools/dev/guide_assets/` in the repo.
+- 58 name-value options across 23 entities were "documented" as `see
+  arguments block`: `help` showed nothing while the generated API
+  reference showed size, type and default. All replaced with real
+  descriptions; pinned to zero by `testHelpHasNoPlaceholders`.
+- Four help defaults disagreed textually with their arguments blocks
+  (`synthesisMatrix.NLat/NLon`, `tvANSFilter.VCEMinDegree`,
+  `vceRescale.MinDegree`).
+- `fetchICGEM` Outputs help never mentioned `info.mode`, added in the
+  series work, nor that bulk selections concatenate their file lists.
+
 ## [3.1.1] - 2026-08-11
 
 ### Added

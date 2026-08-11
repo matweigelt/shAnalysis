@@ -31,7 +31,29 @@ th { background: #f5f7fa; }
 T.map(quantity="geoid", Units="m")    % proper +-100 m undulations</pre>
 <p>The even zonals are COMPUTED from the defining constants (GM, a, f, &omega;) via the Heiskanen-Moritz closed form (q&#8320; series &rarr; J&#8322; &rarr; J&#8322;&#8342;) &mdash; no coefficient tables; validated against NIMA TR8350.2 to all published digits (J&#8322; = 1.082629821313e-3, Cbar&#8322;&#8320;/&#8324;&#8320;/&#8326;&#8320;/&#8328;&#8320;). subtractNormalField rescales the ellipsoid field to the model's (GM, R) automatically, including the degree-0 GM-ratio term.</p>
 <div class="note"><b>Permanent tide.</b> The ellipsoid is tide-free by construction; your model's C20 carries its own convention (ICGEM header 'tide_system'; zero-tide vs tide-free differ by ~4.2e-9 in Cbar20). The toolbox does not convert silently &mdash; check the header.</div>
-<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="shReadGFC.html">shReadGFC</a></p>
+<h2>Pole-tide conventions: C21/S21 <span class="tag">v2.7.0</span></h2>
+<p>Processing centers remove the (solid + ocean) pole tide using a <b>mean pole model</b>, and the
+model is a convention, not a measurement. The IERS 2010 conventional model (cubic until 2010.0,
+linear after) and the 2018 secular-pole update (linear, adopted for GRACE/GRACE-FO RL06) differ by up
+to ~1e-10 in C21/S21 &mdash; with a strong <b>trend</b> component. Mixing conventions across solutions
+therefore biases C21/S21 trend studies at the mm-EWH level, silently.
+<code class="inline">shLowLevel.poleTideConvert</code> makes the conversion explicit.</p>
+<pre>g18 = shLowLevel.poleTideConvert(g, From = "IERS2010", To = "IERS2018");
+dC21 = g18.C(3, 2) - g.C(3, 2)        % ~1e-10, trend-like in t
+
+% raw triangles, epoch passed explicitly
+[C2, S2] = shLowLevel.poleTideConvert(C, S, 2015.5, To = "IERS2018");</pre>
+<p>Only the (3,2) entries change. <code class="inline">Mode=</code> selects
+<code class="inline">"solid"</code>, <code class="inline">"ocean"</code> or
+<code class="inline">"both"</code> (default); the IERS and Desai coefficients are overridable via
+<code class="inline">SolidCoef</code>/<code class="inline">OceanCoef</code> rather than hardcoded. The
+conversion is exactly antisymmetric &mdash; A&rarr;A is zero and A&rarr;B is the negative of
+B&rarr;A, both pinned by tests.</p>
+<div class="note">Check which convention your solutions use <b>before</b> combining releases or
+centers. The correction is small in absolute terms and almost entirely a trend, which is precisely
+what makes it dangerous for the quantity most people are after.</div>
+
+<h2>See also</h2><p class="seealso"><a href="shSynthesis.html">shSynthesis</a> <a href="shReadGFC.html">shReadGFC</a> <a href="apiReference.html">API reference</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </body></html>

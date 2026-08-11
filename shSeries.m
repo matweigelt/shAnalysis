@@ -74,13 +74,16 @@ methods
         %     obj        (1 x 1) shSeries   epoch-sorted monthly stack with sigmas and history
         %
         %   Options
-        %     GM (3.986004415e14)  see arguments block
-        %     R (6378136.3)  see arguments block
-        %     ProductType ("unknown")  see arguments block
+        %     GM (3.986004415e14)  gravitational constant times mass
+        %         [m^3/s^2] of the series (overridable default)
+        %     R (6378136.3)  reference radius [m] of the series
+        %     ProductType ("unknown")  provider product code shared by all
+        %         epochs, e.g. "GSM"
         %     Names (string.empty(0,1))  display labels, one per solution/series
-        %     SigmaCs ([])  see arguments block
-        %     SigmaSs ([])  see arguments block
-        %     History (string.empty(0,1))  see arguments block
+        %     SigmaCs ([])  formal 1-sigma stack for Cs, same size
+        %     SigmaSs ([])  formal 1-sigma stack for Ss, same size
+        %     History (string.empty(0,1))  initial processing history; every
+        %         operation appends one line
         %
         %   Outputs
         %     obj  (1,1) shSeries  modified copy; the operation is appended to the
@@ -243,7 +246,9 @@ methods
         %     resid      (1 x 1) shSeries   residual series about the fit
         %
         %   Options
-        %     ARCorrect (false)  see arguments block
+        %     ARCorrect (false)  correct the parameter sigmas for AR(1)
+        %         residual autocorrelation (Kendall-corrected r1); the
+        %         uncorrected sigmas are optimistic for monthly series
         arguments
             obj
             opts.Robust (1,1) logical = false
@@ -401,8 +406,10 @@ methods
         %     out        (1 x 1) shSeries   C20/C30 replaced epoch-matched
         %
         %   Options
-        %     Tolerance (0.05)  see arguments block
-        %     ReplaceC30 ("auto")  see arguments block
+        %     Tolerance (0.05)  maximum |epoch difference| [yr] accepted
+        %         when matching a table entry to this epoch
+        %     ReplaceC30 ("auto")  "auto" (replace when the table has a
+        %         non-NaN C30 for that month) | "never" | "always"
         %
         %   Outputs
         %     out  (1,1) shSeries  modified copy; the operation is appended to the
@@ -430,7 +437,8 @@ methods
         %     out        (1 x 1) shSeries   degree 1 completed epoch-matched
         %
         %   Options
-        %     Tolerance (0.05)  see arguments block
+        %     Tolerance (0.05)  maximum |epoch difference| [yr] accepted
+        %         when matching a table entry to this epoch
         %
         %   Outputs
         %     out  (1,1) shSeries  modified copy; the operation is appended to the
@@ -625,9 +633,15 @@ methods
         %     out        (1 x 1) shSeries   destriped per month
         %
         %   Options
-        %     minOrder (6)  see arguments block
-        %     polyOrder (3)  see arguments block
-        %     windowLength ([])  see arguments block
+        %     minOrder (6)  lowest order to destripe; coefficients at
+        %         m < minOrder pass through unchanged (below it the signal
+        %         is real, not stripes)
+        %     polyOrder (3)  order of the polynomial fitted and removed
+        %         per order/parity sequence
+        %     windowLength ([])  [] fits ONE polynomial over the whole
+        %         sequence; an odd integer >= polyOrder+2 uses a centered
+        %         moving window instead (windowLength=6 with polyOrder=3 is
+        %         the common "P3M6" variant)
         %
         %   Outputs
         %     out  (1,1) shSeries  modified copy; the operation is appended to the
@@ -894,7 +908,9 @@ methods
         %     out        struct: sigma (K x T), c, attn, condA (deconvolution path)
         %
         %   Options
-        %     Ridge (0)  see arguments block
+        %     Ridge (0)  Tikhonov ridge added to the deconvolution normal
+        %         matrix; raise it when the kernel matrix is ill-conditioned
+        %         (out.condA reports the condition number)
         arguments
             obj
             B double
@@ -957,7 +973,8 @@ methods (Static)
         %     obj        (1 x 1) shSeries   wildcard-read, epoch-sorted stack
         %
         %   Options
-        %     Truncate (NaN)  see arguments block
+        %     Truncate (NaN)  truncate every field to this nmax while
+        %         reading (NaN: keep the file resolution)
         %
         %   Outputs
         %     obj  (1,1) shSeries  modified copy; the operation is appended to the

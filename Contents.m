@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.1.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.1.2 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,15 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.1.2 (documentation coverage)
+%   Narrative help pages for the v3.x features that previously existed
+%   only in the generated API reference: shLowLevel.standardChain,
+%   shLowLevel.designFilter and the ICGEM time-series workflow get their
+%   own pages; poleTideConvert, synthesisPoints, listITSG and
+%   fetchLoveNumbers get sections on the matching topic pages. Workflow
+%   guide Edition 5. Every name-value option now carries a real
+%   description in the in-file help (58 pointed at the code instead).
 %
 % New in v3.1.1 (ICGEM time series and real-world file layouts)
 %   shLowLevel.fetchICGEM Type="temporal" - a temporal-catalogue row now

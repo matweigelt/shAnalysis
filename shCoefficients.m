@@ -79,15 +79,23 @@ methods
         %     obj        (1 x 1) shCoefficients   immutable coefficient set with GM (3.986004415e14), R (6378136.3), epoch, sigmas, history
         %
         %   Options
-        %     SigmaC ([])  see arguments block
-        %     SigmaS ([])  see arguments block
-        %     Epoch (NaN)  see arguments block
-        %     ProductType ("unknown")  see arguments block
-        %     TideSystem ("unknown")  see arguments block
-        %     Name ("")  see arguments block
-        %     Header (struct())  see arguments block
-        %     VariableTerms ([])  see arguments block
-        %     History (string.empty(0,1))  see arguments block
+        %     SigmaC ([])  formal 1-sigma of the cosine coefficients, same
+        %         layout as C ([]: none attached)
+        %     SigmaS ([])  formal 1-sigma of the sine coefficients
+        %     Epoch (NaN)  decimal year of the solution; required by every
+        %         epoch-matched operation (applyTN14, addDegree1, restore)
+        %     ProductType ("unknown")  provider product code, e.g. "GSM",
+        %         "GAD", "GAA" - arithmetic uses it to catch mixing levels
+        %     TideSystem ("unknown")  "tide_free" | "zero_tide" |
+        %         "mean_tide" | "unknown"; carried through and written back
+        %         out, never converted silently
+        %     Name ("")  model label used in displays and plot titles
+        %     Header (struct())  parsed gfc header fields, kept verbatim so
+        %         writeGFC can round-trip them
+        %     VariableTerms ([])  ICGEM 2.0 gfct terms (trend/periodic per
+        %         coefficient) evaluated by evalAt
+        %     History (string.empty(0,1))  initial processing history; every
+        %         operation appends one line
         %
         %   Outputs
         %     obj  (1,1) shCoefficients  modified copy; the operation is appended to the
@@ -308,8 +316,9 @@ methods
         %     out        (1 x 1) shCoefficients   copy with C/S(n+1, m+1) replaced
         %
         %   Options
-        %     SigmaC (NaN)  see arguments block
-        %     SigmaS (NaN)  see arguments block
+        %     SigmaC (NaN)  formal 1-sigma for the coefficient being set
+        %         (NaN leaves the existing sigma untouched)
+        %     SigmaS (NaN)  same for the sine coefficient
         %
         %   Outputs
         %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
@@ -501,7 +510,7 @@ methods
         %     spec       struct: n, amp/rms/var, err   degree spectrum incl. formal-error curve
         %
         %   Options
-        %     n0 (0)  see arguments block
+        %     n0 (0)  first degree included in the spectrum
         arguments
             obj
             opts.n0 (1,1) double = 0
@@ -520,7 +529,7 @@ methods
         %     nInterp  (1,1) double  interpolated crossing degree
         %
         %   Options
-        %     n0 (2)  see arguments block
+        %     n0 (2)  first degree searched for the signal/error crossover
         arguments
             obj
             opts.n0 (1,1) double = 2
@@ -570,13 +579,22 @@ methods
         %
         %   Options
         %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
-        %     Height (0)  see arguments block
-        %     rho_ave (5517)  see arguments block
-        %     rho_water (1000)  see arguments block
-        %     Method ("auto")  see arguments block
-        %     LatType ("geocentric")  see arguments block
-        %     Flattening (1/298.257223563)  see arguments block
-        %     MaxMemGB (4)  see arguments block
+        %     Height (0)  evaluation height above the reference sphere [m];
+        %         applies the upward continuation (R/r)^n
+        %     rho_ave (5517)  mean Earth density [kg/m^3] in the EWH kernel
+        %     rho_water (1000)  water density [kg/m^3] in the EWH kernel
+        %     Method ("auto")  "auto" | "direct" | "fft": FFT along
+        %         longitude is much faster on uniform full-circle longitude
+        %         vectors; "auto" uses it whenever it is applicable
+        %     LatType ("geocentric")  "geocentric" | "geodetic": how the
+        %         latitude inputs are interpreted; geodetic values are
+        %         converted with Flattening before evaluation
+        %     Flattening (1/298.257223563)  flattening of the reference
+        %         ellipsoid for the geodetic/geocentric conversion (WGS84;
+        %         overridable, never silently assumed)
+        %     MaxMemGB (4)  memory budget [GB]; above it the synthesis
+        %         streams in latitude bands instead of allocating the full
+        %         design matrix (this is what makes nmax 2190 tractable)
         arguments
             obj
             latVec (1,:) double
@@ -671,8 +689,9 @@ methods
         %     out        (1 x 1) shCoefficients   disturbing field (even zonals of the normal field removed)
         %
         %   Options
-        %     f (NaN)  see arguments block
-        %     omega (NaN)  see arguments block
+        %     f (NaN)  flattening of the normal field (NaN: the System
+        %         default; give GM, a, f and omega together to define your own)
+        %     omega (NaN)  angular velocity [rad/s] of the normal field
         %
         %   Outputs
         %     out  (1,1) shCoefficients  modified copy; the operation is appended to the
@@ -715,14 +734,15 @@ methods
         %
         %   Options
         %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
-        %     Height (0)  see arguments block
-        %     nmin (0)  see arguments block
-        %     Projection ("plate")  see arguments block
-        %     Coast (true)  see arguments block
-        %     CLim ([])  see arguments block
-        %     Units ("")  see arguments block
-        %     Title ("")  see arguments block
-        %     ax ([])  see arguments block
+        %     Height (0)  evaluation height above the reference sphere [m]
+        %     nmin (0)  lowest degree included in the map
+        %     Projection ("plate")  "plate" (plate carree) | "hammer"
+        %     Coast (true)  draw coastlines
+        %     CLim ([])  color limits [lo hi]; [] uses a robust symmetric
+        %         scale from the data percentiles
+        %     Units ("")  colorbar label
+        %     Title ("")  axes title
+        %     ax ([])  target axes handle; [] creates a new figure
         arguments
             obj
             latDeg (1,:) double = -89:2:89
@@ -793,7 +813,8 @@ methods
         %     east       same size   east component [m]
         %
         %   Options
-        %     Flattening (1/298.257223563)  see arguments block
+        %     Flattening (1/298.257223563)  ellipsoid flattening for the
+        %         geodetic/geocentric conversion of the station latitudes
         arguments
             obj
             latDeg (1,:) double
@@ -870,7 +891,7 @@ methods
         %   Inputs
         %     filename  char/string  path of the file to read/write (gzipped .gz accepted where documented)
         %   Options
-        %     Comment ("")  see arguments block
+        %     Comment ("")  free-text comment written into the gfc header
         arguments
             obj
             filename {mustBeTextScalar}
@@ -1023,10 +1044,14 @@ methods (Static)
         %   Options
         %     kn ([])  load Love numbers, degrees 0..nmax (user-supplied; e.g. shLowLevel.fetchLoveNumbers)
         %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
-        %     rho_ave (5517)  see arguments block
-        %     rho_water (1000)  see arguments block
-        %     LatType ("geocentric")  see arguments block
-        %     Flattening (1/298.257223563)  see arguments block
+        %     rho_ave (5517)  mean Earth density [kg/m^3] in the EWH kernel
+        %     rho_water (1000)  water density [kg/m^3] in the EWH kernel
+        %     LatType ("geocentric")  "geocentric" | "geodetic": how the
+        %         latitude inputs are interpreted; geodetic values are
+        %         converted with Flattening before evaluation
+        %     Flattening (1/298.257223563)  flattening of the reference
+        %         ellipsoid for the geodetic/geocentric conversion (WGS84;
+        %         overridable, never silently assumed)
         arguments
             grid double
             latVec double

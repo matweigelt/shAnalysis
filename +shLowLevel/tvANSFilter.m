@@ -29,7 +29,7 @@ function [Xf, op, info] = tvANSFilter(X, tYears, idx, opts)
 %     opts.NIterSignal  (1,1) double  signal-covariance iterations, 3
 %     opts.Robust       (1,1) logical robust deterministic fit, false
 %     opts.Shrinkage    (1,1) double  empirical noise-cov shrinkage, 0.1
-%     opts.VCEMinDegree (1,1) double  default round(2/3*Lmax)
+%     opts.VCEMinDegree (1,1) double  default round(2/3 * idx.Lmax)
 %     opts.Blocks       'auto' (default) | 'on' | 'off'
 %         Block-diagonal fast path: with SignalMode='isotropic', empirical
 %         noise covariance and no constraints, both S and N are block-

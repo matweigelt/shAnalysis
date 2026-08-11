@@ -24,7 +24,13 @@
 
   <tocitem target="dataManagement.html">Data management and downloads
     <tocitem target="dataManagement.html">Data folder, DDK family, ICGEM catalogue</tocitem>
-    <tocitem target="fetchITSG.html">ITSG download and folder loading</tocitem>
+    <tocitem target="icgemSeries.html">ICGEM time series (whole-series download)</tocitem>
+    <tocitem target="fetchITSG.html">ITSG download, catalogue and folder loading</tocitem>
+  </tocitem>
+
+  <tocitem target="standardChain.html">Processing chains
+    <tocitem target="standardChain.html">standardChain (the canonical chain)</tocitem>
+    <tocitem target="designFilter.html">designFilter (custom anisotropic filters)</tocitem>
   </tocitem>
 
   <tocitem target="shSynthesis.html">Synthesis and analysis
@@ -42,6 +48,7 @@
     <tocitem target="shGaussianWeights.html">shGaussianWeights (Jekeli recursion)</tocitem>
     <tocitem target="shDestripe.html">shDestripe (Swenson-Wahr destriping)</tocitem>
     <tocitem target="readDDK.html">DDK filters (readDDK / applyDDK)</tocitem>
+    <tocitem target="designFilter.html">designFilter (build your own)</tocitem>
     <tocitem target="tvANS.html">tvANS filter</tocitem>
   </tocitem>
 
