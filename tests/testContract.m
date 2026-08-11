@@ -1064,47 +1064,20 @@ verifyTrue(testCase, isfile(src), ...
     'a failed move must leave the source in place');
 end
 
-function testSafeMoveRetriesThenReports(testCase)
-%TESTSAFEMOVERETRIESTHENREPORTS The retry loop is spent, then it gives up.
-%   Exercised with the blocking mechanism each platform actually has: a
-%   read-only destination folder on POSIX (Windows ignores the flag for
-%   directories, and gets the locked-file test below instead).
-assumeFalse(testCase, ispc, ...
-    'read-only directories do not block writes on Windows');
-d = fullfile(tempdir, sprintf('shx_ro_%d', randi(1e9)));
-ro = fullfile(d, 'locked');
-mkdir(ro);
-cl = onCleanup(@() cleanupRO(d, ro)); %#ok<NASGU>
-src = fullfile(d, 'a.bin');
-writematrix(1, src, 'FileType', 'text');
-fileattrib(ro, '-w');
-t0 = tic;
-verifyError(testCase, @() shLowLevel.safeMove(src, ...
-    fullfile(ro, 'c.bin'), Retries = 2, Pause = 0.05), ...
-    'shLowLevel:safeMove:locked');
-verifyGreaterThanOrEqual(testCase, toc(t0), 0.1);   % 0.05 + 0.10 backoff
-verifyTrue(testCase, isfile(src), ...
-    'a failed move must leave the source in place');
-
-% Retries = 0 reproduces a plain movefile: one attempt, no waiting
-t0 = tic;
-verifyError(testCase, @() shLowLevel.safeMove(src, ...
-    fullfile(ro, 'c.bin'), Retries = 0), 'shLowLevel:safeMove:locked');
-verifyLessThan(testCase, toc(t0), 1);
-end
-
-function cleanupRO(d, ro)
-fileattrib(ro, '+w');
-rmdir(d, 's');
-end
 
 function testSafeMoveSurvivesALockedDestination(testCase)
 %TESTSAFEMOVESURVIVESALOCKEDDESTINATION The case this function exists for.
 %   On Windows an antivirus or sync client holds a freshly written file
 %   for a moment and movefile fails with a sharing violation. Reproduced
 %   here by keeping the destination open and releasing it from a timer
-%   while safeMove retries. POSIX allows renaming over an open file, so
-%   the scenario cannot be reproduced on the Linux CI runner.
+%   while safeMove retries.
+%
+%   This is the ONLY test of the retry loop, deliberately. POSIX renames
+%   over open files, and permission tricks do not substitute: the CI
+%   runner is root, so a read-only destination folder does not block it
+%   either (tried; the move succeeded). Rather than fake a failure on
+%   Linux, the loop is tested on the platform whose behaviour it exists
+%   for - which is also the acceptance machine.
 assumeTrue(testCase, ispc, ...
     'file locking during a move is Windows behaviour');
 d = fullfile(tempdir, sprintf('shx_lock_%d', randi(1e9)));
@@ -1118,12 +1091,24 @@ fwrite(fid, 'held by a scanner');
 verifyFalse(testCase, movefile(src, dst, 'f'), ...
     'the destination is not actually locked - test cannot conclude');
 
+% Retries = 0 is a plain movefile: it must fail against the held file,
+% spend no time waiting, and leave the source in place
+t0 = tic;
+verifyError(testCase, @() shLowLevel.safeMove(src, dst, Retries = 0), ...
+    'shLowLevel:safeMove:locked');
+verifyLessThan(testCase, toc(t0), 1);
+verifyTrue(testCase, isfile(src), ...
+    'a failed move must leave the source in place');
+
+% with retries, the lock is outlived: released at 0.4 s from a timer
 rel = timer('StartDelay', 0.4, 'TimerFcn', @(~, ~) fclose(fid));
 clT = onCleanup(@() delete(rel)); %#ok<NASGU>
 start(rel);
+t0 = tic;
 n = shLowLevel.safeMove(src, dst, Pause = 0.15, Retries = 6);
 verifyGreaterThan(testCase, n, 1, ...
     'the first attempt must have failed against the held file');
+verifyGreaterThanOrEqual(testCase, toc(t0), 0.15);   % backoff was spent
 verifyTrue(testCase, isfile(dst));
 verifyFalse(testCase, isfile(src));
 end
