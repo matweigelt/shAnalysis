@@ -839,8 +839,15 @@ methods
             X(:,k) = shLowLevel.vecFromCS(obj.Cs(:,:,k), obj.Ss(:,:,k), idx);
         end
         % forward the tuning options only when the caller set them, so the
-        % single home of their defaults stays shLowLevel.tvANSFilter
-        fwd = {};
+        % single home of their defaults stays shLowLevel.tvANSFilter.
+        % NOTE: everything goes through ONE 'Name', value cell - MATLAB
+        % forbids following name=value syntax with a cell expansion.
+        fwd = {'NoiseCov', opts.NoiseCov, ...
+               'Constraints', opts.Constraints, ...
+               'SignalMode', char(opts.SignalMode), ...
+               'NIterSignal', opts.NIterSignal, ...
+               'Robust', opts.Robust, ...
+               'Blocks', char(opts.Blocks)};
         if ~isempty(opts.Shrinkage)
             fwd = [fwd, {'Shrinkage', opts.Shrinkage}];
         end
@@ -850,11 +857,7 @@ methods
         if ~isempty(opts.VCEBands)
             fwd = [fwd, {'VCEBands', opts.VCEBands}];
         end
-        [Xf, op, info] = shLowLevel.tvANSFilter(X, obj.epochs, idx, ...
-            NoiseCov = opts.NoiseCov, Constraints = opts.Constraints, ...
-            SignalMode = char(opts.SignalMode), ...
-            NIterSignal = opts.NIterSignal, Robust = opts.Robust, ...
-            Blocks = char(opts.Blocks), fwd{:});
+        [Xf, op, info] = shLowLevel.tvANSFilter(X, obj.epochs, idx, fwd{:});
         out = obj;
         out.sigmaCs = nan(size(obj.Cs));
         out.sigmaSs = nan(size(obj.Ss));
