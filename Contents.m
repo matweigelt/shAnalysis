@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.5.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.5.2 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,19 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.5.2 (the discrepancy principle, made to actually fire)
+%   leakageCorrect ResidualRegion= (default: the Mask). The residual
+%     must be measured WHERE THE MODEL IS RESPONSIBLE: with a regional
+%     mask the data still contains every other mass signal on the globe,
+%     so a global residual never reaches the noise level and the
+%     principle silently never fires. info.residualRMSGlobal exposes it.
+%   Guide: the GravIS comparison rerun with a real stopping criterion.
+%     -224.6 Gt/yr against a published -231.1 (2.8 %), replacing an
+%     earlier -227.4 that came from stopping at an arbitrary iteration.
+%     Also: the noise level must match the quantity inverted - the
+%     open-ocean RMS of a TREND field is mostly barystatic sea level,
+%     not error; the trend's noise is sigma_monthly / sqrt(Sxx).
 %
 % New in v3.5.1 (the open-ocean noise metric)
 %   shLowLevel.oceanRMS - area-weighted RMS of a field over the open

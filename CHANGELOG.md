@@ -3,6 +3,34 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.5.2] - 2026-08-11
+
+### Fixed
+- `leakageCorrect` gained `ResidualRegion=` (default: the `Mask`). The
+  discrepancy principle added in 3.5.0 measured the residual GLOBALLY,
+  and with a regional mask that can never reach the noise level: the
+  model describes one region while the data contains Antarctica,
+  Alaska and global hydrology. On the GravIS Greenland case the
+  residual was 0.0085 globally against 0.0008 near the mask, with a
+  noise level of 0.0024 - so the principle silently never fired and
+  every run stopped at `MaxIter`. `info.residualRMSGlobal` now exposes
+  the gap; a large one means unmodelled signal elsewhere.
+
+### Measured
+- The GravIS Greenland comparison, rerun with a real stopping criterion:
+  **-224.6 Gt/yr** against a published -231.1, i.e. **2.8%**. This
+  replaces -227.4 (1.6%), which came from stopping at an arbitrary
+  iteration count. The closer number was a coincidence of where the
+  iteration happened to be; a result that depends on an arbitrary
+  choice is not a result.
+- The noise level must match the quantity being inverted. The
+  open-ocean RMS of a TREND field is 0.0024 m/yr, but most of that is
+  real barystatic sea-level rise, not error - using it stops after 4
+  iterations and gives -201.0 Gt/yr, 13% low. The trend's noise is the
+  monthly noise propagated through the fit, sigma_monthly / sqrt(Sxx) =
+  0.0115 / sqrt(8353) = 0.000125 m/yr, nineteen times smaller. That
+  stops at 82 iterations and gives the -224.6 above.
+
 ## [3.5.1] - 2026-08-11
 
 ### Added
