@@ -1051,12 +1051,36 @@ verifyEqual(testCase, readmatrix(dst, 'FileType', 'text'), magic(3));
 verifyError(testCase, @() shLowLevel.safeMove(fullfile(d, 'nope'), dst), ...
     'shLowLevel:safeMove:noSource');
 
-% unmovable destination: retries are spent, then a named error
+% a missing destination folder cannot be cured by waiting: report it
+% at once, and do not blame a scanner for a caller bug
 writematrix(1, src, 'FileType', 'text');
 bad = fullfile(d, 'no_such_dir', 'c.bin');
 t0 = tic;
-verifyError(testCase, ...
-    @() shLowLevel.safeMove(src, bad, Retries = 2, Pause = 0.05), ...
+verifyError(testCase, @() shLowLevel.safeMove(src, bad), ...
+    'shLowLevel:safeMove:noDestFolder');
+verifyLessThan(testCase, toc(t0), 1, ...
+    'an impossible move must not spend the retry budget');
+verifyTrue(testCase, isfile(src), ...
+    'a failed move must leave the source in place');
+end
+
+function testSafeMoveRetriesThenReports(testCase)
+%TESTSAFEMOVERETRIESTHENREPORTS The retry loop is spent, then it gives up.
+%   Exercised with the blocking mechanism each platform actually has: a
+%   read-only destination folder on POSIX (Windows ignores the flag for
+%   directories, and gets the locked-file test below instead).
+assumeFalse(testCase, ispc, ...
+    'read-only directories do not block writes on Windows');
+d = fullfile(tempdir, sprintf('shx_ro_%d', randi(1e9)));
+ro = fullfile(d, 'locked');
+mkdir(ro);
+cl = onCleanup(@() cleanupRO(d, ro)); %#ok<NASGU>
+src = fullfile(d, 'a.bin');
+writematrix(1, src, 'FileType', 'text');
+fileattrib(ro, '-w');
+t0 = tic;
+verifyError(testCase, @() shLowLevel.safeMove(src, ...
+    fullfile(ro, 'c.bin'), Retries = 2, Pause = 0.05), ...
     'shLowLevel:safeMove:locked');
 verifyGreaterThanOrEqual(testCase, toc(t0), 0.1);   % 0.05 + 0.10 backoff
 verifyTrue(testCase, isfile(src), ...
@@ -1064,10 +1088,14 @@ verifyTrue(testCase, isfile(src), ...
 
 % Retries = 0 reproduces a plain movefile: one attempt, no waiting
 t0 = tic;
-verifyError(testCase, ...
-    @() shLowLevel.safeMove(src, bad, Retries = 0), ...
-    'shLowLevel:safeMove:locked');
+verifyError(testCase, @() shLowLevel.safeMove(src, ...
+    fullfile(ro, 'c.bin'), Retries = 0), 'shLowLevel:safeMove:locked');
 verifyLessThan(testCase, toc(t0), 1);
+end
+
+function cleanupRO(d, ro)
+fileattrib(ro, '+w');
+rmdir(d, 's');
 end
 
 function testSafeMoveSurvivesALockedDestination(testCase)

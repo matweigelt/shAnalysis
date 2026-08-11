@@ -39,6 +39,9 @@ function n = safeMove(src, dst, opts)
 %
 %   Errors
 %     shLowLevel:safeMove:noSource   SRC does not exist
+%     shLowLevel:safeMove:noDestFolder   the folder of DST does not
+%                exist - a caller bug, reported immediately instead of
+%                spending the retry budget on an impossible move
 %     shLowLevel:safeMove:locked     still not movable after all retries;
 %                the message carries the OS diagnostic and names the
 %                usual cause, so the report is actionable
@@ -62,6 +65,14 @@ end
 if ~isfile(src)
     error('shLowLevel:safeMove:noSource', ...
         'safeMove: source does not exist: %s', src);
+end
+% a missing destination folder is a caller bug, not a lock: fail at once
+% rather than spending the whole backoff budget on an impossible move,
+% and do not blame a scanner for it
+dstDir = fileparts(dst);
+if strlength(dstDir) > 0 && ~isfolder(dstDir)
+    error('shLowLevel:safeMove:noDestFolder', ...
+        'safeMove: destination folder does not exist: %s', dstDir);
 end
 msg = '';
 for k = 0:opts.Retries
