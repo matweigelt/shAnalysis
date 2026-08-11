@@ -33,6 +33,21 @@ function [ts, rep] = standardChain(folder, opts)
 %     Filter ("gauss300")  "none" | "gaussN" (N = radius [km]) | "DDKn"
 %                          (n = 1..8, fetched on demand) | a W struct
 %                          from shLowLevel.readDDK / designFilter
+%     Tolerance (0.05)     maximum |epoch difference| [yr] accepted when
+%                          matching a TN-13/TN-14 record to a solution
+%     OnMissing ("drop")   what to do with solution epochs the correction
+%                          tables do not reach. The tables ALWAYS trail
+%                          the solutions - a provider publishes TN-13
+%                          weeks after the monthly field - so the newest
+%                          months of a fresh series are routinely
+%                          uncovered and the old behaviour was to stop
+%                          with an error. "drop" removes them and records
+%                          it in REP; "error" restores the old behaviour.
+%                          Dropping is the default because the only other
+%                          option that keeps them would splice
+%                          UNCORRECTED months onto corrected ones, which
+%                          puts a step in the series exactly where people
+%                          look for the newest signal
 %     Quiet (false)        suppress progress output
 %
 %   Outputs
@@ -61,6 +76,9 @@ arguments
     opts.GIA = []
     opts.GIAEpoch (1,1) double = NaN
     opts.Filter = "gauss300"
+    opts.Tolerance (1,1) double {mustBePositive} = 0.05
+    opts.OnMissing (1,1) string {mustBeMember(opts.OnMissing, ...
+        ["drop", "error"])} = "drop"
     opts.Quiet (1,1) logical = false
 end
 steps = strings(1, 0);
@@ -87,7 +105,13 @@ if opts.TN14
              'TN14File= explicitly.'], tnf);
     end
     tn = shLowLevel.readTN14(tnf);
-    ts = ts.applyTN14(tn);
+    [ts, nDrop] = dropUncovered(ts, tn.epoch, opts.Tolerance, ...
+        opts.OnMissing, "TN-14");
+    if nDrop > 0
+        steps(end+1) = sprintf("dropped %d epoch(s) beyond TN-14 coverage (table ends %.3f)", nDrop, max(tn.epoch));
+        if ~opts.Quiet, fprintf('  %s\n', steps(end)); end
+    end
+    ts = ts.applyTN14(tn, Tolerance = opts.Tolerance);
     steps(end+1) = "TN-14 C20/C30 (" + string(tnf) + ")";
     if ~opts.Quiet, fprintf('  %s\n', steps(end)); end
 end
@@ -104,7 +128,13 @@ if opts.Degree1 ~= "none"
              'Degree1File= explicitly.'], d1f);
     end
     tn13 = shLowLevel.readTN13(d1f);
-    ts = ts.addDegree1(tn13);
+    [ts, nDrop] = dropUncovered(ts, tn13.epoch, opts.Tolerance, ...
+        opts.OnMissing, "TN-13");
+    if nDrop > 0
+        steps(end+1) = sprintf("dropped %d epoch(s) beyond TN-13 coverage (table ends %.3f)", nDrop, max(tn13.epoch));
+        if ~opts.Quiet, fprintf('  %s\n', steps(end)); end
+    end
+    ts = ts.addDegree1(tn13, Tolerance = opts.Tolerance);
     steps(end+1) = "degree-1 " + opts.Degree1 + " (" + string(d1f) + ")";
     if ~opts.Quiet, fprintf('  %s\n', steps(end)); end
 end
@@ -160,4 +190,31 @@ v = shLowLevel.version();
 rep = struct('files', files, 'steps', steps, 'nmax', ts.nmax, ...
     'epochs', ts.epochs, 'version', string(v.Name + " " + v.Version), ...
     'created', string(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')));
+end
+
+% ------------------------------------------------------------- helpers
+function [ts, nDropped] = dropUncovered(ts, tableEpochs, tol, mode, what)
+%DROPUNCOVERED Remove solution epochs no correction record can reach.
+lo = min(tableEpochs) - tol;
+hi = max(tableEpochs) + tol;
+keep = ts.epochs >= lo & ts.epochs <= hi;
+nDropped = nnz(~keep);
+if nDropped == 0
+    return
+end
+if mode == "error"
+    error('shLowLevel:standardChain:uncoveredEpochs', ...
+        ['%d solution epoch(s) lie outside the %s table (%.3f..%.3f). ' ...
+         'The correction tables trail the solutions, so this is normal ' ...
+         'for a fresh series: OnMissing="drop" (the default) excludes ' ...
+         'them, or supply an updated table.'], ...
+        nDropped, what, min(tableEpochs), max(tableEpochs));
+end
+if ~any(keep)
+    error('shLowLevel:standardChain:noCoveredEpochs', ...
+        ['No solution epoch falls inside the %s table (%.3f..%.3f) - ' ...
+         'the table and the series do not overlap at all.'], ...
+        what, min(tableEpochs), max(tableEpochs));
+end
+ts = ts.select(keep);
 end

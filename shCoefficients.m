@@ -892,17 +892,23 @@ methods
         %     filename  char/string  path of the file to read/write (gzipped .gz accepted where documented)
         %   Options
         %     Comment ("")  free-text comment written into the gfc header
+        %     Sidecar (true)  also write "<filename>.provenance.json".
+        %             Set false when exporting into a folder that will be
+        %             read back as a series: the sidecar is metadata, and
+        %             a loose read pattern would otherwise pick it up
         arguments
             obj
             filename {mustBeTextScalar}
             opts.Comment (1,1) string = ""
+            opts.Sidecar (1,1) logical = true
         end
         cmt = strjoin(obj.history, " | ");
         if strlength(opts.Comment) > 0, cmt = opts.Comment + " | " + cmt; end
         nm = obj.name; if strlength(nm) == 0, nm = "shAnalysis_export"; end
         shLowLevel.writeGFC(filename, obj.C, obj.S, obj.GM, obj.R, ...
             SigmaC = obj.sigmaC, SigmaS = obj.sigmaS, ...
-            ModelName = nm, TideSystem = obj.tideSystem, Comment = cmt);
+            ModelName = nm, TideSystem = obj.tideSystem, Comment = cmt, ...
+            Sidecar = opts.Sidecar);
     end
 
     % ---------------------------------------------------- tvANS interface
