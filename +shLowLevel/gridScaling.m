@@ -33,8 +33,10 @@ function [k, info] = gridScaling(model, latDeg, lonDeg, opts)
 %             "gauss<radiusKm>" | "DDKn" | a W struct from
 %             shLowLevel.readDDK / shLowLevel.designFilter
 %     Nmax (NaN)  expansion degree (NaN: floor((nLat - 1) / 2))
-%     MinSignal (1e-3)  pixels whose summed filtered power is below this
-%             FRACTION of the strongest pixel are returned as NaN
+%     MinSignal (1e-3)  threshold as a fraction of the strongest pixel's
+%             summed POWER (so 1e-3 is about 3% in amplitude). Pixels
+%             below it in filtered power get k = NaN; the same threshold
+%             on the MODEL's own power selects the pixels INFO summarises
 %     Clip ([])  (1 x 2) double  clamp k to [lo hi] ([]: no clamping).
 %             Factors far from 1 usually mean the model does not
 %             describe that pixel, not that the signal is huge
@@ -49,10 +51,12 @@ function [k, info] = gridScaling(model, latDeg, lonDeg, opts)
 %     k          (nLat x nLon) double  scaling factors; NaN where the
 %                model carries too little signal to define one
 %     info       (1,1) struct  fields: covered (1,1 double, fraction of
-%                pixels with a finite k), kMedian / kMin / kMax (1,1
-%                double, over the finite pixels), clipped (1,1 double,
-%                number of clamped pixels), nmax (1,1 double),
-%                filter (1,1 string), epochs (1,1 double)
+%                the grid with a finite k), kMedian / kMin / kMax (1,1
+%                double, over the pixels the MODEL gives mass to - not
+%                over all finite pixels, where pure-leakage k = 0 would
+%                dominate), onSignal (1,1 double, how many those are),
+%                clipped (1,1 double, number of clamped pixels), nmax
+%                (1,1 double), filter (1,1 string), epochs (1,1 double)
 %
 %   Python-validated in tools/dev/validate_leakage.py: amplitude
 %   invariance (k depends on the pattern, not the model's scale, to
@@ -103,11 +107,13 @@ wFilt = resolveFilter(opts.Filter, nmax);
 
 num = zeros(nLat, nLon);
 den = zeros(nLat, nLon);
+sig = zeros(nLat, nLon);                 % the MODEL's own power per pixel
 for t = 1:T
     tru = model(:, :, t);
     flt = applyChain(tru, latDeg, lonDeg, nmax, wFilt, opts.GM, opts.R);
     num = num + tru .* flt;
     den = den + flt .* flt;
+    sig = sig + tru .* tru;
 end
 k = nan(nLat, nLon);
 dmax = max(den(:));
@@ -124,22 +130,39 @@ if ~isempty(opts.Clip)
     k(k > hi) = hi;
 end
 fin = isfinite(k);
+% Summarise k where the MODEL CARRIES MASS. Over all finite pixels the
+% median is dominated by pure-leakage pixels, where the model says there
+% is no mass, so num = 0 and k = 0. That k is correct - it scales leaked
+% signal away - but it is not the "basin scaling factor" a user is after,
+% and reporting it as the median makes a working result look broken.
+onSignal = fin & (sig >= opts.MinSignal * max(sig(:)));
 info = struct('covered', nnz(fin) / numel(k), ...
-    'kMedian', median(k(fin), 'omitnan'), ...
-    'kMin', min(k(fin)), 'kMax', max(k(fin)), ...
+    'kMedian', medianOr(k(onSignal)), ...
+    'kMin', minOr(k(onSignal)), 'kMax', maxOr(k(onSignal)), ...
+    'onSignal', nnz(onSignal), ...
     'clipped', nClip, 'nmax', nmax, ...
     'filter', string(filterName(opts.Filter)), 'epochs', T);
-if isempty(info.kMedian), info.kMedian = NaN; end
-if isempty(info.kMin), info.kMin = NaN; end
-if isempty(info.kMax), info.kMax = NaN; end
 if ~opts.Quiet
-    fprintf(['gridScaling: %.1f%% of pixels covered, k median %.3f ' ...
-             '(range %.3f..%.3f), %d epochs\n'], 100 * info.covered, ...
-            info.kMedian, info.kMin, info.kMax, T);
+    fprintf(['gridScaling: k median %.3f (range %.3f..%.3f) over the ' ...
+             '%d pixels the model gives mass to; %.1f%% of the grid has ' ...
+             'a finite k, %d epochs\n'], info.kMedian, info.kMin, ...
+            info.kMax, info.onSignal, 100 * info.covered, T);
 end
 end
 
 % ------------------------------------------------------------- helpers
+function v = medianOr(x)
+if isempty(x), v = NaN; else, v = median(x, 'omitnan'); end
+end
+
+function v = minOr(x)
+if isempty(x), v = NaN; else, v = min(x); end
+end
+
+function v = maxOr(x)
+if isempty(x), v = NaN; else, v = max(x); end
+end
+
 function out = applyChain(field, latDeg, lonDeg, nmax, wFilt, GM, R)
 %APPLYCHAIN analysis -> filter -> synthesis, the operator the data saw.
 %   GM and R must be the SAME on both sides: shAnalysisGrid converts a
