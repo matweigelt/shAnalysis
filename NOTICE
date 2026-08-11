@@ -25,3 +25,28 @@ tests/test_data/loadLoveNumbers_Gegout97.txt
   https://ftp.tugraz.at/pub/ITSG/groops/data/loading/. Test fixture only.
 
 The shAnalysis source code itself is MIT-licensed; see LICENSE.
+
+GravIS test fixtures
+--------------------
+tests/test_data/GRAVIS-2B_MEAN_n10_trimmed.shm
+tests/test_data/GRAVIS-2B_GIA_ICE-6G_D_VM5a_n10_trimmed.shm(.gz)
+tests/test_data/gravis_gis_basins.geojson
+
+Derived from the GravIS COST-G RL02 Level-2B auxiliary products and the
+Greenland drainage-basin definitions published at https://gravis.gfz.de,
+truncated to degree 10 for use as format fixtures. Licensed CC-BY-4.0
+(https://creativecommons.org/licenses/by/4.0/).
+
+  Dahle, C., Murboeck, M. (2025): Post-processed GRACE/GRACE-FO
+  Geopotential GSM Coefficients COST-G RL02 (Level-2B Product). V. 0001.
+  GFZ Data Services. https://doi.org/10.5880/COST-G.GRAVIS_02_L2B
+
+  Dahle, C., Boergens, E., Sasgen, I., Doehne, T., et al. (2025): GravIS:
+  mass anomaly products from satellite gravimetry. Earth Syst. Sci. Data,
+  17, 611-631. https://doi.org/10.5194/essd-17-611-2025
+
+  GIA model: Peltier, W.R., Argus, D.F., Drummond, R. (2018), ICE-6G_D
+  (VM5a). https://doi.org/10.1002/2016JB013844
+
+  Basin definitions follow Sasgen et al. (2012), Earth Planet. Sci.
+  Lett., 333-334, 293-303. https://doi.org/10.1016/j.epsl.2012.03.033
