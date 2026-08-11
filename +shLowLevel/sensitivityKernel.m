@@ -16,14 +16,16 @@ function [k, info] = sensitivityKernel(idx, region, opts)
 %       J(k) = ||k - kExact||^2_M  +  Alpha * k' N k
 %
 %   over the kernel, where the first term measures leakage against the
-%   far-field weighting M and the second the propagated noise. The
-%   solution is closed form,
-%
-%       k = (M + Alpha * N)^-1 * M * kExact,
-%
-%   so no iteration and no stopping criterion is involved. Alpha = 0
-%   returns the exact indicator; large Alpha shrinks the kernel towards
-%   zero. This is the construction behind the ESA CCI and GravIS gridded
+%   far-field weighting M and the second the propagated noise, SUBJECT
+%   TO the unit-response constraint k' kExact = kExact' kExact. The
+%   constraint is what makes the result an AVERAGE: without it the
+%   cheapest way to reduce noise is to shrink the kernel towards zero,
+%   and the "optimal" kernel measures nothing (INFO.gain fell to 0.28
+%   already at Alpha = 0.1 during development). The solution is closed
+%   form via one Lagrange multiplier - no iteration, no stopping
+%   criterion, nothing that depends on where you stop. Alpha = 0 returns
+%   the exact indicator; larger Alpha buys less noise with more leakage
+%   while the gain stays at 1. This is the construction behind the ESA CCI and GravIS gridded
 %   ice products (Swenson & Wahr 2002; Groh & Horwath 2021; Doehne et
 %   al. 2023).
 %
@@ -34,8 +36,8 @@ function [k, info] = sensitivityKernel(idx, region, opts)
 %                shLowLevel.basinKernel accepts
 %
 %   Options
-%     Alpha (1)  the trade-off weight. Larger = smoother kernel, less
-%             noise, more leakage. There is no universally right value:
+%     Alpha (1)  the trade-off weight. Larger = less noise, more
+%             leakage, at unchanged unit gain. There is no universally right value:
 %             sweep it and look at INFO.leakage against INFO.noise (an
 %             L-curve), then take the corner. Report which you used
 %     Noise ([])  (P x P) double  error covariance in IDX ordering, or a
@@ -61,8 +63,9 @@ function [k, info] = sensitivityKernel(idx, region, opts)
 %                alpha (1,1 double), kExact (P,1 double, the indicator
 %                it started from), areaFraction (1,1 double), gain
 %                (1,1 double, k' kExact / (kExact' kExact) - how much of
-%                the region's own signal survives; well below 1 means
-%                Alpha is too large)
+%                the region's own signal survives. The constraint holds
+%                it at 1; a value that drifts off 1 means the constraint
+%                could not be applied, e.g. a degenerate region)
 %
 %   Validated in tools/dev/validate_senskernel.py: the trade-off is
 %   monotone in Alpha (so it is a real dial), the two limits are exact,
@@ -128,21 +131,36 @@ else
     nVec = diag(Nfull);
 end
 
-% k = (M + Alpha N)^-1 M kExact. With diagonal M and N this is one
-% divide per coefficient; a full covariance needs the solve.
+% k = (M + Alpha N)^-1 (M kExact + lambda kExact), with lambda chosen so
+% that k' kExact = kExact' kExact - the kernel must still RESPOND to the
+% basin with unit gain. Without that constraint the cheapest way to cut
+% noise is to shrink the kernel towards zero, and the "optimum" is a
+% kernel that measures nothing: gain fell to 0.28 at Alpha = 0.1 and
+% 0.001 at Alpha = 100 before the constraint was added.
 if isempty(Nfull)
-    k = (mVec .* kExact) ./ (mVec + opts.Alpha * nVec);
-    noise = sqrt(sum(nVec .* k.^2));
+    k0 = (mVec .* kExact) ./ (mVec + opts.Alpha * nVec);
+    v = kExact ./ (mVec + opts.Alpha * nVec);
 else
     A = diag(mVec) + opts.Alpha * Nfull;
-    k = A \ (mVec .* kExact);
+    k0 = A \ (mVec .* kExact);
+    v = A \ kExact;
+end
+den = kExact' * v;
+if abs(den) > 0
+    k = k0 + ((kExact' * kExact - kExact' * k0) / den) * v;
+else
+    k = k0;
+end
+if isempty(Nfull)
+    noise = sqrt(sum(nVec .* k.^2));
+else
     noise = sqrt(max(k' * Nfull * k, 0));
 end
 d = k - kExact;
 leakage = sqrt(sum(mVec .* d.^2));
-den = kExact' * kExact;
-if den > 0
-    gain = (k' * kExact) / den;
+denG = kExact' * kExact;
+if denG > 0
+    gain = (k' * kExact) / denG;
 else
     gain = NaN;
 end
