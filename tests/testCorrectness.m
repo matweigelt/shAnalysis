@@ -1952,3 +1952,60 @@ sparse5 = ts.select(ismember(t, t(1:40:end)));
 verifyError(testCase, @() sparse5.removeAlias(), ...
     'shSeries:removeAlias:tooShort');
 end
+
+% --------------------------------------------------- open-ocean RMS metric
+function testOceanRMSErosionAndWeighting(testCase)
+%TESTOCEANRMSEROSIONANDWEIGHTING The GRACE noise metric, both halves right.
+%   Pinned against tools/dev/validate_oceanrms.py: the erosion must move
+%   the boundary by exactly the requested distance, and the average must
+%   be area-weighted (an unweighted RMS over a lat/lon grid over-counts
+%   the polar rows, which white noise hides and structure exposes).
+lat = -89:2:89;
+lon = 0:2:358;
+[LO, LA] = meshgrid(lon, lat);
+% "land" = a 30 degree cap at the north pole
+psi = acosd(min(1, max(-1, sind(90) * sind(LA))));
+isOcean = psi > 30;
+
+% erosion moves the boundary by d/R, to within a grid step
+for d = [0 1000 2000]
+    [~, info] = shLowLevel.oceanRMS(ones(size(LA)), lat, lon, isOcean, ...
+        MinDistanceKm = d);
+    edge = min(psi(info.mask));
+    verifyEqual(testCase, edge, 30 + rad2deg(d / 6371), 'AbsTol', 2.5, ...
+        sprintf('erosion by %d km', d));
+end
+[~, i0] = shLowLevel.oceanRMS(ones(size(LA)), lat, lon, isOcean, MinDistanceKm = 0);
+[~, i2] = shLowLevel.oceanRMS(ones(size(LA)), lat, lon, isOcean, MinDistanceKm = 2000);
+verifyLessThan(testCase, i2.nPixels, i0.nPixels, 'erosion must remove points');
+
+% area weighting: mean of cos^2 over the sphere is 2/3
+f = cosd(LA);
+r = shLowLevel.oceanRMS(f, lat, lon, true(size(LA)), MinDistanceKm = 0);
+verifyEqual(testCase, r^2, 2/3, 'AbsTol', 0.01);
+ru = shLowLevel.oceanRMS(f, lat, lon, true(size(LA)), MinDistanceKm = 0, ...
+    Weighted = false);
+verifyLessThan(testCase, ru, r, ...
+    'the unweighted RMS must over-count the small polar values');
+
+% on white noise the two agree - which is why the difference is easy to
+% miss until the field has structure
+rng(1);
+g = randn(size(LA));
+rw = shLowLevel.oceanRMS(g, lat, lon, true(size(LA)), MinDistanceKm = 0);
+rn = shLowLevel.oceanRMS(g, lat, lon, true(size(LA)), MinDistanceKm = 0, ...
+    Weighted = false);
+verifyEqual(testCase, rw, rn, 'RelTol', 0.05);
+
+% a function-handle mask is equivalent to the logical one
+rh = shLowLevel.oceanRMS(g, lat, lon, @(la, lo) la < 0, MinDistanceKm = 0);
+rl = shLowLevel.oceanRMS(g, lat, lon, LA < 0, MinDistanceKm = 0);
+verifyEqual(testCase, rh, rl);
+
+% and it feeds leakageCorrect: a noise level in the field's own units
+verifyGreaterThan(testCase, rw, 0);
+verifyError(testCase, @() shLowLevel.oceanRMS(g, lat, lon, ...
+    false(size(LA))), 'shLowLevel:oceanRMS:emptyOcean');
+verifyError(testCase, @() shLowLevel.oceanRMS(g(1:3,:), lat, lon, ...
+    true(size(LA))), 'shLowLevel:oceanRMS:badSize');
+end
