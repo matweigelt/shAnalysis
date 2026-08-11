@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.4.0 (R2026a-compatible) 11-Aug-2026
+% Version 3.4.1 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,19 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.4.1 (the GravIS comparison closed to 1.6 %)
+%   leakageCorrect: the Filter= you declare must be the filter the
+%     FORWARD MODEL sees, not the one your input file carries. GravIS
+%     ice basin averages start from UNFILTERED coefficients and still
+%     apply a Wiener filter (~Gaussian, 4 deg latitude half-width)
+%     inside the inversion; declaring "none" instead of "gauss445"
+%     moved the Greenland trend from -234.9 to -227.4 Gt/yr against a
+%     published -231.1. Documented in the guide and on the topic page.
+%   designFilter: VDK (Horvath et al. 2018) is DDK rebuilt from each
+%     MONTH's error covariance - i.e. a per-epoch usage of designFilter
+%     with Noise=. What is missing is the data, not the method: monthly
+%     full covariances are not distributed with Level-2 products.
 %
 % New in v3.4.0 (tidal alias removal; the GravIS validation written up)
 %   shSeries.removeAlias - fit a tidal-alias harmonic (S2, 161 d by

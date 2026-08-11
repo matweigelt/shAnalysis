@@ -111,6 +111,16 @@ before the MATLAB port, against known truth: exact analysis/synthesis round trip
 zero out, monotone residual, the divergence bound, amplitude invariance of <code class="inline">k</code>
 to 1e-15, and error reduction on a field whose mixture differs from the model's.</p>
 
+<div class="note"><b>Declare the filter the FORWARD MODEL sees, not the one your input file
+carries.</b> Reproducing the GravIS Greenland series, the inputs are genuinely unfiltered Level-2B
+coefficients &mdash; and passing <code class="inline">Filter="none"</code> was still wrong, because
+the method filters the forward model identically to the observations (a Wiener filter,
+approximately a Gaussian of 4&deg; latitude half-width). Declaring
+<code class="inline">Filter="gauss445"</code> instead moved the answer from &minus;234.9 to
+&minus;227.4 Gt/yr against a published &minus;231.1: a 1.6% overshoot became a 1.6% undershoot.
+This single choice mattered more than the mask, the polygon resolution and the tidal alias
+combined.</div>
+
 <h2>Validated against GravIS</h2>
 <p>The full worked comparison against the published GravIS Greenland basin averages &mdash; every
 processing step, the code, and what each step is worth &mdash; is chapter <b>"Validation against
