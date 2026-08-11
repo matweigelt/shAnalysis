@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Tutorials</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Getting started</span><span class="tag">v3.8.0</span>
+<h1>Tutorials &mdash; Live Scripts to open and run</h1>
+<p>The fastest way into the toolbox is to open something that already works and change it.
+<code class="inline">shLowLevel.makeTutorials</code> writes one Live Script per demonstration case
+into <code class="inline">tutorials/</code>:</p>
+<pre>shLowLevel.makeTutorials();                 % all 16 cases
+shLowLevel.makeTutorials(Cases = "core");   % the five headline ones
+shLowLevel.makeTutorials(Cases = ["D01" "D05"]);</pre>
+<p>Each one sets up the path, runs its case with figures visible, and points at the topic page and
+the workflow guide for what comes next. Open the <code class="inline">.mlx</code> in the Live
+Editor, press Run, then start changing parameters &mdash; the demos work offline against the
+fixtures that ship with the toolbox.</p>
+
+<h2>Why they are generated</h2>
+<p><a href="apiReference.html">demo_shAnalysis</a> is the single source of truth for what the
+toolbox demonstrates. A parallel set of hand-written tutorials would drift from it within a
+release &mdash; and <code class="inline">.mlx</code> is a binary zip, so the drift would not even be
+visible in a diff. Regenerating is cheap; keeping two copies in step by hand is not. Every tutorial
+says so in its own footer.</p>
+<div class="note">The <code class="inline">.mlx</code> conversion uses an internal MATLAB API that
+is not present in every release. If it is unavailable the <code class="inline">.m</code> files are
+still written &mdash; they are the useful artefact either way &mdash; and a warning explains that
+they can be converted by hand with <b>Save As</b> in the Live Editor.</div>
+
+<h2>The cases</h2>
+<p>D01 reading and spectra &middot; D02 synthesis and maps &middot; D03 normal field &middot;
+D04 filter comparison &middot; D05 climatology and basin series &middot; D06 the tvANS pipeline
+&middot; D07 SH analysis &middot; D08 basin tools &middot; D09 uncertainty &middot; D10 load
+deformation &middot; D11 gradient tensor &middot; D12 EOF &middot; D13 trend breakpoints &middot;
+D14 multi-center combination &middot; D15 sea-level fingerprint &middot; D16 export.
+<code class="inline">demo_shAnalysis("list")</code> prints the current table.</p>
+
+<h2>See also</h2>
+<p class="seealso"><a href="setup.html">setup_shAnalysis</a>
+<a href="shAnalysis.html">Toolbox overview</a> <a href="apiReference.html">API reference</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude.</p>
+</div></body></html>

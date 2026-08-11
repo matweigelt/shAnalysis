@@ -3,6 +3,7 @@
 <tocitem target="shAnalysis.html">shAnalysis Toolbox
 
   <tocitem target="setup.html">Getting started: setup_shAnalysis</tocitem>
+  <tocitem target="tutorials.html">Tutorials (Live Scripts)</tocitem>
   <tocitem target="version.html">shLowLevel.version - toolbox metadata</tocitem>
   <tocitem target="apiReference.html">API reference (generated from the source)</tocitem>
 

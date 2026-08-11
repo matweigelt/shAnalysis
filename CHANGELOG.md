@@ -3,6 +3,38 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.0] - 2026-08-11
+
+### Added
+- `shLowLevel.makeTutorials` (roadmap item 10): writes one Live Script
+  per demonstration case into `tutorials/` - set up the path, run the
+  case with figures visible, and point at the topic page and workflow
+  guide. Open, press Run, change something.
+- They are GENERATED from the demo registry, not hand-written.
+  `demo_shAnalysis` is the single source of truth for what the toolbox
+  demonstrates; a parallel set of curated tutorials would drift from it
+  within a release, and `.mlx` is a binary zip, so the drift would not
+  even show in a diff. Each tutorial says so in its own footer.
+- Conversion to `.mlx` uses `matlab.internal.livecode.FileModel`, an
+  internal API that is not in every release. When it is missing the `.m`
+  files are still written - they are the useful artefact either way -
+  and a warning explains the manual Save As route.
+- New topic page `tutorials.html`, reachable from the Help browser.
+
+### Fixed
+- CI now sets `timeout-minutes` on the job (20) and on the MATLAB setup
+  step (8). That step hung four times in one session, taking 5-10
+  minutes against its usual 1.2 and each time needing a manual cancel.
+  It now fails fast and visibly instead of sitting pending.
+
+### Note
+- Two bugs the acceptance machine caught in the generator:
+  `repmat("x", 1, 40)` builds a 1x40 STRING ARRAY rather than a
+  40-character string, so the padding trick that works for char produced
+  a non-scalar file name; and `demo_shAnalysis("list")` PRINTS the case
+  table as well as returning it, which would have spammed every
+  generator run and every test.
+
 ## [3.7.0] - 2026-08-11
 
 ### Added
