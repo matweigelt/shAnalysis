@@ -2079,6 +2079,12 @@ verifyEqual(testCase, d1.S11(1), s11, 'RelTol', 0.05);
 verifyEqual(testCase, d1.epoch, ts.epochs(:));
 verifyLessThan(testCase, info.cond(1), 5, ...
     'a global ocean must give a well-conditioned system');
+% the sigmas addDegree1 requires must be there - a table without them is
+% not a TN-13 drop-in, however the help describes it
+for f = ["sigC10", "sigC11", "sigS11", "t0", "t1"]
+    verifyTrue(testCase, isfield(d1, f), "missing field " + f);
+end
+verifyGreaterThan(testCase, d1.sigC10(1), 0);
 
 % the result plugs into addDegree1 exactly like a TN-13 table
 tsD = ts.addDegree1(d1);
@@ -2094,6 +2100,10 @@ verifyWarning(testCase, @() shLowLevel.estimateDegree1(ts, ocean, ...
 [~, iP] = shLowLevel.estimateDegree1(ts, ocean & (LA > 60), kn = kn, ...
     OceanModel = oceanModel, LatDeg = lat, LonDeg = lon, Nmax = nmax);
 verifyGreaterThan(testCase, iP.cond(1), 3 * info.cond(1));
+% cond must report the GEOMETRY, not the column units: an unequilibrated
+% design matrix reported 3.8e7 on a problem whose geometry is fine
+verifyLessThan(testCase, info.cond(1), 100, ...
+    'cond must be equilibrated, or it reports units not geometry');
 
 % Love numbers are never assumed
 verifyError(testCase, @() shLowLevel.estimateDegree1(ts, ocean, ...
