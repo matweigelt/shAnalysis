@@ -64,4 +64,23 @@ this record format per the GRACE Level-2 handbook.</div>
 <hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
 <p style="color:#888;font-size:11.5px;">shAnalysis v2.1 &middot; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
-</body></html>
+</body></html><h2>Estimating degree 1 from the data <span class="tag">v3.6.0</span></h2>
+<p>A TN-13 table is one source of geocentre coefficients; the other is the data itself.
+<code class="inline">shLowLevel.estimateDegree1</code> implements Swenson, Chambers &amp; Wahr
+(2008), which is what GravIS and geogravL3 use: the degree-1 terms are whatever, when added, make
+the <b>ocean</b> part of the field agree with an ocean model. A small least-squares problem per
+epoch, over the ocean domain, area-weighted.</p>
+<pre>LN = shLowLevel.readLoveNumbers("loadLoveNumbers.txt");
+d1 = shLowLevel.estimateDegree1(ts, isOcean, kn = LN.kn, OceanModel = obp);
+ts = ts.addDegree1(d1);            % identical interface to a TN-13 table</pre>
+<p>The advantage over a published table is consistency: the estimate is derived from the very
+solutions you are processing, so it does not depend on somebody having published a degree-1 series
+for your exact Level-2 product and release.</p>
+<div class="note"><b>Omitting <code class="inline">OceanModel</code> biases the result</b> &mdash;
+whatever real ocean signal the model would have explained is attributed to the geocentre instead
+(up to 177% error on the reference problem). A warning is raised. Check
+<code class="inline">info.cond</code>: it reflects the geometry of the ocean domain and rises sharply
+when that domain is too small or lopsided (1.3 for a global ocean, 58 for a polar-only one) &mdash;
+a warning you can see without knowing the truth.</div>
+
+

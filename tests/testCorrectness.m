@@ -2036,3 +2036,80 @@ verifyError(testCase, @() shLowLevel.oceanRMS(g, lat, lon, ...
 verifyError(testCase, @() shLowLevel.oceanRMS(g(1:3,:), lat, lon, ...
     true(size(LA))), 'shLowLevel:oceanRMS:badSize');
 end
+
+% ------------------------------------------ self-consistent degree 1
+function testEstimateDegree1RecoversAKnownGeocentre(testCase)
+%TESTESTIMATEDEGREE1RECOVERSAKNOWNGEOCENTRE Swenson et al. (2008).
+%   Build a world whose degree-1 content is known, blind the "observer"
+%   to it, and check it comes back. Pinned against
+%   tools/dev/validate_degree1.py.
+lat = -89:4:89;
+lon = 0:4:356;
+[LO, LA] = meshgrid(lon, lat);
+kn = [0; 0.021; -0.3054; -0.1960; zeros(17, 1)];   % degree-1 in CF
+ocean = ~(((LA > 10) & (LA < 70) & (LO > 250) & (LO < 350)) | ...
+          ((LA > -40) & (LA < 30) & (LO > 10) & (LO < 60)));
+verifyGreaterThan(testCase, nnz(ocean) / numel(ocean), 0.5);
+
+% a truth field with real degree-1 content, then observe it WITHOUT
+nmax = 12;
+truth = zeros(size(LA));
+truth(~ocean) = 0.05 * sind(3 * LO(~ocean));
+oceanModel = zeros(size(LA));
+oceanModel(ocean) = 0.01 * cosd(2 * LA(ocean));
+truth = truth + oceanModel;
+gT = shCoefficients.analysis(truth, lat, lon, nmax, quantity = "ewh", ...
+    kn = kn);
+c10 = gT.C(2, 1); c11 = gT.C(2, 2); s11 = gT.S(2, 2);
+verifyGreaterThan(testCase, abs(c10) + abs(c11) + abs(s11), 0, ...
+    'the truth must actually contain degree 1, or nothing is tested');
+
+gObs = gT;                                  % GRACE is blind to degree 1
+Cs = gObs.C; Ss = gObs.S;
+Cs(2, :) = 0; Ss(2, :) = 0;
+ts = shSeries(cat(3, Cs, Cs), Ss = cat(3, Ss, Ss), ...
+    Epochs = [2008.0; 2008.1]);
+
+[d1, info] = shLowLevel.estimateDegree1(ts, ocean, kn = kn, ...
+    OceanModel = oceanModel, LatDeg = lat, LonDeg = lon, Nmax = nmax);
+verifyEqual(testCase, numel(d1.C10), 2);
+verifyEqual(testCase, d1.C10(1), c10, 'RelTol', 0.05);
+verifyEqual(testCase, d1.C11(1), c11, 'RelTol', 0.05);
+verifyEqual(testCase, d1.S11(1), s11, 'RelTol', 0.05);
+verifyEqual(testCase, d1.epoch, ts.epochs(:));
+verifyLessThan(testCase, info.cond(1), 5, ...
+    'a global ocean must give a well-conditioned system');
+% the sigmas addDegree1 requires must be there - a table without them is
+% not a TN-13 drop-in, however the help describes it
+for f = ["sigC10", "sigC11", "sigS11", "t0", "t1"]
+    verifyTrue(testCase, isfield(d1, f), "missing field " + f);
+end
+verifyGreaterThan(testCase, d1.sigC10(1), 0);
+
+% the result plugs into addDegree1 exactly like a TN-13 table
+tsD = ts.addDegree1(d1);
+verifyEqual(testCase, tsD.Cs(2, 1, 1), d1.C10(1), 'RelTol', 1e-12);
+
+% omitting the ocean model biases the answer, and says so
+verifyWarning(testCase, @() shLowLevel.estimateDegree1(ts, ocean, ...
+    kn = kn, LatDeg = lat, LonDeg = lon, Nmax = nmax), ...
+    'shLowLevel:estimateDegree1:noOceanModel');
+
+% a degenerate ocean domain raises the condition number - the warning a
+% user can see without knowing the truth
+[~, iP] = shLowLevel.estimateDegree1(ts, ocean & (LA > 60), kn = kn, ...
+    OceanModel = oceanModel, LatDeg = lat, LonDeg = lon, Nmax = nmax);
+verifyGreaterThan(testCase, iP.cond(1), 3 * info.cond(1));
+% cond must report the GEOMETRY, not the column units: an unequilibrated
+% design matrix reported 3.8e7 on a problem whose geometry is fine
+verifyLessThan(testCase, info.cond(1), 100, ...
+    'cond must be equilibrated, or it reports units not geometry');
+
+% Love numbers are never assumed
+verifyError(testCase, @() shLowLevel.estimateDegree1(ts, ocean, ...
+    LatDeg = lat, LonDeg = lon), ...
+    'shLowLevel:estimateDegree1:noLoveNumbers');
+verifyError(testCase, @() shLowLevel.estimateDegree1(ts, ...
+    false(size(LA)), kn = kn, LatDeg = lat, LonDeg = lon), ...
+    'shLowLevel:estimateDegree1:emptyOcean');
+end

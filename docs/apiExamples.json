@@ -320,6 +320,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.estimateDegree1",
+  "example": "d1 = shLowLevel.estimateDegree1(ts, isOcean, kn = LN.kn, ...\n    OceanModel = obpModel);\nts = ts.addDegree1(d1);            % same interface as a TN-13 table",
+  "run": false
+ },
+ {
   "name": "shLowLevel.evalMask",
   "example": "[mask, area] = shLowLevel.evalMask(idx, capSpec);   % quadrature-grid mask",
   "run": false

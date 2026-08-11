@@ -3,6 +3,38 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.6.0] - 2026-08-11
+
+### Added
+- `shLowLevel.estimateDegree1`: geocentre coefficients (C10, C11, S11)
+  estimated from GRACE itself plus an ocean model, following Swenson,
+  Chambers & Wahr (2008) - the method both GravIS and geogravL3 use.
+  This removes the dependency on somebody having published a TN-13
+  series for your exact Level-2 product and release, and guarantees the
+  degree-1 terms are consistent with the solutions actually processed.
+  The output struct matches `readTN13` exactly, sigmas included, so it
+  drops into `addDegree1` unchanged. `kn` is required: degree-1 load
+  Love numbers are frame dependent and are never assumed.
+- Python-validated (`tools/dev/validate_degree1.py`): exact recovery of
+  a known geocentre from a synthetic land/ocean world, 1.5-4% error at
+  2 mm noise, a demonstrable bias when the ocean model is omitted, and
+  a rising condition number on a degenerate ocean domain.
+
+### Notes on three things the acceptance machine caught
+- A CONSTANT nuisance column is carried beside the three patterns. The
+  ocean residual generally has a degree-0 component (the observed field
+  is degrees 2+, and any mass imbalance between data and ocean model is
+  an offset), and without a constant to absorb it that offset lands on
+  C10, which has a large ocean mean: a **153% error** before the fix.
+- The design matrix is column-equilibrated before `cond` is reported.
+  The constant column has a completely different scale from the basis
+  patterns, so an unscaled condition number reports the units rather
+  than the geometry - 3.8e7 on a problem whose geometry is fine. After
+  equilibration: 1.3 for a global ocean, 58 for a polar-only one.
+- `addDegree1` REQUIRES sigma fields, so the first version was not the
+  drop-in its own help text claimed. Formal sigmas now come from the
+  ocean-fit residual propagated through the least-squares solution.
+
 ## [3.5.2] - 2026-08-11
 
 ### Fixed

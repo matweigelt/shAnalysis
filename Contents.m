@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.5.2 (R2026a-compatible) 11-Aug-2026
+% Version 3.6.0 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,15 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.6.0 (self-consistent degree 1)
+%   shLowLevel.estimateDegree1 - geocentre coefficients from GRACE
+%     itself plus an ocean model (Swenson, Chambers & Wahr 2008), the
+%     method GravIS and geogravL3 use. Removes the dependency on someone
+%     having published a TN-13 series for your exact Level-2 product,
+%     and returns the same struct layout - sigmas included - so it drops
+%     into addDegree1 unchanged. kn is REQUIRED (degree-1 Love numbers
+%     are frame dependent). Python-validated in validate_degree1.py.
 %
 % New in v3.5.2 (the discrepancy principle, made to actually fire)
 %   leakageCorrect ResidualRegion= (default: the Mask). The residual
