@@ -3,6 +3,31 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.2] - 2026-08-11
+
+### Added
+- `setup_shAnalysis` gained `SeriesFolder=` and `MasconFile=`, which
+  export `SHX_SERIES_FOLDER` and `SHX_MASCON_FILE` for the session and
+  report them in `summary.testData`. Until now those variables were
+  mentioned only inside the test files that read them, so nobody would
+  have found them.
+- The workflow guide gained an **Installation and data** chapter
+  covering setup, the download levels, the persistent data folder, and
+  both opt-in variables with a table of where the data comes from. Also
+  documented on the setup page and in the README.
+- `DryRun` reports what it *would* set without calling `setenv`, and a
+  path that does not exist warns rather than failing silently.
+
+### Notes
+- Both variables are optional. Without them the suite runs complete and
+  the two tests report as FILTERED, not as passing - the distinction
+  matters, because a silently skipped test looks like a green one.
+- `SHX_SERIES_FOLDER` is deliberately NOT wired to the persistent data
+  folder: a routine acceptance run must never reach for a network or
+  archive drive, so pointing at that data stays an explicit decision.
+- MATLAB was unavailable for this change, so it is verified by the
+  static gates and CI only.
+
 ## [3.8.1] - 2026-08-11
 
 ### Changed

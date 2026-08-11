@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.2 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,17 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.2 (opt-in test data, documented and settable)
+%   setup_shAnalysis SeriesFolder= and MasconFile= export
+%   SHX_SERIES_FOLDER and SHX_MASCON_FILE for the session (startup.m to
+%   keep them) and report them in summary.testData. Documented in the
+%   guide's new Installation chapter, on the setup page and in the
+%   README. Both variables are optional: without them the two tests
+%   report as FILTERED rather than passing silently.
+%   SHX_SERIES_FOLDER stays deliberately unwired from the persistent
+%   data folder - a routine acceptance run must never reach for a
+%   network or archive drive.
 %
 % New in v3.8.1 (README rewritten; the COST-G SINEX question settled)
 %   The README still described compat/ and tests/legacy - both removed in

@@ -99,4 +99,31 @@ Contract-tested.</p>
 <a href="readDDK.html">readDDK / fetchDDK</a>
 <a href="readTN13.html">readTN13</a></p>
 <p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
-</div></body></html>
+</div></body></html><h2>Opt-in test data <span class="tag">v3.8.2</span></h2>
+<p>Two checks need data far too large to ship as fixtures, so they read an environment variable and
+filter themselves out when it is unset. Pass the paths to
+<code class="inline">setup_shAnalysis</code> and it exports them for the session:</p>
+<pre>setup_shAnalysis(SeriesFolder = "D:/grace/itsg", ...
+                 MasconFile = "D:/grace/GRCTellus_JPL.nc");</pre>
+<table>
+<tr><th>Variable</th><th>Enables</th><th>Data</th></tr>
+<tr><td><code class="inline">SHX_SERIES_FOLDER</code></td>
+<td>the trend regression in <code class="inline">testScience</code></td>
+<td>a folder of monthly <code class="inline">.gfc</code> files, &gt; 24 epochs, GSM level &mdash;
+<a href="fetchITSG.html">fetchITSG</a> or <a href="icgemSeries.html">fetchICGEM</a></td></tr>
+<tr><td><code class="inline">SHX_MASCON_FILE</code></td>
+<td>the <a href="readMascon.html">readMascon</a> check against a real product</td>
+<td>CSR (no login), GSFC, or JPL PO.DAAC (free Earthdata login)</td></tr>
+</table>
+<div class="note"><b>This is not tidiness.</b> The fixture suite cannot see the class of failure that
+only appears on real data of real length: three bugs surfaced the first time the toolbox ran against
+a full 24-year series, and the mascon reader's dimension order was only settled by a real product
+file. Neither variable is required &mdash; without them the suite runs complete and both tests
+report as filtered rather than passing silently.</div>
+<p><code class="inline">setenv</code> lasts for the session only; put the same lines in your
+<code class="inline">startup.m</code> to keep them.
+<code class="inline">SHX_SERIES_FOLDER</code> is deliberately <em>not</em> wired to the persistent
+data folder: a routine acceptance run must never reach for a network or archive drive, so pointing
+at that data stays an explicit decision.</p>
+
+

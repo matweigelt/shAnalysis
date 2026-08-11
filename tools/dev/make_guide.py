@@ -260,6 +260,67 @@ story += [Spacer(1, 8),
                "explains why and in which order."),
           PageBreak()]
 
+# ========================================================== Installation
+story += [para("Installation and data", "h1")]
+story += [para("The toolbox itself needs nothing beyond base MATLAB. One "
+               "call puts it on the path and, optionally, fetches the "
+               "correction files the standard chain uses:")]
+story += code("""
+cd shAnalysis
+setup_shAnalysis(Permanent = true, Download = "core")
+% levels: "none" (path only) | "core" (TN-13/TN-14) | "filters" (+DDK)
+%         | "starter" (+ a few ITSG months);  DryRun = true shows the plan
+shLowLevel.makeTutorials(Cases = "core");   % Live Scripts to open and run
+""")
+story += [para("Downloads land under a persistent data folder "
+               "(<font face='Courier'>shLowLevel.dataFolder</font>), set "
+               "once with <font face='Courier'>DataFolder=</font>. The "
+               "fetchers throttle themselves and verify every file by "
+               "parsing it before it replaces anything, so an interrupted "
+               "download is resumable and never leaves a corrupt file in "
+               "place.")]
+
+story += [para("Opt-in test data", "h2")]
+story += [para("Two checks need data far too large to ship as fixtures, "
+               "so they read an environment variable and filter "
+               "themselves out when it is unset. This is not tidiness: "
+               "the fixture suite cannot see the class of failure that "
+               "only appears on real data of real length &mdash; three "
+               "such bugs were found the first time the toolbox was run "
+               "against a full 24-year series, and the mascon reader's "
+               "dimension order was only settled by a real product "
+               "file.")]
+story += tbl(["Variable", "What it enables", "Where to get the data"], [
+    ["<font face='Courier'>SHX_SERIES_FOLDER</font>",
+     "the trend regression in <font face='Courier'>testScience</font>: a "
+     "folder of monthly .gfc files, more than 24 epochs, GSM level",
+     "<font face='Courier'>shLowLevel.fetchITSG</font> or "
+     "<font face='Courier'>fetchICGEM(Type=\"temporal\")</font>"],
+    ["<font face='Courier'>SHX_MASCON_FILE</font>",
+     "the <font face='Courier'>readMascon</font> check against a REAL "
+     "product &mdash; the synthetic fixture writes (lon, lat, time), the "
+     "JPL file writes (time, lat, lon), and a size check passes either "
+     "way",
+     "CSR (no login), GSFC, or JPL PO.DAAC (free Earthdata login)"],
+], [4.4*cm, 5.6*cm, 3.6*cm])
+story += code("""
+% set them for this session, or pass them to setup:
+setup_shAnalysis(SeriesFolder = "D:/grace/itsg", ...
+                 MasconFile = "D:/grace/GRCTellus_JPL.nc");
+% for good, put the same two lines in your startup.m:
+setenv("SHX_SERIES_FOLDER", "D:/grace/itsg");
+setenv("SHX_MASCON_FILE", "D:/grace/GRCTellus_JPL.nc");
+""")
+story += [para("<font face='Courier'>SHX_SERIES_FOLDER</font> is "
+               "deliberately NOT wired to the persistent data folder. A "
+               "routine acceptance run must never reach for a network or "
+               "archive drive, so pointing at that data is a decision the "
+               "user makes explicitly. Neither variable is required: "
+               "without them the suite runs complete and the two tests "
+               "report themselves as filtered rather than passing "
+               "silently."),
+          PageBreak()]
+
 # ========================================================= Part I theory
 story += [para("Part I &mdash; Theory as implemented", "h1")]
 
