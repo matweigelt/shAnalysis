@@ -50,10 +50,13 @@ function [d1, info] = estimateDegree1(ts, ocean, opts)
 %             (NaN: the series' own nmax)
 %
 %   Outputs
-%     d1         (1,1) struct  fields: epoch (T,1 double),
-%                C10, C11, S11 (T,1 double) - the same layout
-%                shLowLevel.readTN13 returns, so it drops straight into
-%                shSeries.addDegree1 / shCoefficients.addDegree1
+%     d1         (1,1) struct  fields: epoch, t0, t1 (T,1 double),
+%                C10, C11, S11 (T,1 double) and sigC10, sigC11, sigS11
+%                (T,1 double, from the ocean-fit residual propagated
+%                through the least-squares solution). This is exactly
+%                the layout shLowLevel.readTN13 returns - including the
+%                sigmas, which shCoefficients.addDegree1 requires - so
+%                it drops straight into shSeries.addDegree1
 %     info       (1,1) struct  fields: cond (T,1 double, condition
 %                number of the column-equilibrated design matrix per
 %                epoch (equilibrated so the number reflects the GEOMETRY
@@ -163,7 +166,20 @@ for k = 1:T
     cnd(k) = cond(A);
     rms(k) = sqrt(mean((A * (x .* colScale(:)) - b).^2));
 end
-d1 = struct('epoch', ts.epochs(:), 'C10', C10, 'C11', C11, 'S11', S11);
+% formal sigmas from the ocean fit residual, propagated through the
+% least-squares solution: sigma^2 * diag(inv(A'A)) on the equilibrated
+% system, undone by the same column scaling. shCoefficients.addDegree1
+% REQUIRES these fields, so a table without them is not a drop-in
+% replacement for TN-13 whatever the help text claims.
+covScale = (colScale(:) * colScale(:).');
+sig = zeros(T, 3);
+for k = 1:T
+    Cx = inv(A' * A) ./ covScale;                           %#ok<MINV>
+    sig(k, :) = rms(k) * sqrt(abs(diag(Cx(1:3, 1:3)))).';
+end
+d1 = struct('epoch', ts.epochs(:), 'C10', C10, 'C11', C11, 'S11', S11, ...
+    'sigC10', sig(:, 1), 'sigC11', sig(:, 2), 'sigS11', sig(:, 3), ...
+    't0', ts.epochs(:), 't1', ts.epochs(:));
 info = struct('cond', cnd, 'oceanFraction', sum(w(isOc)) / sum(w(:)), ...
     'nPixels', nnz(isOc), 'hasModel', hasModel, 'residualRMS', rms);
 if ~hasModel
