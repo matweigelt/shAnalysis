@@ -1,10 +1,11 @@
-"""make_guide.py - build shAnalysis_workflow_guide.pdf (Edition 3, v2.4.2).
+"""make_guide.py - build shAnalysis_workflow_guide.pdf (Edition 5, v3.1.1).
 
 Rebuilt after the original builder was lost; content reconstructed from the
 shipped Edition-2 PDF, updated for v2.4.2, with all display equations
 rendered as matplotlib mathtext (Computer Modern) images instead of the
-former flattened inline text. Figures are the Edition-2 assets (rendered
-with the Python validation port) re-embedded from /home/claude/guide_assets.
+former flattened inline text. Figures live in tools/dev/guide_assets/ IN
+THE REPO - they were lost once when the container path they used to be
+read from vanished, and were recovered from the shipped PDF.
 
 Snippets are declared via code(\"\"\"...\"\"\") so check_api.py / mlint_lite can
 lint every guide code block (gate 2).
@@ -29,8 +30,12 @@ from reportlab.platypus import (BaseDocTemplate, Frame, Image,  # noqa: E402
 
 matplotlib.rcParams["mathtext.fontset"] = "cm"
 
-OUT = "/mnt/user-data/outputs/shAnalysis_workflow_guide.pdf"
-ASSETS = "/home/claude/guide_assets"
+OUT = os.environ.get("SHX_GUIDE_OUT",
+                     "/tmp/shx_git/docs/shAnalysis_workflow_guide.pdf")
+# figures live IN THE REPO (they were lost once when a container path
+# vanished; recovered from the shipped PDF and committed since v3.1.2)
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      "guide_assets")
 EQDIR = "/tmp/guide_eq"
 os.makedirs(EQDIR, exist_ok=True)
 
@@ -38,7 +43,7 @@ import re as _re
 _cm = open("/tmp/shx_git/Contents.m").read()
 VERSION = "v" + _re.search(r"% Version (\S+)", _cm).group(1)
 STAMP = ("shAnalysis %s - Workflow & Theory Guide - Developed by "
-         "Matthias Weigelt with the help of Claude (Fable 5), 2026-08-07"
+         "Matthias Weigelt with the help of Claude, 2026-08-11"
          % VERSION)
 
 PAGE_W, PAGE_H = A4
@@ -207,16 +212,20 @@ story += [Spacer(1, 30),
                "recipes", "subtitle")]
 story += tbl(["", ""], [
     ["Toolbox version", "shAnalysis " + VERSION],
-    ["Edition", "4 (adds: exact constrained posterior, basin sigma incl. "
-                "deterministic term, Kendall AR(1), readLoveNumbers, real "
-                "CSR/JPL TN-13 + DDK pack validation)"],
+    ["Edition", "5 (adds: ICGEM time-series download, the standard chain "
+                "and custom filter design as single entry points, and what "
+                "real provider files actually look like &mdash; FORTRAN "
+                "D-exponents, the ICGEM 2.0 column order, ragged record "
+                "groups)"],
     ["Scope", "ICGEM I/O, spectral diagnostics, synthesis &amp; analysis, "
               "destriping, Gaussian / DDK / tvANS filtering, VCE, basin "
               "averages &amp; deconvolution, climatology &amp; AR(1) "
               "significance, GIA, degree-1/C20 chain, Slepian localization, "
               "SINEX covariances, mascon comparison, load deformation, "
               "gradient tensor, multi-center combination, sea-level "
-              "fingerprints, Love-number I/O incl. frame conversion"],
+              "fingerprints, Love-number I/O incl. frame conversion, "
+              "ICGEM series download, pole-tide conventions, pointwise "
+              "synthesis at satellite altitude"],
     ["Dependencies", "base MATLAB only (no toolboxes); Java optionally for "
                      "gz streaming"],
     ["Validation", "every numerical method independently validated in "
@@ -987,25 +996,53 @@ g = shCoefficients.read(f);
 shLowLevel.fetchITSG(2010:2016);              % -> dataFolder/itsg_series
 shLowLevel.fetchITSG("2008-04", Product="daily"); % Kalman daily n40 (v2.4.1)
 
-% FULL temporal catalogue (v2.4.2): all ~70+ series, all centers
+% FULL temporal catalogue: all ~70+ series, all centers
 Tt = shLowLevel.listICGEM(Type="temporal");
-% individual files of one series - directly downloadable
-F = shLowLevel.listICGEM(Type="temporal", ...
-        Series="03_other/ITSG/ITSG-Grace2018/monthly");
-websave("m1.gfc", F.url(1));
+% fetch a WHOLE monthly series (v3.1.1) - one row of that catalogue
+fs = shLowLevel.fetchICGEM(17, Type="temporal");
+ts = shSeries.fromFolder(fileparts(fs(1)));   % straight into a series
 """)
 story += [para("The ICGEM static catalogue is parsed from icgem.gfz.de "
-               "(fixture-tested offline). The temporal catalogue "
-               "(reworked v2.4.2) lists every series of every center "
-               "&mdash; groups 01_GRACE, 02_COST-G, 03_other, 04_SLR "
-               "&mdash; with columns group, center, series, path, url "
-               "and zip; a catalogue path fed into Series= lists the "
-               "individual .gfc files of that series for direct websave "
-               "download. The Edition-2 note that temporal browsing is "
-               "JavaScript-only and serves whole-series ZIPs exclusively "
-               "is obsolete. For ITSG monthlies "
+               "(fixture-tested offline). The temporal catalogue lists "
+               "every series of every center &mdash; groups 01_GRACE, "
+               "02_COST-G, 03_other, 04_SLR &mdash; with columns group, "
+               "center, series, path, url and zip. Since v3.1.1 a "
+               "temporal row is not just browsable but fetchable: "
+               "<font face='Courier'>fetchICGEM(idx, Type=\"temporal\")</font> "
+               "downloads the whole series into "
+               "<font face='Courier'>&lt;dataFolder&gt;/icgem/series/"
+               "&lt;group&gt;_&lt;center&gt;_&lt;series&gt;/</font>, which "
+               "<font face='Courier'>shSeries.fromFolder</font> and "
+               "<font face='Courier'>shLowLevel.standardChain</font> consume "
+               "directly. For ITSG monthlies "
                "<font face='Courier'>shLowLevel.fetchITSG</font> remains the "
                "convenient route.")]
+
+story += [para("Mode: one request, not three hundred", "h3")]
+story += [para("The default <font face='Courier'>Mode=\"auto\"</font> takes "
+               "the server's whole-series ZIP in a SINGLE request and "
+               "unpacks it. This is not an optimization but a courtesy "
+               "requirement: icgem.gfz.de rate-limits, and fetching a "
+               "283-file series one file at a time earns HTTP 429 and a "
+               "tarpit (field-observed as &quot;too many connections&quot;). "
+               "If the archive is unavailable the fetcher falls back to "
+               "per-file mode automatically &mdash; resumable, throttled "
+               "with <font face='Courier'>Pause=</font> and "
+               "<font face='Courier'>Retries=</font> exponential backoff, "
+               "each file verified by parse before it replaces anything. "
+               "<font face='Courier'>Mode=\"archive\"|\"files\"</font> force "
+               "either path; <font face='Courier'>info.mode</font> reports "
+               "which one actually ran, so a script can tell a fresh "
+               "download from a no-op. <font face='Courier'>Files=</font> "
+               "filters the series, and "
+               "<font face='Courier'>FileList=</font> injects a catalogue "
+               "table for offline mirrors and subsets.")]
+story += code("""
+% forced per-file, filtered to a window, gentle on the server
+fs = shLowLevel.fetchICGEM(17, Type = "temporal", Mode = "files", ...
+        Files = "*2008*.gfc", Pause = 3, Retries = 3);
+[ts, rep] = shLowLevel.standardChain(fileparts(fs(1)), Filter = "DDK3");
+""")
 
 story += [para("G8. Multi-center combination (v2.4)", "h2")]
 story += code("""
@@ -1041,8 +1078,111 @@ shLowLevel.plotSHMap(info.S2D / info.eustatic, grid.latDeg, grid.lonDeg, ...
 story += [para("Plot S normalized by the eustatic mean: near-field "
                "values drop below zero, far-field plateaus around "
                "1.1&ndash;1.3 &mdash; if not, check the ocean mask and "
-               "that idx uses MinDegree = 0."),
-          PageBreak()]
+               "that idx uses MinDegree = 0.")]
+
+story += [para("G10. The standard chain in one call", "h2")]
+story += code("""
+% the whole post-processing chain, in the ONE correct order
+gia = shCoefficients.read("ICE-6G_D_trend.gfc");   % a TREND field [1/yr]
+[ts, rep] = shLowLevel.standardChain("D:/grace/monthly", ...
+    TN14File = "TN-14_C30_C20_SLR_GSFC.txt", ...   % TN14 itself is a FLAG
+    Degree1 = "CSR", ...                           % provider, not a path
+    GIA = gia, Filter = "DDK3");
+disp(rep.steps')          % what was applied, in order, with provenance
+""")
+story += [para("Order is not a matter of taste here. The SLR C20/C30 "
+               "replacement and the degree-1 restoration must happen on "
+               "the UNFILTERED coefficients &mdash; a filter mixes degrees, "
+               "so replacing a coefficient afterwards inserts an "
+               "unfiltered value into a filtered field and the low "
+               "degrees no longer mean anything consistent. GIA is a "
+               "trend in the same (corrected) coefficients, so it comes "
+               "next; filtering is last. "
+               "<font face='Courier'>standardChain</font> encodes exactly "
+               "that order and returns REP, a provenance record naming "
+               "every step, the files it used and the toolbox version "
+               "that ran &mdash; the thing you paste into a paper's data "
+               "section. Every stage is optional: leave "
+               "<font face='Courier'>GIA=</font> out and the report says "
+               "so, rather than silently skipping a step you assumed had "
+               "happened.")]
+story += [para("Two contracts worth reading before the first call: "
+               "<font face='Courier'>TN14</font> is a logical FLAG and the "
+               "path goes in <font face='Courier'>TN14File</font>, while "
+               "<font face='Courier'>Degree1</font> names the TN-13 "
+               "provider (\"GFZ\" | \"CSR\" | \"JPL\" | \"none\") with the "
+               "path in <font face='Courier'>Degree1File</font>; and "
+               "<font face='Courier'>GIA</font> takes an "
+               "<font face='Courier'>shCoefficients</font> TREND field in "
+               "[1/yr], not a filename &mdash; it is applied as "
+               "(t &minus; GIAEpoch) &times; GIA. Left at their defaults "
+               "the files come from the persistent data folder that "
+               "<font face='Courier'>setup_shAnalysis</font> populates.")]
+
+story += [para("G11. Designing your own anisotropic filter", "h2")]
+story += code("""
+% a DDK-class filter built from YOUR error covariance
+g  = shCoefficients.read("ITSG-Grace2018_n60_2008-04.gfc");
+W  = shLowLevel.designFilter(g.sigmaC, g.sigmaS, Kaula = 1e-5);
+[Cf, Sf] = shLowLevel.applyDDK(g.C, g.S, W);   % same block format as readDDK
+""")
+story += [para("The released DDK filters are built from a specific "
+               "center's normal equations. If you have your own sigmas "
+               "or a released covariance, "
+               "<font face='Courier'>designFilter</font> builds the same "
+               "kind of operator, W = (N + a S<sup>-1</sup>)<sup>-1</sup> N, "
+               "in the block format "
+               "<font face='Courier'>readDDK</font> produces &mdash; so it "
+               "drops into <font face='Courier'>applyDDK</font>, "
+               "<font face='Courier'>g.applyDDK</font> and "
+               "<font face='Courier'>standardChain(Filter=W)</font> "
+               "unchanged. Note that <font face='Courier'>Noise=</font> "
+               "expects a COVARIANCE, not sigmas: passing standard "
+               "deviations where a variance is expected is the classic "
+               "way to get a filter that looks plausible and smooths by "
+               "the square root of what you intended.")]
+
+story += [para("G12. What real provider files look like", "h2")]
+story += [para("Format specifications describe what files ought to "
+               "contain. The reader is written against what they "
+               "actually contain, and three separate field failures are "
+               "worth knowing about, because they are silent &mdash; you "
+               "get numbers, just not the right ones.")]
+story += bullets([
+    "<b>FORTRAN D-exponents.</b> Providers switch from "
+    "<font face='Courier'>1.23E-10</font> to "
+    "<font face='Courier'>1.23D-10</font> partway through large files "
+    "(EIGEN-6C4 does it above degree ~370). MATLAB's "
+    "<font face='Courier'>str2double</font> returns NaN for those, so a "
+    "line-by-line parser quietly corrupts the high degrees of exactly "
+    "the models where the high degrees are the point. The reader "
+    "normalizes D/d to E/e before conversion.",
+    "<b>ICGEM 2.0 column order.</b> The real-world layout of an "
+    "<font face='Courier'>acos</font>/<font face='Courier'>asin</font> "
+    "line is <font face='Courier'>... sigC sigS t0 t1 period</font> "
+    "&mdash; period LAST, verified against CNES/GRGS files. A "
+    "period-first assumption mis-parses every such file and produces a "
+    "time-variable model whose seasonal terms are wrong without ever "
+    "raising an error.",
+    "<b>Ragged record groups.</b> EIGEN-5S and 5C carry a single "
+    "<font face='Courier'>gfc</font> line with a trailing epoch among "
+    "thousands of uniform ones. Bulk "
+    "<font face='Courier'>sscanf(txt, '%f', [nc Inf])</font> does not "
+    "complain about that &mdash; it silently re-flows the whole group by "
+    "one column and asks for a coefficient matrix indexed by a date. "
+    "The reader checks rows-out == lines-in per group, subgroups by "
+    "numeric width when ragged, and keeps an n/m sanity net.",
+])
+story += [para("The practical rule: when a new provider or a new release "
+               "enters your pipeline, read one file and check "
+               "<font face='Courier'>g.C(3,1)</font> and the highest "
+               "degrees against the provider's own published values "
+               "before you trust a thousand of them. Bulk parsing is "
+               "fast &mdash; EIGEN-6C4 at 177.7 MB and degree 2190 in "
+               "about 5 s, a 73.6 MB GRGS mean field with 674k variable "
+               "terms in about 7 s &mdash; but fast and correct are "
+               "different properties.")]
+story += [PageBreak()]
 
 # ======================================================== demo gallery
 story += [para("Demo gallery", "h1"),

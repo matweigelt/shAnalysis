@@ -95,5 +95,23 @@ GNSS loading series.</div>
 <a href="shSynthesisDeformation.html">deformation</a>
 <a href="readTN13.html">readTN13</a>
 <a href="dataManagement.html">data management</a></p>
+
+<h2>fetchLoveNumbers: obtaining a published set <span class="tag">v3.0.0</span></h2>
+<p>Love numbers are never assumed by this toolbox &mdash; every function that needs them takes them
+as an argument, because the right set depends on the Earth model and the reference frame your study
+uses. <code class="inline">shLowLevel.fetchLoveNumbers</code> automates <em>obtaining</em> a published
+set (the GROOPS / TU Graz load Love numbers); it does not choose one for you.</p>
+<pre>f  = shLowLevel.fetchLoveNumbers();            % -&gt; the data folder
+LN = shLowLevel.readLoveNumbers(f);            % kn, hn, ln by degree
+ewh = g.synthesis(-89:89, 0:359, quantity = "ewh", kn = LN.kn);</pre>
+<p>The usual fetcher options apply: <code class="inline">Dest</code>,
+<code class="inline">BaseURL</code> (also a local mirror), <code class="inline">Proxy</code>,
+<code class="inline">Timeout</code>, <code class="inline">Quiet</code>, and
+<code class="inline">Update=true</code> for a parse-verified safe refresh. Read the set with
+<code class="inline">readLoveNumbers</code>, which handles the layout variants, interpolates sparse
+tables and converts the degree-1 frame (CE&rarr;CF/CM, CF&harr;CM).</p>
+<div class="note">Record which set and which frame you used. Degree-1 load Love numbers are
+frame-dependent, and a fingerprint or deformation result computed in one frame and compared against
+data in another will disagree for a reason that has nothing to do with geophysics.</div>
 <p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </div></body></html>

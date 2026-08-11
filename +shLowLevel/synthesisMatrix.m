@@ -11,14 +11,14 @@ function [Y, w, grid] = synthesisMatrix(idx, opts)
 %   (vectorized over all Gauss-Legendre latitudes in one call): the GL
 %   nodes t in cos(colatitude) map to geocentric latitude lat = asin(t).
 %
-%   Grid: NLat Gauss-Legendre latitude rings (default Lmax+1), NLon
+%   Grid: NLat Gauss-Legendre latitude rings (default idx.Lmax + 1), NLon
 %   equiangular longitudes (default 2*Lmax+2), latitude-major rows:
 %   row = (i-1)*NLon + j.
 %
 %   Inputs
 %     idx        struct   from shLowLevel.shIndex
 %     opts.NLat  (1,1)    number of latitude rings   [default Lmax+1]
-%     opts.NLon  (1,1)    number of longitudes       [default 2*Lmax+2]
+%     opts.NLon  (1,1)    number of longitudes  [default 2*idx.Lmax + 2]
 %   Outputs
 %     Y      (NLat*NLon x idx.P) double   synthesis matrix
 %     w      (NLat*NLon x 1)     double   quadrature weights, sum(w) = 1

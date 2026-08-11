@@ -970,3 +970,29 @@ cm = string(fileread(fullfile(root, 'Contents.m')));
 verifyFalse(testCase, contains(cm, "folder compat/, add to path"), ...
     'Contents.m still advertises the removed compat/ folder');
 end
+
+% ------------------------------------------------ in-file help completeness
+function testHelpHasNoPlaceholders(testCase)
+%TESTHELPHASNOPLACEHOLDERS No option is documented as "see arguments block".
+%   58 name-value options across 23 entities used to be "documented" with
+%   a pointer to the code, so `help` said nothing while the generated
+%   apiReference.html showed size, type and default. Pin that to zero:
+%   the in-file help is the primary source, not a redirect.
+root = fileparts(fileparts(mfilename('fullpath')));
+files = [ ...
+    string(fullfile(root, {'shCoefficients.m', 'shSeries.m', ...
+                           'shClimatology.m', 'setup_shAnalysis.m'})), ...
+    string(fullfile(root, '+shLowLevel', {dir(fullfile(root, ...
+        '+shLowLevel', '*.m')).name}))];
+bad = strings(0, 1);
+for f = files
+    if ~isfile(f), continue; end
+    txt = string(fileread(f));
+    if contains(txt, "see arguments block")
+        bad(end+1) = f; %#ok<AGROW>
+    end
+end
+verifyEmpty(testCase, bad, sprintf( ...
+    'placeholder help ("see arguments block") in: %s', ...
+    strjoin(bad, ', ')));
+end

@@ -19,7 +19,10 @@ function [mask, grid] = evalMask(idx, region, opts)
 %                   exactly in latitude chunks (O(N*Nregion); fine to
 %                   Lmax ~ 60-96, cost noted in the doc page)
 %     R (6378136.3) sphere radius [m] for the km conversion
-%     OverSample (2)  see arguments block
+%     OverSample (2)  refinement factor of the quadrature grid the
+%         mask is evaluated on; the Gauss rule uses
+%         OverSample*(Lmax+1) latitude rings, so a higher value
+%         resolves the region boundary more finely at quadratic cost
 %   Outputs
 %     mask  (Ngrid,1) double in [0,1]
 %     grid  struct from shLowLevel.synthesisMatrix (latDeg, lonDeg per ring)

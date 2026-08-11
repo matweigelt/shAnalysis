@@ -63,7 +63,28 @@ imagesc(lon, lat, N*1000); set(gca,'YDir','normal'); colorbar; % mm</pre><p>dCg/
 for k = 2:nMonths
     grids(:,:,k) = shSynthesis(dCk{k}, dSk{k}, GM, R, lat, lon, 'nmax', 60, 'P', P);
 end</pre><p>P depends only on latVec and nmax, not on the coefficients -- computing it once for a fixed grid and reusing it across all months in a time series skips the Legendre recursion entirely on every subsequent call.</p>
+<h2>Pointwise synthesis at arbitrary 3-D points <span class="tag">v3.0.0</span></h2>
+<p>Grid synthesis evaluates on a sphere. <code class="inline">shLowLevel.synthesisPoints</code>
+evaluates at scattered positions given by equal-length vectors of geocentric latitude [deg],
+longitude [deg] and geocentric <b>radius</b> [m] &mdash; satellite altitudes, GNSS stations,
+profiles &mdash; and therefore includes the upward continuation (R/r)<sup>n</sup> that a spherical
+grid cannot express:</p>
+<table>
+<tr><th>Quantity</th><th>Expression</th><th>Units</th></tr>
+<tr><td><code class="inline">"potential"</code> (default)</td><td>T = GM/r &sum;<sub>n</sub> (R/r)<sup>n</sup> &sum;<sub>m</sub> P<sub>nm</sub>(C cos + S sin)</td><td>m<sup>2</sup>/s<sup>2</sup></td></tr>
+<tr><td><code class="inline">"disturbance"</code></td><td>&delta;g = GM/r<sup>2</sup> &sum;<sub>n</sub> (n+1)(R/r)<sup>n</sup> &hellip; &nbsp;( = &minus;dT/dr )</td><td>m/s<sup>2</sup></td></tr>
+<tr><td><code class="inline">"anomaly"</code></td><td>&Delta;g = GM/r<sup>2</sup> &sum;<sub>n</sub> (n&minus;1)(R/r)<sup>n</sup> &hellip;</td><td>m/s<sup>2</sup></td></tr>
+</table>
+<pre>dg = shLowLevel.synthesisPoints(g.C, g.S, g.GM, g.R, ...
+        [10; 12], [100; 101], (g.R + 450e3) * [1; 1], ...
+        Quantity = "disturbance") * 1e5;      % mGal at 450 km</pre>
+<p><code class="inline">MinDegree</code> defaults to 2; set it to 0 to evaluate the full field
+including the central term. Latitudes are geocentric and coefficients fully normalized in the
+C(n+1,m+1) layout, as everywhere in the toolbox &mdash; convert with
+<a href="geodetic2geocentric.html">geodetic2geocentric</a> if your points are geodetic. The radial
+derivative identity &delta;g = &minus;dT/dr is pinned to 3e-10 by the test suite.</p>
+
 <h2>See Also</h2>
-<p class="seealso"><a href='legendreALF.html'>legendreALF</a> <a href='shGaussianFilter.html'>shGaussianFilter</a> <a href='shDestripe.html'>shDestripe</a></p>
+<p class="seealso"><a href='legendreALF.html'>legendreALF</a> <a href='shGaussianFilter.html'>shGaussianFilter</a> <a href='shDestripe.html'>shDestripe</a> <a href='gradientTensor.html'>gradient tensor</a> <a href='geodetic2geocentric.html'>latitude conversions</a></p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </body></html>

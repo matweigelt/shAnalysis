@@ -30,7 +30,28 @@ ts = shSeries.fromFolder(info.dest, Truncate=60);</pre>
 <h2>Description</h2>
 <p><b>Daily product (v2.4.1):</b> the ITSG daily Kalman-smoother solutions - one ICGEM .gfc per day (~83 kB, n40 only, formal errors, zero_tide), released for both ITSG-Grace2018 and the operational GRACE-FO series. The months/years spec expands to all days (a year is ~365 files, ~30 MB); target dataFolder/itsg_daily, kept separate from the monthly series so fromFolder never mixes samplings. Filename epochs (mid-day decimal year) parse automatically.</p>
 <p>websave (base MATLAB) from ftp.tugraz.at/pub/ITSG/GRACE with automatic release routing (ITSG-Grace2018 before the mission gap, ITSG-Grace_operational from 2018-06). Existing files are skipped; nonexistent months (gap 2017-07..2018-05, dropouts) land in <code class="inline">info.missing</code> instead of erroring. Default target tests/test_data/itsg_series &mdash; once populated with &ge; 24 months, demo cases D05/D06 switch to real data automatically. Cite the ITSG release (Mayer-G&uuml;rr et&nbsp;al.) when publishing.</p>
-<h2>See also</h2><p class="seealso"><a href="shReadGFC.html">shReadGFC</a> <a href="combineCenters.html">combineCenters</a></p>
+<h2>listITSG: the server catalogue <span class="tag">v3.0.0</span></h2>
+<p>Before v3.0.0 a fetch guessed the server layout, which meant a release could change underneath a
+script and mix solutions from two releases into one folder without saying so.
+<code class="inline">shLowLevel.listITSG</code> reads the actual catalogue, so what you fetch is
+what you chose.</p>
+<pre>T = shLowLevel.listITSG();          % idx, release, product, nmax, url
+disp(T)
+shLowLevel.fetchITSG(Catalog = [3 4]);        % fetch those rows completely
+shLowLevel.fetchITSG(2010:2016, Release = "ITSG-Grace2018");   % explicit release
+shLowLevel.fetchITSG("all", Release = "ITSG-Grace2018");</pre>
+<p>Columns are <code class="inline">idx</code> (the selection number
+<code class="inline">Catalog=</code> takes), <code class="inline">release</code> (e.g.
+"ITSG-Grace2018"), <code class="inline">product</code> ("monthly" | "daily" | "static"),
+<code class="inline">nmax</code> and <code class="inline">url</code>.
+<code class="inline">BaseURL=</code> accepts a <b>local mirror folder</b> on both functions &mdash; the
+directory tree is walked instead of scraped, which is how the offline tests run and how a lab
+mirror is used without touching the network.</p>
+<div class="note">Name the release explicitly in scripts you intend to reproduce. A bare year range
+resolves against whatever the server currently offers, and that is exactly the silent release mixing
+<code class="inline">listITSG</code> exists to end.</div>
+
+<h2>See also</h2><p class="seealso"><a href="shReadGFC.html">shReadGFC</a> <a href="combineCenters.html">combineCenters</a> <a href="icgemSeries.html">ICGEM time series</a> <a href="standardChain.html">standardChain</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </body></html>

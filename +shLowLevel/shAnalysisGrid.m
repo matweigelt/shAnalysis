@@ -54,8 +54,12 @@ function [C, S, info] = shAnalysisGrid(grid, latVec, lonVec, nmax, opts)
 %
 %   Options
 %     hn ([])  vertical-deformation Love numbers, degrees 0..nmax (user-supplied)
-%     LatType ("geocentric")  see arguments block
-%     Flattening (1/298.257223563)  see arguments block
+%     LatType ("geocentric")  "geocentric" | "geodetic": how the
+%         latitude inputs are interpreted; geodetic values are
+%         converted with Flattening before evaluation
+%     Flattening (1/298.257223563)  flattening of the reference
+%         ellipsoid for the geodetic/geocentric conversion (WGS84;
+%         overridable, never silently assumed)
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 
 arguments

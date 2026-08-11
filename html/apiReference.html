@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.1.1)</h1>
+<h1>shAnalysis API reference (v3.1.2)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -340,8 +340,8 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>-</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>300</td></tr><tr><td><code>List</code></td><td>-</td><td>table</td><td>table()</td></tr><tr><td><code>Proxy</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Pause</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Retries</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Type</code></td><td>1 x 1</td><td>string</td><td>&quot;static&quot;</td></tr><tr><td><code>Files</code></td><td>1 x 1</td><td>string</td><td>&quot;*.gfc*&quot;</td></tr><tr><td><code>Mode</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>FileList</code></td><td>-</td><td>table</td><td>table()</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>file</code></td><td>string   local path</td></tr>
-<tr><td><code>info</code></td><td>struct: url, skipped (true if already present)</td></tr>
+<tr><td><code>file</code></td><td>string   local path(s): one per model, or every file of the series in temporal mode (bulk selections are concatenated)</td></tr>
+<tr><td><code>info</code></td><td>struct: url, skipped (true if already present) and mode (1,1) string reporting the path that actually ran - &quot;model&quot; (single static model) | &quot;archive&quot; (whole-series ZIP in one request) | &quot;files&quot; (per-file fallback) | &quot;present&quot; (nothing to do); a script can tell a fresh download from a no-op by this field</td></tr>
 </table>
 <b>Example</b><pre>f = shLowLevel.fetchICGEM(&quot;GOCO06s&quot;);        % static model by name</pre>
 </div>
@@ -997,7 +997,7 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <div class="entry" id="shLowLevel.vceRescale">
 <h3><code>shLowLevel.vceRescale(N, Xres, idx, opts)</code></h3>
 <p class="h1line">Per-month variance factors for the noise covariance shape.</p>
-<p>s = shLowLevel.vceRescale(N, Xres, idx) estimates one variance factor per month such that N_t = s(t) * N. The factor is the robust (median-based, chi-square(1) corrected) ratio between the observed squared residuals and the formal variances, evaluated over noise-dominated coefficients (n &gt;= MinDegree, default 2/3 of Lmax). This is the single-component Helmert VCE specialization; it absorbs the month-to-month noise level changes (orbit geometry, beta-prime angle, instrument state) that a stationary filter ignores.</p>
+<p>s = shLowLevel.vceRescale(N, Xres, idx) estimates one variance factor per month such that N_t = s(t) * N. The factor is the robust (median-based, chi-square(1) corrected) ratio between the observed squared residuals and the formal variances, evaluated over noise-dominated coefficients (n &gt;= MinDegree, default round(2/3 * idx.Lmax)). This is the single-component Helmert VCE specialization; it absorbs the month-to-month noise level changes (orbit geometry, beta-prime angle, instrument state) that a stationary filter ignores.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>N</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>Xres</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>MinDegree</code></td><td>1 x 1</td><td>double</td><td>round(2/3 * idx.Lmax)</td></tr><tr><td><code>Rows</code></td><td>-</td><td>logical</td><td>true(0, 1)</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
@@ -1828,4 +1828,4 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 </table>
 <b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.1.1). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.1.2). Generated by tools - do not edit.</p></body></html>

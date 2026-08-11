@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shLowLevel.designFilter</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Package function</span><span class="tag">v3.1.0</span>
+<h1>designFilter &mdash; a DDK-class filter from your own covariances</h1>
+<p>The released DDK filters are built from one particular center's normal equations at one particular
+release. <code class="inline">shLowLevel.designFilter</code> performs the same construction against
+<em>your</em> solution's error information, and emits the result in the exact block format
+<a href="readDDK.html">readDDK</a> produces &mdash; so it drops into
+<code class="inline">applyDDK</code>, <code class="inline">g.applyDDK</code> and
+<a href="standardChain.html">standardChain</a><code class="inline">(Filter=W)</code> unchanged.</p>
+
+<pre>[W, info] = shLowLevel.designFilter(SigmaC, SigmaS, Name=Value)</pre>
+
+<h2>What it computes</h2>
+<p>Per order/parity block, the Wiener-type decorrelation operator</p>
+<pre>W = (N + Alpha * inv(S))^-1 * N</pre>
+<p>where <b>N</b> is the normal matrix (from the formal sigmas as a diagonal, or from a full
+covariance via <code class="inline">Noise=</code>) and <b>S</b> is the signal covariance (a Kaula-type
+degree rule by default, or your own model via <code class="inline">DegVar=</code> /
+<code class="inline">Signal=</code>). This is the same structure the published DDK filters have:
+anisotropic, order-dependent, strong on the near-sectorial coefficients where the striping lives.</p>
+
+<h2>Options</h2>
+<table>
+<tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+<tr><td><code class="inline">Alpha</code></td><td>1</td><td>regularization weight. Larger = stronger smoothing (DDK1-like), smaller = weaker (DDK7+). This is the knob you turn.</td></tr>
+<tr><td><code class="inline">Kaula</code></td><td>1e-5</td><td>signal RMS per coefficient, K/n<sup>2</sup>. Ignored when <code class="inline">DegVar</code> or <code class="inline">Signal</code> is given.</td></tr>
+<tr><td><code class="inline">DegVar</code></td><td>[]</td><td>(nmax+1 x 1) per-degree signal <b>variance</b>; overrides <code class="inline">Kaula</code>.</td></tr>
+<tr><td><code class="inline">Noise</code></td><td>[]</td><td>(P x P) full noise <b>covariance</b> in <a href="apiReference.html">shIndex</a> ordering; overrides the sigmas.</td></tr>
+<tr><td><code class="inline">Signal</code></td><td>[]</td><td>(P x P) full signal covariance, same ordering.</td></tr>
+<tr><td><code class="inline">Idx</code></td><td>[]</td><td>the <code class="inline">shIndex</code> struct &mdash; <b>required</b> whenever <code class="inline">Noise</code> or <code class="inline">Signal</code> is used.</td></tr>
+<tr><td><code class="inline">MinDegree</code></td><td>2</td><td>first filtered degree; below it W passes coefficients through unchanged.</td></tr>
+<tr><td><code class="inline">Name</code></td><td>"designFilter"</td><td>stored in <code class="inline">W.name</code>, so filtered histories stay readable.</td></tr>
+</table>
+
+<div class="note"><b>Noise and Signal are COVARIANCES, not sigmas.</b> Passing standard deviations
+where a variance is expected produces a filter that looks entirely plausible and smooths by the
+square root of what you intended. If you have sigmas, pass them as
+<code class="inline">SigmaC</code>/<code class="inline">SigmaS</code> and let the function square
+them.</div>
+
+<h2>Examples</h2>
+<pre>% from a solution's own formal errors
+g  = shCoefficients.read("ITSG-Grace2018_n60_2008-04.gfc");
+W  = shLowLevel.designFilter(g.sigmaC, g.sigmaS, Alpha = 1);
+gF = g.applyDDK(W);
+
+% from a released full covariance (SINEX)
+snx = shLowLevel.readSINEX("ITSG-Grace2018_n96_2008-04.snx");
+idx = shLowLevel.shIndex(96);
+W2  = shLowLevel.designFilter(g.sigmaC, g.sigmaS, Noise = snx.M, Idx = idx);</pre>
+
+<h2>Checking the result</h2>
+<p>INFO reports <code class="inline">alpha</code>, <code class="inline">mode</code>
+("diagonal" | "fullcov") and <code class="inline">gainRange</code>, the min/max eigenvalue over all
+blocks. For SPD inputs every eigenvalue lies in (0, 1): a gain above 1 means the filter would
+<em>amplify</em> a direction, which never happens with a consistent covariance and is the first thing
+to check if a result looks wrong. As <code class="inline">Alpha</code> tends to 0 the operator tends to
+the identity. A useful sanity step is to plot the gains over the (degree, order) triangle and compare
+them against a released DDK &mdash; they should have the same anisotropic character.</p>
+
+<h2>See also</h2>
+<p class="seealso"><a href="readDDK.html">readDDK / applyDDK</a>
+<a href="standardChain.html">standardChain</a> <a href="tvANS.html">tvANS filter</a>
+<a href="readSINEX.html">readSINEX</a> <a href="apiReference.html">API reference</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude.</p>
+</div></body></html>

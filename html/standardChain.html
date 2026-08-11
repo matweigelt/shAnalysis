@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>shLowLevel.standardChain</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Package function</span><span class="tag">v3.1.0</span>
+<h1>standardChain &mdash; the canonical post-processing chain</h1>
+<p>The GRACE/GRACE-FO post-processing chain is short, but its <em>order</em> is not negotiable, and
+getting it wrong is the classic beginner error. <code class="inline">shLowLevel.standardChain</code>
+encodes the correct order as one entry point and returns a provenance record of what it actually did.</p>
+
+<pre>[ts, rep] = shLowLevel.standardChain(folder, Name=Value)</pre>
+
+<h2>The five stages</h2>
+<table>
+<tr><th>#</th><th>Stage</th><th>Why here</th></tr>
+<tr><td>1</td><td>read the folder (<a href="fetchITSG.html">shSeries.fromFolder</a>)</td><td>one series, epoch-sorted, gaps kept as gaps</td></tr>
+<tr><td>2</td><td>replace C20/C30 with SLR (<a href="readTN13.html">TN-14</a>)</td><td>must happen on <b>unfiltered</b> coefficients</td></tr>
+<tr><td>3</td><td>restore degree 1 (<a href="readTN13.html">TN-13</a>)</td><td>same reason; the geocenter is a coefficient like any other</td></tr>
+<tr><td>4</td><td>subtract a GIA trend (optional)</td><td>a trend in the corrected coefficients</td></tr>
+<tr><td>5</td><td>filter (Gaussian, DDK, or your own W)</td><td>last, because a filter mixes degrees</td></tr>
+</table>
+
+<div class="note"><b>Why the order matters.</b> A filter mixes degrees. If you replace C20 <em>after</em>
+filtering, you insert an unfiltered value into a filtered field, and the low degrees no longer mean
+anything consistent &mdash; the result looks fine and is wrong. Stages 2 and 3 therefore precede
+stage 5 unconditionally.</div>
+
+<h2>Typical call</h2>
+<pre>gia = shCoefficients.read("ICE-6G_D_trend.gfc");   % a TREND field [1/yr]
+[ts, rep] = shLowLevel.standardChain("D:/grace/monthly", ...
+    TN14File = "TN-14_C30_C20_SLR_GSFC.txt", ...   % TN14 itself is a FLAG
+    Degree1  = "CSR", ...                          % provider, not a path
+    GIA = gia, Filter = "DDK3");
+disp(rep.steps')</pre>
+
+<h2>Three contracts that trip people up</h2>
+<table>
+<tr><th>Option</th><th>Takes</th><th>Not</th></tr>
+<tr><td><code class="inline">TN14</code></td><td>a logical flag (default <code class="inline">true</code>)</td><td>a path &mdash; that is <code class="inline">TN14File</code></td></tr>
+<tr><td><code class="inline">Degree1</code></td><td>a provider: <code class="inline">"GFZ"</code> | <code class="inline">"CSR"</code> | <code class="inline">"JPL"</code> | <code class="inline">"none"</code></td><td>a path &mdash; that is <code class="inline">Degree1File</code></td></tr>
+<tr><td><code class="inline">GIA</code></td><td>an <code class="inline">shCoefficients</code> trend field in [1/yr], applied as (t &minus; GIAEpoch) &times; GIA</td><td>a filename</td></tr>
+</table>
+<p>Left at their defaults, the correction files come from the persistent data folder that
+<a href="setup.html">setup_shAnalysis</a> populates. <code class="inline">Filter</code> accepts
+<code class="inline">"none"</code>, <code class="inline">"gaussN"</code> (N = radius in km),
+<code class="inline">"DDKn"</code> (fetched on demand), or a W struct from
+<a href="readDDK.html">readDDK</a> / <a href="designFilter.html">designFilter</a>.</p>
+
+<h2>The provenance report</h2>
+<p>REP is the record you paste into a paper's data section: <code class="inline">files</code> (every
+input), <code class="inline">steps</code> (the applied stages <em>with their parameters</em>),
+<code class="inline">nmax</code>, <code class="inline">epochs</code>,
+<code class="inline">version</code> (from <a href="version.html">shLowLevel.version</a> at run time)
+and <code class="inline">created</code>. Skipped stages are reported as skipped rather than silently
+omitted &mdash; so a sensitivity study that turns off the GIA correction leaves a trace.</p>
+
+<h2>Feeding it a downloaded series</h2>
+<pre>fs = shLowLevel.fetchICGEM(17, Type = "temporal");
+[ts, rep] = shLowLevel.standardChain(fileparts(fs(1)), Filter = "DDK3");</pre>
+
+<h2>See also</h2>
+<p class="seealso"><a href="icgemSeries.html">ICGEM time series</a>
+<a href="designFilter.html">designFilter</a> <a href="readDDK.html">readDDK / applyDDK</a>
+<a href="readTN13.html">readTN13 / readTN14</a> <a href="shSeries.html">shSeries</a>
+<a href="apiReference.html">API reference</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude.</p>
+</div></body></html>

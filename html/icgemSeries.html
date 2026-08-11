@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>ICGEM time series</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Data management</span><span class="tag">v3.1.1</span>
+<h1>ICGEM time series &mdash; downloading a whole monthly series</h1>
+<p>The ICGEM temporal catalogue lists roughly seventy monthly series across all centers. Until
+v3.1.1 you could <em>browse</em> it but had to fetch the files yourself; now a temporal catalogue row
+is fetchable in one call, and the result folder feeds
+<a href="shSeries.html">shSeries.fromFolder</a> and
+<a href="standardChain.html">standardChain</a> directly.</p>
+
+<h2>The workflow</h2>
+<pre>T  = shLowLevel.listICGEM(Type = "temporal");   % ~70 series, all centers
+fs = shLowLevel.fetchICGEM(17, Type = "temporal");
+ts = shSeries.fromFolder(fileparts(fs(1)));</pre>
+<p>Files land in
+<code class="inline">&lt;dataFolder&gt;/icgem/series/&lt;group&gt;_&lt;center&gt;_&lt;series&gt;/</code>.
+Selection works by index, by name or with <code class="inline">"all"</code>, and
+<code class="inline">Type=</code> mirrors <a href="dataManagement.html">listICGEM</a>, so the same
+numeric selection means the same thing on either catalogue.</p>
+
+<h2>Mode: one request, not three hundred</h2>
+<table>
+<tr><th>Mode</th><th>What happens</th></tr>
+<tr><td><code class="inline">"auto"</code> (default)</td><td>fetch the server's whole-series ZIP in a <b>single</b> request and unpack it; fall back to per-file automatically if the archive is unavailable</td></tr>
+<tr><td><code class="inline">"archive"</code></td><td>force the ZIP; fail rather than fall back</td></tr>
+<tr><td><code class="inline">"files"</code></td><td>force file-by-file &mdash; resumable, each file verified by parse before it replaces anything</td></tr>
+</table>
+
+<div class="note"><b>The default is a courtesy requirement, not an optimization.</b>
+<code class="inline">icgem.gfz.de</code> rate-limits: requesting a 283-file series one file at a
+time earns HTTP 429 and a tarpit, observed in the field as "too many connections". HEAD requests
+count too. If you must use per-file mode, leave <code class="inline">Pause</code> and
+<code class="inline">Retries</code> at their defaults (3 s between requests; 3 attempts with
+30/60/120 s backoff).</div>
+
+<h2>Subsets, filters and offline mirrors</h2>
+<pre>% only the 2008 months, forced per-file, gentle on the server
+fs = shLowLevel.fetchICGEM(17, Type = "temporal", Mode = "files", ...
+        Files = "*2008*.gfc", Pause = 3, Retries = 3);
+
+% inject a catalogue instead of querying (mirror, subset, offline test)
+F  = shLowLevel.listICGEM(Type = "temporal", Series = "03_other/ITSG/ITSG-Grace2018/monthly");
+fs = shLowLevel.fetchICGEM(17, Type = "temporal", FileList = F(1:12, :));</pre>
+<p><code class="inline">Files=</code> filters by filename; <code class="inline">FileList=</code>
+replaces the catalogue query entirely with a table you supply, which is how the offline tests and
+local mirrors work. <code class="inline">Update=true</code> refreshes existing files with a verified
+safe swap; without it, present files are skipped.</p>
+
+<h2>Knowing what actually happened</h2>
+<p><code class="inline">info.mode</code> reports the path that ran &mdash;
+<code class="inline">"model"</code> (a single static model),
+<code class="inline">"archive"</code>, <code class="inline">"files"</code>, or
+<code class="inline">"present"</code> (everything was already there). A script can therefore tell a
+fresh download from a no-op, and a fallback from a clean archive fetch. Bulk selections report
+"M of K selections ok (N files)"; the file outputs of all selections are concatenated, so a
+multi-series call returns one flat list of paths.</p>
+
+<h2>Straight into the standard chain</h2>
+<pre>fs = shLowLevel.fetchICGEM(17, Type = "temporal");
+[ts, rep] = shLowLevel.standardChain(fileparts(fs(1)), Filter = "DDK3");
+disp(rep.steps')</pre>
+
+<h2>See also</h2>
+<p class="seealso"><a href="dataManagement.html">Data folder, DDK family, ICGEM catalogue</a>
+<a href="fetchITSG.html">ITSG download</a> <a href="standardChain.html">standardChain</a>
+<a href="shReadGFC.html">shReadGFC</a> <a href="shSeries.html">shSeries</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude.</p>
+</div></body></html>
