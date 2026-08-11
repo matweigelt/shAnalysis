@@ -1332,6 +1332,56 @@ story += [para("The paper also specifies the mask GravIS uses, which is "
                "<font face='Courier'>basinKernel(..., BufferKm = 200, "
                "TaperKm = 400)</font>, not a hard boundary.")]
 
+story += [para("V4c. The regularised number, and the noise it needs", "h2")]
+story += [para("Every figure above was produced by stopping the "
+               "iteration at a fixed count, which is not a criterion. "
+               "Rerun with the discrepancy principle, two further things "
+               "have to be right &mdash; and getting either wrong is "
+               "worse than the leakage it was meant to fix.")]
+story += bullets([
+    "<b>The residual must be measured where the model is "
+    "responsible.</b> With a Greenland mask the model describes one "
+    "region while the data contains Antarctica, Alaska and global "
+    "hydrology, so the GLOBAL residual never falls to the noise level: "
+    "0.0085 globally against 0.0008 near the mask, with a noise level "
+    "of 0.0024. The principle silently never fires and the run stops "
+    "at MaxIter. <font face='Courier'>ResidualRegion</font> (default: "
+    "the mask) fixes this.",
+    "<b>The noise level must match the quantity being inverted.</b> "
+    "The open-ocean RMS of a TREND field is 0.0024 m/yr &mdash; but "
+    "most of that is real barystatic sea-level rise, not error. Using "
+    "it stops the iteration after 4 steps and gives &minus;201.0 Gt/yr, "
+    "13% low. The trend&rsquo;s actual noise is the monthly noise "
+    "propagated through the fit, sigma_monthly / sqrt(Sxx) = 0.0115 / "
+    "sqrt(8353) = 0.000125 m/yr &mdash; nineteen times smaller.",
+])
+story += code("""
+% monthly noise from the residuals about the deterministic fit ...
+sigMon = shLowLevel.oceanRMS(residGrid, lat, lon, openOcean);
+% ... propagated to the TREND: sigma_trend = sigma_monthly / sqrt(Sxx)
+sigTrend = sigMon / sqrt(sum((epochs - mean(epochs)).^2));
+[m, info] = shLowLevel.leakageCorrect(trendGrid, lat, lon, ...
+    Filter = "gauss445", Mask = unionMask, NoiseLevel = sigTrend);
+info.stoppedBy      % "discrepancy", after 82 iterations
+""")
+story += tbl(["Stopping rule", "Gt/yr", "vs published"], [
+    ["fixed 300 iterations (no criterion)", "&minus;227.4", "&minus;1.6%"],
+    ["discrepancy, trend-field oceanRMS (wrong noise)", "&minus;201.0",
+     "&minus;13%"],
+    ["<b>discrepancy, propagated trend noise</b>", "<b>&minus;224.6</b>",
+     "<b>&minus;2.8%</b>"],
+    ["<b>GravIS COST-G RL02, matching span</b>", "<b>&minus;231.1</b>",
+     "&mdash;"],
+], [7.2*cm, 3.2*cm, 3.2*cm])
+story += [para("The regularised answer is 2.8% from the published one, "
+               "slightly further than the 1.6% obtained by stopping at "
+               "an arbitrary iteration count. That is the honest "
+               "outcome: the closer number was a coincidence of where "
+               "the iteration happened to be, and a result that depends "
+               "on an arbitrary choice is not a result. This one "
+               "follows from a stated criterion and a noise estimate "
+               "that can be recomputed.")]
+
 story += [para("V5. The lessons", "h2")]
 story += [para("<b>The mask must cover every region that can hold mass, "
                "not only the one you are measuring.</b> A Greenland-only "

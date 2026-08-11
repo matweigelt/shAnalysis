@@ -112,6 +112,21 @@ over a lat/lon grid over-counts the polar rows &mdash; on white noise the two ag
 why the difference is easy to miss until the field has structure. Plot
 <code class="inline">info.mask</code> once before trusting the value.</p>
 
+<h3>Two traps in the discrepancy principle <span class="tag">v3.5.2</span></h3>
+<p><b>The residual is measured where the model is responsible.</b> With a mask, the model describes
+one region while the data contains every other mass signal on the globe, so a global residual never
+falls to the noise level and the principle silently never fires. Reproducing the GravIS Greenland
+series: residual 0.0085 globally against 0.0008 near the mask, noise level 0.0024.
+<code class="inline">ResidualRegion</code> defaults to the mask; <code class="inline">info.residualRMSGlobal</code>
+shows the gap, and a large one means unmodelled signal elsewhere.</p>
+<p><b>The noise level must match the quantity being inverted.</b>
+<a href="apiReference.html">oceanRMS</a> of a <em>monthly</em> field is its noise. Applied to a
+<em>trend</em> field it returns 0.0024 m/yr, but most of that is real barystatic sea-level rise -
+and using it stopped the iteration after 4 steps, 13% low. The trend's noise is the monthly noise
+propagated through the fit:</p>
+<pre>sigMon   = shLowLevel.oceanRMS(residGrid, lat, lon, openOcean);
+sigTrend = sigMon / sqrt(sum((epochs - mean(epochs)).^2));   % 19x smaller</pre>
+
 <h3>Gain and iteration count</h3>
 <p>Small regions under a strong filter converge slowly: the 6&deg; disc needs about 260 iterations at
 <code class="inline">Gain = 1</code> and about 170 at <code class="inline">Gain = 2</code>. Values
