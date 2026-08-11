@@ -3,25 +3,26 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
-## [3.8.2] - 2026-08-11
+## [3.8.3] - 2026-08-11
 
 ### Fixed
 - `testStandardChain` had been silently SKIPPING since v3.1.0. It asked
   for `TN-13_GEOC_GFZ_RL06.3.txt`; the shipped GFZ fixture spells the
   release with an underscore (`RL06_3`), unlike the CSR and JPL ones.
-  The `assumeTrue` guard turned that typo into a filtered test, which
-  in the summary looks exactly like a passing one - so the canonical
-  pipeline entry point went unverified through four releases. The
-  fixture checks are now `verifyTrue`: a missing fixture is a failure,
-  not a shrug. An audit of every fixture filename referenced in the
-  suite found no other case.
-- With the test running for the first time, CI found one assertion in it
-  that had never been exercised: the GIA epoch check demanded RelTol
-  1e-10 on a value that survives a gfc write/read round trip. The epoch
-  is stored as a decimal year in text, so the observed agreement is
-  5.3e-10 - the format's precision, not MATLAB's. Relaxed to 1e-8, which
-  still catches any real error in the GIA scaling (those are of order 1
-  in relative terms). Nothing wrong with standardChain itself.
+  The `assumeTrue` guard turned that typo into a filtered test, which in
+  the summary looks exactly like a passing one - so the canonical
+  pipeline entry point went unverified through four releases and every
+  CI run. The fixture checks are `verifyTrue` now: a missing fixture is
+  a failure, not a shrug. An audit of every fixture filename referenced
+  in the suite found no other case.
+- With the test running for the first time, CI immediately found an
+  assertion inside it that had never been exercised: the GIA epoch check
+  demanded `RelTol 1e-10` on a value that survives a gfc write/read
+  round trip. Epochs are stored as decimal years in text, so the
+  observed agreement is 5.3e-10 - the format's precision, not MATLAB's.
+  Relaxed to 1e-8, which still catches any real error in the GIA
+  scaling (those are of order 1 in relative terms). Nothing wrong with
+  `standardChain` itself.
 
 ### Checked, not changed
 - The workflow guide's demo-gallery figures were carried on the roadmap
@@ -30,6 +31,28 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   GRACE-FO minus GRACE difference), and all ten are present in
   `tools/dev/guide_assets/`. The roadmap entry was stale, like the
   COST-G SINEX fetcher removed in 3.8.1. Removed.
+
+## [3.8.2] - 2026-08-11
+
+### Added
+- Opt-in test of `readMascon` against a REAL mascon product, via
+  `SHX_MASCON_FILE`. Verified on the JPL RL06.3Mv04 CRI file (0.5 deg,
+  257 months, 46 MB), which reads correctly in 0.8 s.
+- The test checks GEOGRAPHY, not dimensions. The synthetic fixture
+  writes `lwe_thickness(lon, lat, time)` while the real JPL file writes
+  `(time, lat, lon)` - a size check passes either way, and a transposed
+  grid would sail through it. Greenland must LOSE mass over the GRACE
+  era: measured -124 cm between 2003 and 2024, with the largest change
+  at 76 N / 291 E (northwest Greenland), which is the right place.
+
+### Documented
+- The verified JPL layout, and that the reader permutes whatever order
+  it finds to (lat, lon, time).
+- Mascon latitudes are conventionally GEODETIC while this toolbox
+  synthesises on GEOCENTRIC ones. The difference peaks near 45 deg at
+  0.19 deg - about 21 km, or 0.4 of a 0.5-degree mascon cell. The help
+  said "typically geodetic" before; it now says what that costs and
+  where to convert.
 
 ## [3.8.1] - 2026-08-11
 

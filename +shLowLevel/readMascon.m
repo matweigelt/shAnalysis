@@ -8,6 +8,23 @@ function mas = readMascon(filename)
 %   generic 'lwe'/'water_thickness'; time units "days since YYYY-MM-DD"
 %   are converted to decimal years.
 %
+%   VERIFIED LAYOUTS. The dimension order differs between products, and
+%   the reader permutes to (lat, lon, time) whatever it finds:
+%     JPL RL06.3Mv04 CRI   lwe_thickness(time, lat, lon), 0.5 deg,
+%                          lat ascending -89.75..89.75, lon 0.25..359.75,
+%                          time "days since 2002-01-01", units cm
+%   That file also carries uncertainty, land_mask, scale_factor,
+%   mascon_ID and GAD, which this reader ignores - read them with ncread
+%   if you need them.
+%
+%   LATITUDES ARE AS STORED. Mascon grids are conventionally GEODETIC
+%   while this toolbox synthesises on GEOCENTRIC latitudes, and the two
+%   differ by up to 0.19 deg (about 21 km, or 0.4 of a 0.5-degree
+%   mascon cell) around 45 deg latitude. Convert with
+%   shLowLevel.geodetic2geocentric before comparing against a
+%   synthesised field, or the comparison carries a systematic
+%   mid-latitude shift that looks like a real discrepancy.
+%
 %   Inputs
 %     filename  char/string  .nc path
 %   Outputs (struct)
