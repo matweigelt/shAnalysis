@@ -1100,6 +1100,54 @@ verifyEqual(testCase, meta.epoch, 2008 + 105.5/366, 'AbsTol', 1e-9);
 verifyLessThan(testCase, meta.epochStop - meta.epochStart, 1.1/365);
 end
 
+function testFetchICGEMSeriesOffline(tc)
+% v3.1.1: temporal-series fetch, both modes, fully offline via local
+% mirror paths (fetchWithBackoff copies local files) - then the
+% advertised workflow: fromFolder on the result
+d = tc.TestData.dataDir;
+src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
+assumeTrue(tc, isfile(src));
+mir = tempname; mkdir(mir);
+c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+f1 = fullfile(mir, 'ITSG-Grace2018_n60_2008-04.gfc');
+f2 = fullfile(mir, 'ITSG-Grace2018_n60_2008-05.gfc');
+copyfile(src, f1); copyfile(src, f2);
+zf = fullfile(mir, 'series.zip');
+zip(zf, {f1, f2});
+row = table("01_TEST", "TC", "Series A", "01_TEST/TC/Series A", ...
+    "file://" + string(mir), string(zf), 'VariableNames', ...
+    {'group', 'center', 'series', 'path', 'url', 'zip'});
+% archive mode: local zip -> unzip -> files
+dA = tempname; cA = onCleanup(@() rmdir(dA, 's')); %#ok<NASGU>
+[fsA, iA] = shLowLevel.fetchICGEM(row, Archive = true, Dest = dA, ...
+    Quiet = true);
+verifyEqual(tc, numel(fsA), 2);
+verifyFalse(tc, iA.failed);
+[fsA2, iA2] = shLowLevel.fetchICGEM(row, Archive = true, Dest = dA, ...
+    Quiet = true);
+verifyTrue(tc, iA2.skipped);                   % resume semantics
+verifyEqual(tc, numel(fsA2), 2);
+% per-file mode via FileList (local urls), Pause = 0 offline
+FL = table((1:2)', ["ITSG-Grace2018_n60_2008-04.gfc"; ...
+    "ITSG-Grace2018_n60_2008-05.gfc"], [string(f1); string(f2)], ...
+    'VariableNames', {'idx', 'name', 'url'});
+dB = tempname; cB = onCleanup(@() rmdir(dB, 's')); %#ok<NASGU>
+[fsB, iB] = shLowLevel.fetchICGEM(row, FileList = FL, Dest = dB, ...
+    Pause = 0, Quiet = true);
+verifyEqual(tc, numel(fsB), 2);
+verifyFalse(tc, iB.failed);
+% verified-before-swap: files parse
+g = shLowLevel.shReadGFC(char(fsB(1)));
+verifyEqual(tc, g.nmax, 60);
+% the advertised workflow end-to-end
+ts = shSeries.fromFolder(fileparts(char(fsB(1))), Pattern = "*.gfc*");
+verifyEqual(tc, ts.nEpochs, 2);
+% Files= filter contract
+verifyError(tc, @() shLowLevel.fetchICGEM(row, FileList = FL, ...
+    Dest = tempname, Files = "*.nope", Quiet = true), ...
+    'shLowLevel:fetchICGEM:emptySeries');
+end
+
 function testFetchLoveNumbersMirror(tc)
 % v3.0.0: GROOPS Love-number fetch from a local mirror + parser contract
 d = tc.TestData.dataDir;

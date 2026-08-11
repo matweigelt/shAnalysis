@@ -16,12 +16,32 @@ function [file, info] = fetchICGEM(model, opts)
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
 %     Quiet (false)       suppress progress output ([k/K] counter,
 %                         per-file timing, failure summary)
+%     Type ("static")     "static" | "temporal": which catalogue
+%                         numeric selections and names resolve against
+%                         (mirrors shLowLevel.listICGEM)
+%     Files ("*.gfc*")    filename filter in series mode
+%     Archive (false)     series mode: download the server's whole-
+%                         series zip in ONE request (fast first grab,
+%                         often hundreds of MB, no per-file resume)
+%                         instead of file-by-file (default: resumable,
+%                         each file verified before swap)
+%     FileList (table())  series mode: use this file table (from
+%                         listICGEM(Series=...)) instead of querying -
+%                         for subsetting or offline mirrors
 %     Pause (3)           seconds between models in bulk mode - the
 %                         ICGEM server RATE-LIMITS rapid requests
 %                         (HTTP 429), which looks like a stall
 %     Retries (3)         retry attempts on 429/timeout, with 30/60/120
 %                         second backoff
 %     Update (false)  refresh existing files (safe swap: verified before replacing)
+%   TIME SERIES (temporal catalogue): a catalogue row carrying the
+%   'zip' column fetches a whole monthly series into
+%   <dataFolder>/icgem/series/<group>_<center>_<series>/ - ready for
+%   shSeries.fromFolder or shLowLevel.standardChain:
+%       T  = shLowLevel.listICGEM(Type = "temporal");
+%       fs = shLowLevel.fetchICGEM(T(12, :));
+%       ts = shSeries.fromFolder(fileparts(fs(1)), Pattern = "*.gfc*");
+%
 %   Outputs
 %     file  string   local path
 %     info  struct: url, skipped (true if already present)
@@ -41,12 +61,17 @@ arguments
     opts.Quiet (1,1) logical = false
     opts.Pause (1,1) double {mustBeNonnegative} = 3
     opts.Retries (1,1) double {mustBeInteger, mustBeNonnegative} = 3
+    opts.Type (1,1) string {mustBeMember(opts.Type, ...
+        ["static", "temporal"])} = "static"
+    opts.Files (1,1) string = "*.gfc*"
+    opts.Archive (1,1) logical = false
+    opts.FileList table = table()
 end
 % ---- v3.0.0: numeric idx vector (rows of shLowLevel.listICGEM), "all", or a
 % list of names fetch multiple models in one call
 if isnumeric(model) || ...
         (isstring(model) && (numel(model) > 1 || model == "all"))
-    if isempty(opts.List), T = shLowLevel.listICGEM(); else, T = opts.List; end
+    if isempty(opts.List), T = shLowLevel.listICGEM(Type = opts.Type); else, T = opts.List; end
     if isnumeric(model)
         sel = model(:)';
         assert(all(sel >= 1 & sel <= height(T) & sel == round(sel)), ...
@@ -80,13 +105,17 @@ if isnumeric(model) || ...
             [file(k), infos{k}] = shLowLevel.fetchICGEM(rows(k, :), ...
                 Dest = opts.Dest, Timeout = opts.Timeout, ...
                 Proxy = opts.Proxy, Update = opts.Update, ...
-                Quiet = opts.Quiet, Retries = opts.Retries, List = T);
+                Quiet = opts.Quiet, Retries = opts.Retries, ...
+                Type = opts.Type, Files = opts.Files, ...
+                Archive = opts.Archive, List = T);
             if k < K && ~infos{k}.skipped
                 pause(opts.Pause);              % ICGEM rate limit
             end
         catch err
             if ismember('name', rows.Properties.VariableNames)
                 nm = rows.name(k);
+            elseif ismember('series', rows.Properties.VariableNames)
+                nm = rows.series(k);
             else
                 nm = rows.url(k);
             end
@@ -111,14 +140,30 @@ if istable(model)
     assert(height(model) == 1 && ismember('url', model.Properties.VariableNames), ...
         'shLowLevel:fetchICGEM:badRow', 'Table input must be ONE listICGEM row.');
     row = model;
+    if ismember('zip', row.Properties.VariableNames)
+        [file, info] = fetchSeries(row, opts);  % temporal catalogue row
+        return
+    end
 else
     name = string(model);
     if isempty(opts.List)
-        T = shLowLevel.listICGEM();
+        T = shLowLevel.listICGEM(Type = opts.Type);
     else
         T = opts.List;
     end
-    hit = find(strcmpi(T.name, name));
+    if ismember('name', T.Properties.VariableNames)
+        hit = find(strcmpi(T.name, name));
+    else
+        hit = find(strcmpi(T.series, name));
+        if isempty(hit)
+            hit = find(contains(T.series, name, 'IgnoreCase', true));
+            if numel(hit) > 1
+                error('shLowLevel:fetchICGEM:ambiguous', ...
+                    '"%s" matches %d series - be more specific.', ...
+                    name, numel(hit));
+            end
+        end
+    end
     if isempty(hit)
         hit = find(startsWith(lower(T.name), lower(name)));
     end
@@ -149,28 +194,7 @@ end
 tDl = tic;
 tmpf = file + ".part";
 try
-    backoff = [30, 60, 120];
-    attempt = 0;
-    while true
-        try
-            webFetch(row.url, tmpf, opts.Timeout, opts.Proxy);
-            break
-        catch errDl
-            attempt = attempt + 1;
-            retryable = contains(errDl.message, '429') || ...
-                contains(errDl.message, 'Too Many Requests') || ...
-                contains(lower(errDl.message), 'timed out');
-            if ~retryable || attempt > opts.Retries
-                rethrow(errDl);
-            end
-            wsec = backoff(min(attempt, numel(backoff)));
-            if ~opts.Quiet
-                fprintf(['  rate-limited by ICGEM - waiting %d s, ' ...
-                    'then retry %d/%d\n'], wsec, attempt, opts.Retries);
-            end
-            pause(wsec);
-        end
-    end
+    fetchWithBackoff(row.url, tmpf, opts);
     if endsWith(lower(file), [".gfc", ".gfc.gz"])
         shLowLevel.shReadGFC(tmpf);                    % verify BEFORE swap
     else
@@ -198,4 +222,128 @@ end
 
 function s = ternary(tf, a, b)
 if tf, s = a; else, s = b; end
+end
+
+function fetchWithBackoff(url, tmpf, opts)
+% download with 429/timeout backoff; local paths copy (mirror/testing)
+if isfile(url)
+    copyfile(char(url), char(tmpf));
+    return
+end
+backoff = [30, 60, 120];
+attempt = 0;
+while true
+    try
+        webFetch(url, tmpf, opts.Timeout, opts.Proxy);
+        break
+    catch errDl
+        attempt = attempt + 1;
+        retryable = contains(errDl.message, '429') || ...
+            contains(errDl.message, 'Too Many Requests') || ...
+            contains(lower(errDl.message), 'timed out');
+        if ~retryable || attempt > opts.Retries
+            rethrow(errDl);
+        end
+        wsec = backoff(min(attempt, numel(backoff)));
+        if ~opts.Quiet
+            fprintf(['  rate-limited by ICGEM - waiting %d s, ' ...
+                'then retry %d/%d\n'], wsec, attempt, opts.Retries);
+        end
+        pause(wsec);
+    end
+end
+end
+
+function [files, info] = fetchSeries(row, opts)
+% one temporal-catalogue row: fetch a whole monthly series into its own
+% folder - per file (resumable, verified, throttled) or as the server's
+% whole-series zip (Archive = true; one request, no resume granularity)
+dest = opts.Dest;
+if strlength(dest) == 0
+    tag = regexprep(char(row.group + "_" + row.center + "_" + row.series), ...
+        '[^\w\-.]', '_');
+    dest = string(fullfile(shLowLevel.dataFolder(), 'icgem', 'series', tag));
+end
+if ~isfolder(dest), mkdir(dest); end
+info = struct('url', row.url, 'skipped', false, 'updated', false, ...
+    'failed', false);
+listF = @() string(reshape({dir(fullfile(char(dest), '**', ...
+    char(opts.Files))).folder}, [], 1)) + filesep + ...
+    string(reshape({dir(fullfile(char(dest), '**', char(opts.Files))).name}, [], 1));
+have = listF();
+if ~isempty(have) && ~opts.Update && opts.Archive
+    files = have; info.skipped = true;
+    if ~opts.Quiet
+        fprintf('  %s: %d files present, skipped\n', row.series, numel(have));
+    end
+    return
+end
+if opts.Archive
+    if ~opts.Quiet
+        fprintf('  fetching series archive %s (can be hundreds of MB)...\n', ...
+            row.series);
+    end
+    tDl = tic;
+    tmpf = fullfile(char(dest), 'series.zip.part');
+    fetchWithBackoff(row.zip, tmpf, opts);
+    unzip(tmpf, char(dest));                    % verify BEFORE accepting
+    delete(tmpf);
+    files = listF();
+    assert(~isempty(files), 'shLowLevel:fetchICGEM:emptySeries', ...
+        'Archive of "%s" contained no files matching %s.', ...
+        row.series, opts.Files);
+    if ~opts.Quiet
+        d = dir(char(dest));
+        fprintf('  done: %d files in %.0f s\n', numel(files), toc(tDl));
+    end
+    return
+end
+% per-file mode (default): resumable, each file verified before swap
+if isempty(opts.FileList)
+    F = shLowLevel.listICGEM(Type = "temporal", Series = row.path, ...
+        Timeout = opts.Timeout);
+else
+    F = opts.FileList;
+end
+pat = regexptranslate('wildcard', char(opts.Files));
+keep = ~cellfun('isempty', regexp(cellstr(F.name), ['^' pat '$'], 'once'));
+F = F(keep, :);
+assert(height(F) > 0, 'shLowLevel:fetchICGEM:emptySeries', ...
+    'Series "%s" has no files matching %s.', row.series, opts.Files);
+files = strings(0, 1); nFetched = 0; nSkip = 0;
+for j = 1:height(F)
+    fp = fullfile(char(dest), char(F.name(j)));
+    if isfile(fp) && ~opts.Update
+        files(end+1, 1) = string(fp); %#ok<AGROW>
+        nSkip = nSkip + 1;
+        continue
+    end
+    if ~opts.Quiet
+        fprintf('  [%d/%d] %s\n', j, height(F), F.name(j));
+    end
+    tmpf = [fp '.part'];
+    fetchedThis = true;
+    try
+        fetchWithBackoff(F.url(j), tmpf, opts);
+        shLowLevel.shReadGFC(tmpf);             % verify BEFORE swap
+        movefile(tmpf, fp, 'f');
+        files(end+1, 1) = string(fp); %#ok<AGROW>
+        nFetched = nFetched + 1;
+    catch err
+        if isfile(tmpf), delete(tmpf), end
+        info.failed = true;
+        if ~opts.Quiet
+            fprintf('  FAILED %s (%s)\n', F.name(j), err.message);
+        end
+        fetchedThis = false;
+    end
+    if j < height(F) && fetchedThis
+        pause(opts.Pause);                      % ICGEM rate limit
+    end
+end
+info.skipped = nFetched == 0 && ~info.failed;
+if ~opts.Quiet
+    fprintf('  series %s: %d fetched, %d present, failed: %d\n', ...
+        row.series, nFetched, nSkip, info.failed);
+end
 end
