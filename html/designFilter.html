@@ -78,6 +78,31 @@ to check if a result looks wrong. As <code class="inline">Alpha</code> tends to 
 the identity. A useful sanity step is to plot the gains over the (degree, order) triangle and compare
 them against a released DDK &mdash; they should have the same anisotropic character.</p>
 
+<h2>VDK, and what it would take <span class="tag">v3.4.1</span></h2>
+<p>GravIS filters its Level-2B products with <b>VDK</b> (Horvath et al. 2018), which is DDK
+(Kusche et al. 2009) with the filter matrix rebuilt from <em>each month's own</em> formal error
+covariance rather than from one fixed release covariance. <code class="inline">designFilter</code>
+performs exactly that construction &mdash; <code class="inline">Noise=</code> takes a full
+covariance and <code class="inline">Alpha=</code> is the regularisation strength &mdash; so VDK is a
+<em>usage</em> of this function, applied per epoch:</p>
+<pre>for k = 1:ts.nEpochs
+    W = shLowLevel.designFilter(sigC(:,:,k), sigS(:,:,k), ...
+            Noise = Nmonth{k}, Idx = idx, Alpha = a);   % this month's covariance
+    ts.Cs(:,:,k) = ...                                   % apply as any DDK
+end</pre>
+<div class="note"><b>What is missing is the data, not the method.</b> The monthly full error
+covariance matrices are not distributed with GRACE/GRACE-FO Level-2 products &mdash; only the formal
+per-coefficient sigmas &mdash; and Dahle et al. (2025) note that for the combined COST-G solutions
+the variance&ndash;covariance information is currently not available at all. Building a filter from
+the diagonal alone is a DDK-class filter, not VDK: the decorrelation VDK achieves comes precisely
+from the off-diagonal structure.</div>
+<p>Two practical routes: use the <b>VDK-filtered Level-2B products</b> GravIS publishes (VDK1&ndash;VDK8,
+readable with <a href="dataManagement.html">shLowLevel.readSHM</a>), or use a released full
+covariance &mdash; a SINEX normal-equation file via <a href="readSINEX.html">readSINEX</a> &mdash;
+as <code class="inline">Noise=</code>. Note that the GravIS <b>ice basin averages</b> do not use VDK
+at all: they start from unfiltered Level-2B and apply a Wiener filter (approximately a Gaussian of
+4&deg; latitude half-width) inside the inversion.</p>
+
 <h2>See also</h2>
 <p class="seealso"><a href="readDDK.html">readDDK / applyDDK</a>
 <a href="standardChain.html">standardChain</a> <a href="tvANS.html">tvANS filter</a>

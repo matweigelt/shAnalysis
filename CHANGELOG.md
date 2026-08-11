@@ -3,6 +3,33 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.4.1] - 2026-08-11
+
+### Documented
+- The GravIS Greenland comparison closes to **1.6%** once the filter is
+  declared correctly. Dahle et al. (2025, Sect. 2.2.1) specify the
+  basin-average method: spectral masking, then a Wiener optimal filter
+  approximately equivalent to a Gaussian of 4 deg latitude half-width,
+  then conversion to surface mass, then least-squares adjustment. The
+  forward model is filtered IDENTICALLY to the observations. The inputs
+  are genuinely unfiltered Level-2B coefficients, so `Filter="none"`
+  looked right and was not: declaring `Filter="gauss445"` moved the
+  trend from -234.9 to -227.4 Gt/yr against a published -231.1, turning
+  a 1.6% overshoot into a 1.6% undershoot. It also drifts less with
+  continued iteration (2.0 Gt/yr over 300->900 steps against 2.5),
+  because the filter regularises the inverse problem.
+- The same paper specifies the mask: 1 until 200 km outside the
+  grounding line, tapering to 0 by 600 km - `basinKernel(BufferKm=200,
+  TaperKm=400)`, not a hard outline.
+- **VDK**: it is DDK with the filter matrix rebuilt from each MONTH's
+  formal error covariance, i.e. a per-epoch usage of `designFilter` with
+  `Noise=`. What the toolbox lacks is the data, not the method - monthly
+  full covariances are not distributed with Level-2 products, and for
+  COST-G they are not available at all. Documented on the designFilter
+  page with the two practical routes (GravIS VDK-filtered Level-2B
+  products, or a SINEX normal-equation covariance). Note the GravIS ice
+  basin averages do not use VDK at all.
+
 ## [3.4.0] - 2026-08-11
 
 ### Added

@@ -1286,7 +1286,53 @@ story += tbl(["Method", "Gt/yr", "vs published"], [
     ["<b>GravIS COST-G RL02, matching span</b>", "<b>&minus;231.1</b>", "&mdash;"],
 ], [7.2*cm, 3.2*cm, 3.2*cm])
 
-story += [para("V5. The two lessons", "h2")]
+story += [para("V4b. Describe the filter the FORWARD MODEL sees", "h2")]
+story += [para("The table above hides the single largest error I made. "
+               "GravIS basin averages start from UNFILTERED Level-2B "
+               "coefficients, so I passed "
+               "<font face='Courier'>Filter=\"none\"</font> to "
+               "<font face='Courier'>leakageCorrect</font>. But Dahle et "
+               "al. (2025), Sect. 2.2.1, list the basin-average steps: "
+               "spectral masking, then <b>low-pass filtering with a "
+               "Wiener optimal filter, approximately a Gaussian of 4&deg; "
+               "latitude spatial half-width</b>, then the conversion to "
+               "surface mass, then the least-squares adjustment. The "
+               "forward model is filtered IDENTICALLY to the "
+               "observations &mdash; that is the whole point of the "
+               "method &mdash; so the filter to declare is the Wiener "
+               "one, not \"none\".")]
+story += code("""
+r = 4 * 111.195;                         % 4 deg latitude ~ 445 km
+wG = shLowLevel.shGaussianWeights(nmax, r);
+obs = shCoefficients(Ct .* wG(:), St .* wG(:)).synthesis( ...
+        lat, lon, quantity = "ewh", kn = kn, nmin = 0);
+m = shLowLevel.leakageCorrect(obs, lat, lon, Filter = "gauss445", ...
+        Mask = unionMask, Gain = 2, MaxIter = 300);
+""")
+story += tbl(["Declared filter", "Gt/yr", "vs published"], [
+    ["<font face='Courier'>\"none\"</font> (wrong)", "&minus;234.9", "+1.6%"],
+    ["<font face='Courier'>\"gauss445\"</font> (Wiener equivalent)",
+     "<b>&minus;227.4</b>", "<b>&minus;1.6%</b>"],
+    ["<b>GravIS COST-G RL02, matching span</b>", "<b>&minus;231.1</b>",
+     "&mdash;"],
+], [7.2*cm, 3.2*cm, 3.2*cm])
+story += [para("Declaring the filter correctly turns a 1.6% overshoot "
+               "into a 1.6% undershoot, and the iteration also drifts "
+               "less with continued iteration (2.0 Gt/yr from 300 to 900 "
+               "steps, against 2.5 unfiltered) because the filter "
+               "regularises the inverse problem. At that point the "
+               "agreement is as close as this reproduction can "
+               "meaningfully be read: the remaining difference is "
+               "smaller than the spread between GravIS product versions "
+               "and smaller than the effect of the stopping point.")]
+story += [para("The paper also specifies the mask GravIS uses, which is "
+               "NOT the bare drainage-basin outline: the spectral mask "
+               "is 1 until 200 km outside the grounding line and tapers "
+               "smoothly to 0 by 600 km. That is "
+               "<font face='Courier'>basinKernel(..., BufferKm = 200, "
+               "TaperKm = 400)</font>, not a hard boundary.")]
+
+story += [para("V5. The lessons", "h2")]
 story += [para("<b>The mask must cover every region that can hold mass, "
                "not only the one you are measuring.</b> A Greenland-only "
                "mask tells the inversion that mass exists nowhere else, "
@@ -1297,6 +1343,12 @@ story += [para("<b>The mask must cover every region that can hold mass, "
                "also converges faster. This is a usage rule, not a bug: "
                "<font face='Courier'>Mask=</font> always accepted a "
                "union.")]
+story += [para("<b>The filter you declare must be the filter the "
+               "FORWARD MODEL sees, not the filter the input file "
+               "carries.</b> The inputs here are genuinely unfiltered, "
+               "and declaring that was still wrong, because the method "
+               "filters both sides. This cost more than the mask, the "
+               "polygon resolution and the alias put together.")]
 story += [para("<b>The S2 alias removal is worth 0.2 Gt/yr on a "
                "twenty-year trend &mdash; that is, nothing.</b> A "
                "161-day harmonic is very nearly orthogonal to a linear "
