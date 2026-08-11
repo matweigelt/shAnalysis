@@ -58,7 +58,9 @@ end
 if ~isfolder(dest)
     mkdir(dest);
 end
-reg = demo_shAnalysis("list");
+% "list" PRINTS the table as well as returning it, which would spam a
+% generator run and every test; capture the output instead
+evalc('reg = demo_shAnalysis("list");');
 ids = string({reg.id});
 sel = opts.Cases;
 if isscalar(sel) && sel == "all"
@@ -150,10 +152,20 @@ fprintf(fid, '%s\n', L{:});
 end
 
 function s = slug(t)
+%SLUG A safe, short file-name fragment from a title.
+%   repmat("x", 1, 40) builds a 1x40 STRING ARRAY, not a 40-character
+%   string - the padding trick that works for char silently produces an
+%   array here, and the result then cannot be a file name. Truncate
+%   directly instead.
 s = lower(string(t));
 s = regexprep(s, '[^a-z0-9]+', '_');
 s = regexprep(s, '^_+|_+$', '');
-s = extractBefore(s + repmat("x", 1, 40), min(strlength(s), 40) + 1);
+if strlength(s) > 40
+    s = extractBefore(s, 41);
+end
+if strlength(s) == 0
+    s = "case";
+end
 end
 
 function s = stringIf(tf, t)
