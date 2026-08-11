@@ -3,6 +3,27 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.8.2] - 2026-08-11
+
+### Fixed
+- `testStandardChain` had been silently SKIPPING since v3.1.0. It asked
+  for `TN-13_GEOC_GFZ_RL06.3.txt`; the shipped GFZ fixture spells the
+  release with an underscore (`RL06_3`), unlike the CSR and JPL ones.
+  The `assumeTrue` guard turned that typo into a filtered test, which
+  in the summary looks exactly like a passing one - so the canonical
+  pipeline entry point went unverified through four releases. The
+  fixture checks are now `verifyTrue`: a missing fixture is a failure,
+  not a shrug. An audit of every fixture filename referenced in the
+  suite found no other case.
+
+### Checked, not changed
+- The workflow guide's demo-gallery figures were carried on the roadmap
+  as "Edition-2 placeholders". They are not: all ten are real rendered
+  figures from real data (the ITSG month, the DDK3 Wbd binary, the
+  GRACE-FO minus GRACE difference), and all ten are present in
+  `tools/dev/guide_assets/`. The roadmap entry was stale, like the
+  COST-G SINEX fetcher removed in 3.8.1. Removed.
+
 ## [3.8.1] - 2026-08-11
 
 ### Changed
