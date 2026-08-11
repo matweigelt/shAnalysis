@@ -282,6 +282,7 @@ listF = @() string(reshape({dir(fullfile(char(dest), '**', ...
 have = listF();
 if ~isempty(have) && ~opts.Update
     files = reshape(have, 1, []); info.skipped = true;
+    info.mode = "present";
     if ~opts.Quiet
         fprintf('  %s: %d files present, skipped\n', row.series, numel(have));
     end

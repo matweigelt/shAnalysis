@@ -1174,7 +1174,10 @@ out = evalc(['[fD, iD] = shLowLevel.fetchICGEM([1 2], List = T2, ' ...
     'Type = "temporal", Dest = dD, Pause = 0);']);
 verifyEqual(tc, numel(fD), 4);                 % 2 series x 2 files
 verifyEqual(tc, numel(iD), 2);
-verifyTrue(tc, all([iD.mode] == "archive"));   % uniform info fields
+% shared Dest: row 1 fetches the archive, row 2 finds the files present
+verifyEqual(tc, iD(1).mode, "archive");
+verifyEqual(tc, iD(2).mode, "present");
+verifyTrue(tc, iD(2).skipped);
 verifyTrue(tc, contains(out, '2 of 2 selections ok (4 files)'));
 % Files= filter contract
 verifyError(tc, @() shLowLevel.fetchICGEM(row, Mode = "files", ...
