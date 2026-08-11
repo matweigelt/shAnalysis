@@ -1685,10 +1685,13 @@ function testLeakageCorrectRecoversAKnownDisc(testCase)
 verifyLessThan(testCase, max(obs(:)), 0.9, ...
     'the fixture must actually lose signal, or it tests nothing');
 
+% Gain = 2 halves the iteration count on this problem (validated in
+% tools/dev/validate_leakage.py; 3 is still stable, 5 diverges)
 [m, info] = shLowLevel.leakageCorrect(obs, lat, lon, ...
     Filter = "gauss500", Mask = mask, Nmax = nmax, ...
-    MaxIter = 80, Quiet = true);
-verifyTrue(testCase, info.converged);
+    Gain = 2, MaxIter = 400, Quiet = true);
+verifyTrue(testCase, info.converged, ...
+    'the reference problem must converge within 400 iterations');
 verifyEqual(testCase, mean(m(mask)), 1, 'AbsTol', 0.02);
 verifyEqual(testCase, max(abs(m(~mask))), 0, 'AbsTol', 1e-12);
 
@@ -1704,6 +1707,9 @@ verifyTrue(testCase, info.masked);
 verifyEqual(testCase, numel(info.history), info.iterations);
 verifyLessThan(testCase, info.history(end), info.history(1), ...
     'the residual must fall');
+verifyEqual(testCase, numel(info.step), info.iterations);
+verifyLessThan(testCase, info.step(end), 1e-4, ...
+    'convergence is judged on the step, not the residual');
 end
 
 function testLeakageCorrectContract(testCase)

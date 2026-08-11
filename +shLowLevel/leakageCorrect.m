@@ -44,7 +44,13 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %             convergence; large values DIVERGE (validated: 5 diverges
 %             on the reference problem), which is detected rather than
 %             returned
-%     MaxIter (50)  iteration cap
+%     MaxIter (200)  iteration cap. Small regions under a strong
+%             filter converge slowly - a 6-degree disc under a 500 km
+%             Gaussian needs about 260 iterations at Gain = 1 and about
+%             170 at Gain = 2. The FIELD is already accurate long before
+%             the step criterion is met (0.997 of the truth after 80 of
+%             those 260), so a run that stops at MaxIter is usually
+%             usable; check info.step to see how close it got
 %     Tol (1e-4)  stop when the relative CHANGE OF THE SOLUTION between
 %             two iterations falls below this. Not the residual: with a
 %             mask the problem is inconsistent (no field confined to the
@@ -97,7 +103,7 @@ arguments
     opts.Mask = []
     opts.Nmax (1,1) double = NaN
     opts.Gain (1,1) double {mustBePositive} = 1
-    opts.MaxIter (1,1) double {mustBeInteger, mustBePositive} = 50
+    opts.MaxIter (1,1) double {mustBeInteger, mustBePositive} = 200
     opts.Tol (1,1) double {mustBePositive} = 1e-4
     opts.GM (1,1) double = 3.986004415e14
     opts.R (1,1) double = 6378136.3
