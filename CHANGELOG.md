@@ -3,6 +3,40 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.2.0] - 2026-08-11
+
+### Added
+- `shLowLevel.leakageCorrect`: iterative forward modelling of filter
+  leakage and attenuation. Finds the mass field whose filtered image
+  matches the observation, using only the filter - no external signal
+  model. `Mask=` confines the solution to where mass can exist, which is
+  both better conditioned and the variant that removes leakage rather
+  than redistributing it: on a synthetic disc with an exact mask it
+  recovers 0.9998 of the truth and leaves exactly zero outside.
+- `shLowLevel.gridScaling`: per-pixel scaling factors from a model
+  series pushed through the same chain. Amplitude-invariant to 1e-15 -
+  the factors describe the model's PATTERN, not its scale.
+- Both implemented and validated in Python
+  (`tools/dev/validate_leakage.py`, a compact numpy SH port whose
+  analysis/synthesis round trip is exact to 4e-16 and whose Gaussian
+  weights match `shGaussianWeights` to 2.7e-11) BEFORE the MATLAB port.
+  The validation caught two design errors before any MATLAB was written:
+  a scaling test that was exact by construction and therefore validated
+  nothing, and a test cap so large the filter barely touched it.
+
+### Two contracts that are easy to get wrong
+- Convergence is judged on the CHANGE OF THE SOLUTION, not the residual.
+  A masked problem is inconsistent - no field confined to the region
+  reproduces an observation with energy outside it - so the residual
+  plateaus at a nonzero floor while the solution is converged. The first
+  implementation stopped on the residual and reported failure on exactly
+  the case the mask exists for.
+- `gridScaling` returns NaN where the model carries no signal instead of
+  a ratio of two numerical zeros, and `info.kMedian` summarises the
+  pixels the model gives mass to. Over all finite pixels the median is
+  dominated by pure-leakage pixels, whose `k = 0` is correct but is not
+  the basin scaling factor anyone is looking for.
+
 ## [3.1.4] - 2026-08-11
 
 ### Added

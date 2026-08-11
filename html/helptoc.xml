@@ -63,6 +63,7 @@
   <tocitem target="basinKernel.html">Regional and geophysical analysis
     <tocitem target="basinKernel.html">basinKernel (regional kernels)</tocitem>
     <tocitem target="basinScaling.html">Basin scaling factors</tocitem>
+    <tocitem target="leakage.html">Leakage correction (forward modelling, gridded k)</tocitem>
     <tocitem target="slepianBasis.html">slepianBasis (Slepian localization)</tocitem>
     <tocitem target="removeGIA.html">GIA correction (removeGIA)</tocitem>
     <tocitem target="eofAnalysis.html">EOF analysis</tocitem>

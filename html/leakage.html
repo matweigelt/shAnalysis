@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Leakage correction</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Package function</span><span class="tag">v3.2.0</span>
+<h1>Leakage correction &mdash; putting back what the filter removed</h1>
+<p>Every GRACE filter removes real signal and smears the rest across basin boundaries. A 6&deg; disc
+under a 500 km Gaussian keeps about half its peak, and what it loses reappears outside its own
+boundary as leakage. Two corrections are available, and they differ in <em>what you have to
+believe</em>.</p>
+
+<table>
+<tr><th></th><th><a href="#fwd">leakageCorrect</a> (forward modelling)</th><th><a href="#k">gridScaling</a></th></tr>
+<tr><td>Needs</td><td>the filter, and optionally a region mask</td><td>a model field series</td></tr>
+<tr><td>Assumes</td><td>mass lives only inside the mask</td><td>the model's spatial <b>pattern</b> is right</td></tr>
+<tr><td>Gives</td><td>a corrected field</td><td>a per-pixel factor <code class="inline">k</code></td></tr>
+<tr><td>Fails when</td><td>the mask is wrong</td><td>the model's pattern is wrong</td></tr>
+</table>
+
+<h2 id="fwd">Iterative forward modelling</h2>
+<p>Find the mass field that, pushed through the <b>same</b> chain the data saw, reproduces the
+observation:</p>
+<pre>m<sub>k+1</sub> = m<sub>k</sub> + Gain &middot; (observed &minus; F(m<sub>k</sub>)),   F = analysis &rarr; filter &rarr; synthesis</pre>
+<pre>ewh = g.synthesis(-89:89, 0:359, quantity = "ewh", kn = kn);
+[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
+    Filter = "gauss300", Mask = basinMask, Gain = 2);</pre>
+<p><code class="inline">Filter</code> must be the filter <em>actually applied to the data</em>
+(<code class="inline">"none"</code>, <code class="inline">"gauss&lt;km&gt;"</code>,
+<code class="inline">"DDKn"</code>, or a W struct from <a href="readDDK.html">readDDK</a> /
+<a href="designFilter.html">designFilter</a>). Getting it wrong is the one way to make the result
+meaningless while it still looks plausible.</p>
+
+<h3>The mask does the heavy lifting</h3>
+<p>Confining the solution to pixels where mass can exist is the standard variant and much better
+conditioned: the iteration must then explain the observation with mass <em>inside</em> the region,
+so leakage outside is removed rather than redistributed. On a synthetic disc with an exact mask the
+correction recovers 0.9998 of the truth and leaves exactly zero outside.</p>
+
+<div class="note"><b>Convergence is judged on the change of the solution, not on the residual.</b>
+With a mask the problem is inconsistent &mdash; no field confined to the region can reproduce an
+observation that has energy outside it &mdash; so the residual settles at a nonzero floor while the
+solution is perfectly converged. Stopping on the residual would report failure on exactly the case
+the mask exists for.</div>
+
+<h3>Gain and iteration count</h3>
+<p>Small regions under a strong filter converge slowly: the 6&deg; disc needs about 260 iterations at
+<code class="inline">Gain = 1</code> and about 170 at <code class="inline">Gain = 2</code>. Values
+around 2&ndash;3 accelerate safely; large gains <b>diverge</b>, which is detected and raised as
+<code class="inline">shLowLevel:leakageCorrect:diverged</code> rather than returned as a field that
+looks like a result. The field is accurate well before the step criterion is met &mdash; 0.997 of the
+truth after 80 of those 260 iterations &mdash; so a run that stops at
+<code class="inline">MaxIter</code> is usually still usable; check
+<code class="inline">info.step</code>.</p>
+
+<h2 id="k">Gridded scaling factors</h2>
+<p>Push a model series through the same chain and regress, per pixel, true on filtered:</p>
+<pre>k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = "gauss300");
+corrected = k .* filteredEWH;</pre>
+<p>The factors are the least-squares gain per pixel, so they restore amplitude over the model's time
+behaviour rather than pointwise at any single epoch. They are <b>invariant to the model's
+amplitude</b> and depend only on its pattern &mdash; which is the method's standing caveat, not an
+implementation detail.</p>
+<div class="note"><b>Where the model carries no signal, <code class="inline">k</code> is NaN.</b>
+The ratio would be two numerical zeros, and returning a number there would silently multiply your
+data by noise. <code class="inline">info.covered</code> and
+<code class="inline">info.onSignal</code> make a model that does not reach your region visible
+instead. <code class="inline">info.kMedian</code> summarises the pixels the model gives mass to, not
+all finite pixels &mdash; pure-leakage pixels correctly get <code class="inline">k = 0</code> and
+would otherwise dominate the median.</div>
+
+<h2>Validation</h2>
+<p>Both methods were implemented and checked in Python (<code class="inline">tools/dev/validate_leakage.py</code>)
+before the MATLAB port, against known truth: exact analysis/synthesis round trip (4e-16), zero in /
+zero out, monotone residual, the divergence bound, amplitude invariance of <code class="inline">k</code>
+to 1e-15, and error reduction on a field whose mixture differs from the model's.</p>
+
+<h2>See also</h2>
+<p class="seealso"><a href="basinKernel.html">basinDeconvolve</a>
+<a href="basinScaling.html">basinScaling</a> <a href="readDDK.html">readDDK / applyDDK</a>
+<a href="designFilter.html">designFilter</a> <a href="apiReference.html">API reference</a></p>
+
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude.</p>
+</div></body></html>

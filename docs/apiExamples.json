@@ -370,6 +370,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.gridScaling",
+  "example": "k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = \"gauss300\");\ncorrected = k .* filteredEWH;      % NaN where the model is blind",
+  "run": false
+ },
+ {
   "name": "shLowLevel.icgemDate2Year",
   "example": "t = shLowLevel.icgemDate2Year(20080415.0000);   % -> 2008.29",
   "run": true
@@ -378,6 +383,11 @@
   "name": "shLowLevel.kernelFactors",
   "example": "kf = shLowLevel.kernelFactors(\"ewh\", 60, GM, R, kn = kn);",
   "run": true
+ },
+ {
+  "name": "shLowLevel.leakageCorrect",
+  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);\n[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...\n    Filter = \"gauss300\", Mask = basinMask);",
+  "run": false
  },
  {
   "name": "shLowLevel.legendreALF",
