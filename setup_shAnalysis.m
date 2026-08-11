@@ -43,6 +43,24 @@ function summary = setup_shAnalysis(opts)
 %     Update (false)     forward to the fetchers: refresh existing files
 %                       with a safe, parse-verified swap (temporal files
 %                       like TN-13/TN-14 grow monthly)
+%     SeriesFolder ("")   folder of monthly .gfc files, exported as the
+%                         SHX_SERIES_FOLDER environment variable. This
+%                         enables the opt-in trend regression in
+%                         testScience: a trend needs a real monthly
+%                         series, which is far too large to ship as a
+%                         fixture, and the fixture suite cannot see the
+%                         class of failure that only appears on a real
+%                         series of real length. Deliberately NOT wired
+%                         to the persistent data folder, so a routine
+%                         acceptance run never touches a network or
+%                         archive drive
+%     MasconFile ("")     a mascon .nc, exported as SHX_MASCON_FILE. This
+%                         enables the opt-in readMascon check against a
+%                         REAL product: the synthetic fixture writes
+%                         (lon, lat, time) while the JPL file writes
+%                         (time, lat, lon), and a size check passes
+%                         either way. Sources: CSR (no login), GSFC, or
+%                         JPL PO.DAAC (free Earthdata login)
 %     Quiet (false)       suppress progress output
 %     DataFolder ("")  persistent data folder, applied BEFORE any fetcher runs
 %     FetchITSG ("none")  "all" additionally downloads every monthly ITSG solution
@@ -58,12 +76,19 @@ function summary = setup_shAnalysis(opts)
 %       fetched     (1,:) string   files newly downloaded (verified)
 %       skipped     (1,:) string   files already present (re-verified)
 %       failed      (1,:) string   files that failed (download or parse)
+%       testData    (1,:) string   opt-in test-data variables that were
+%                                  set, if any (SHX_SERIES_FOLDER,
+%                                  SHX_MASCON_FILE). setenv lasts for
+%                                  the session only - put the same lines
+%                                  in startup.m to keep them
 %       ok          (1,1) logical  isempty(failed)
 %
 %   Examples
 %     setup_shAnalysis(Permanent = true, Download = "core")
 %     setup_shAnalysis(Download = "filters", DDK = [2 3 5])
 %     s = setup_shAnalysis(DryRun = true, Download = "starter")
+%     setup_shAnalysis(SeriesFolder = "D:/grace/itsg", ...
+%         MasconFile = "D:/grace/GRCTellus_JPL.nc")   % opt-in test data
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
 %   2026-08-07 (v2.5).
@@ -83,6 +108,8 @@ arguments
     opts.FetchITSG (1,1) string = "none"
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
+    opts.SeriesFolder (1,1) string = ""
+    opts.MasconFile (1,1) string = ""
     opts.Quiet (1,1) logical = false
 end
 root = string(fileparts(mfilename('fullpath')));
@@ -124,7 +151,8 @@ end
 
 summary = struct('root', root, 'pathAction', "planned", ...
     'dataFolder', "", 'plan', plan, 'fetched', strings(1, 0), ...
-    'skipped', strings(1, 0), 'failed', strings(1, 0), 'ok', true);
+    'skipped', strings(1, 0), 'failed', strings(1, 0), ...
+    'testData', strings(1, 0), 'ok', true);
 
 % ---- data folder override BEFORE any fetcher runs (v3.0.0): the
 % pre-v3 chicken-and-egg (dataFolder had to be set via a function that
@@ -139,9 +167,18 @@ if opts.DryRun
     else
         summary.dataFolder = string(fullfile(root, 'data'));
     end
+    if strlength(opts.SeriesFolder) > 0
+        summary.testData(end+1) = "SHX_SERIES_FOLDER = " + opts.SeriesFolder;
+    end
+    if strlength(opts.MasconFile) > 0
+        summary.testData(end+1) = "SHX_MASCON_FILE = " + opts.MasconFile;
+    end
     if ~opts.Quiet
         fprintf('setup_shAnalysis DRY RUN - planned actions:\n');
         fprintf('  %s\n', plan);
+        if ~isempty(summary.testData)
+            fprintf('  would set: %s\n', summary.testData);
+        end
     end
     return
 end
@@ -221,6 +258,40 @@ if level >= 4
     catch err
         summary.failed(end+1) = "fetchITSG: " + err.message;
     end
+end
+
+% ----------------------------------------------- opt-in test data paths
+% Two test suites need data far too large to ship as fixtures: the trend
+% regression in testScience needs a monthly series, and the mascon
+% reader check needs a real .nc. Both read an environment variable and
+% filter themselves out when it is empty, so setting them here is the
+% one place a user has to think about it.
+%
+% setenv only lasts for the session. A permanent setting belongs in
+% startup.m, and the summary says so rather than pretending otherwise.
+if strlength(opts.SeriesFolder) > 0
+    if ~isfolder(opts.SeriesFolder)
+        warning('shAnalysis:setup:noSeriesFolder', ...
+            'SeriesFolder is not a folder: %s', opts.SeriesFolder);
+    end
+    if ~opts.DryRun
+        setenv('SHX_SERIES_FOLDER', char(opts.SeriesFolder));
+    end
+    summary.testData(end+1) = "SHX_SERIES_FOLDER = " + opts.SeriesFolder;
+end
+if strlength(opts.MasconFile) > 0
+    if ~isfile(opts.MasconFile)
+        warning('shAnalysis:setup:noMasconFile', ...
+            'MasconFile is not a file: %s', opts.MasconFile);
+    end
+    if ~opts.DryRun
+        setenv('SHX_MASCON_FILE', char(opts.MasconFile));
+    end
+    summary.testData(end+1) = "SHX_MASCON_FILE = " + opts.MasconFile;
+end
+if ~isempty(summary.testData) && ~opts.Quiet
+    fprintf('opt-in test data (this session only - put in startup.m to keep):\n');
+    fprintf('  %s\n', summary.testData);
 end
 
 % ---------------------------------------------------------------- docs

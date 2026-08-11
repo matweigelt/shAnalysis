@@ -71,6 +71,26 @@ tsA = dts.destripe(minOrder=6).gaussian(300);   % classic chain
 avg = tsF.basinAverage(B, Deconvolve=true, Op=op);   % unbiased basin series
 ```
 
+## Opt-in test data
+
+Two checks need data too large to ship. Point `setup_shAnalysis` at yours:
+
+```matlab
+setup_shAnalysis(SeriesFolder = "D:/grace/itsg", ...
+                 MasconFile = "D:/grace/GRCTellus_JPL.nc");
+```
+
+| Variable | Enables | Data |
+|---|---|---|
+| `SHX_SERIES_FOLDER` | the trend regression in `testScience` | monthly `.gfc` files, > 24 epochs, GSM level |
+| `SHX_MASCON_FILE` | `readMascon` against a real product | CSR (no login), GSFC, or JPL PO.DAAC |
+
+Neither is required. Without them both tests report as filtered rather
+than passing silently. They exist because the fixture suite cannot see
+the class of failure that only appears on real data of real length -
+three bugs surfaced the first time the toolbox ran against a full
+24-year series.
+
 ## Running the tests
 
 ```matlab
