@@ -1,5 +1,240 @@
 [
  {
+  "name": "demo_shAnalysis",
+  "example": "demo_shAnalysis([\"D01\", \"D06\"])   % run selected demos, fail-and-continue",
+  "run": false
+ },
+ {
+  "name": "runAllTests",
+  "example": "runAllTests            % 169 tests; acceptance gate on R2026a",
+  "run": false
+ },
+ {
+  "name": "setup_shAnalysis",
+  "example": "    setup_shAnalysis(Permanent = true, Download = \"core\")\n    setup_shAnalysis(Download = \"filters\", DDK = [2 3 5])\n    s = setup_shAnalysis(DryRun = true, Download = \"starter\")",
+  "run": false
+ },
+ {
+  "name": "shClimatology.amplitudeMap",
+  "example": "[A, lat, lon] = clim.amplitudeMap(\"annual\", -89:89, 0:359, quantity = \"ewh\", kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shClimatology.bias",
+  "example": "g0 = clim.bias();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.cosAnnual",
+  "example": "gc = clim.cosAnnual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.cosSemiannual",
+  "example": "gc2 = clim.cosSemiannual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.disp",
+  "example": "disp(clim)",
+  "run": true
+ },
+ {
+  "name": "shClimatology.eval",
+  "example": "g2020 = clim.eval(2020.0);             % model field at an epoch",
+  "run": true
+ },
+ {
+  "name": "shClimatology.fromCoef",
+  "example": "clim = shClimatology.fromCoef(coef, t0, ts);",
+  "run": false
+ },
+ {
+  "name": "shClimatology.periodic",
+  "example": "[gc, gs] = clim.periodic(1);           % extra Periods= component",
+  "run": true
+ },
+ {
+  "name": "shClimatology.removeGIA",
+  "example": "clim = clim.removeGIA(giaModel);",
+  "run": true
+ },
+ {
+  "name": "shClimatology.sinAnnual",
+  "example": "gs = clim.sinAnnual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.sinSemiannual",
+  "example": "gs2 = clim.sinSemiannual();",
+  "run": true
+ },
+ {
+  "name": "shClimatology.trend",
+  "example": "gT = clim.trend();                     % [units/yr], sigmas attached",
+  "run": true
+ },
+ {
+  "name": "shClimatology.withNote",
+  "example": "clim = clim.withNote(\"GIA: ICE-6G_D removed\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.addDegree1",
+  "example": "g = g.addDegree1(tn13);               % nearest epoch within 0.05 yr",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.analysis",
+  "example": "g2 = shCoefficients.analysis(grid, lat, lon, 10, Kaula = 1e-10);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.applyDDK",
+  "example": "g = g.applyDDK(\"DDK3\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.applyTN14",
+  "example": "g = g.applyTN14(tn14);                % C20/C30 replacement",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.compare",
+  "example": "rep = g.compare(gF, Names = [\"raw\", \"G350\"]);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.crossover",
+  "example": "nc = g.crossover();                   % needs formal sigmas",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.deformation",
+  "example": "[up, no, ea] = g.deformation(latPts, lonPts, kn = LN.kn, hn = LN.hn, ...\n    ln = LN.ln, Mode = \"points\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.degreeRMS",
+  "example": "spec = g.degreeRMS();                  % degree amplitude + error spectrum",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.destripe",
+  "example": "g = g.destripe(minOrder = 6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.disp",
+  "example": "disp(g)                                % degree, epoch, history",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.evalAt",
+  "example": "g2015 = g.evalAt(2015.5);              % gfct variable terms AT AN EPOCH",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.fan",
+  "example": "g = g.fan(350, 200);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.fromVec",
+  "example": "g2 = shCoefficients.fromVec(x, idx, g10);   % sizes/GM/R from template",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.gaussian",
+  "example": "g = g.gaussian(350);                  % radius in km",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.map",
+  "example": "g.map(quantity = \"geoid\", Title = \"Geoid 2008-04 [m]\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.minus",
+  "example": "dg = g - gMean;                       % anomaly about the mean field",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.mtimes",
+  "example": "gHalf = 0.5 * g;                      % scalar scaling, sigmas follow",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.plus",
+  "example": "gsm = g + gad;                        % epoch-checked restore",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.read",
+  "example": "g = shCoefficients.read(\"ITSG-Grace2018_n60_2008-04.gfc\", Epoch = 2008.29);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.setCoefficient",
+  "example": "g = g.setCoefficient(2, 0, c20slr);   % SLR C20 by hand",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.shCoefficients",
+  "example": "g = shCoefficients(C, S, GM = 3.986004415e14, R = 6.3781363e6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.spectrum",
+  "example": "g.spectrum(Kaula = true, MarkCrossover = true);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.subtractNormalField",
+  "example": "g = g.subtractNormalField(System = \"GRS80\");",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.synthesis",
+  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.times",
+  "example": "gW = w .* g;                          % per-coefficient weighting",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.toReference",
+  "example": "g = g.toReference(GM = 3.986004415e14, R = 6.3781363e6);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.triangle",
+  "example": "g.triangle();                          % butterfly plot",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.truncate",
+  "example": "g60 = g.truncate(60);",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.uminus",
+  "example": "gNeg = -g;",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.vec",
+  "example": "x = g10.vec(idx);                     % idx-ordered coefficient vector",
+  "run": true
+ },
+ {
+  "name": "shCoefficients.write",
+  "example": "g.write(\"out.gfc\");",
+  "run": true
+ },
+ {
   "name": "shLowLevel.applyDDK",
   "example": "W = shLowLevel.readDDK(\"DDK3\", Nmax = 60);\n[Cf, Sf] = shLowLevel.applyDDK(g.C, g.S, W);",
   "run": true
@@ -135,6 +370,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.gridScaling",
+  "example": "k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = \"gauss300\");\ncorrected = k .* filteredEWH;      % NaN where the model is blind",
+  "run": false
+ },
+ {
   "name": "shLowLevel.icgemDate2Year",
   "example": "t = shLowLevel.icgemDate2Year(20080415.0000);   % -> 2008.29",
   "run": true
@@ -143,6 +383,11 @@
   "name": "shLowLevel.kernelFactors",
   "example": "kf = shLowLevel.kernelFactors(\"ewh\", 60, GM, R, kn = kn);",
   "run": true
+ },
+ {
+  "name": "shLowLevel.leakageCorrect",
+  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);\n[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...\n    Filter = \"gauss300\", Mask = basinMask);",
+  "run": false
  },
  {
   "name": "shLowLevel.legendreALF",
@@ -420,218 +665,8 @@
   "run": true
  },
  {
-  "name": "setup_shAnalysis",
-  "example": "    setup_shAnalysis(Permanent = true, Download = \"core\")\n    setup_shAnalysis(Download = \"filters\", DDK = [2 3 5])\n    s = setup_shAnalysis(DryRun = true, Download = \"starter\")",
-  "run": false
- },
- {
-  "name": "runAllTests",
-  "example": "runAllTests            % 169 tests; acceptance gate on R2026a",
-  "run": false
- },
- {
-  "name": "demo_shAnalysis",
-  "example": "demo_shAnalysis([\"D01\", \"D06\"])   % run selected demos, fail-and-continue",
-  "run": false
- },
- {
-  "name": "shCoefficients.shCoefficients",
-  "example": "g = shCoefficients(C, S, GM = 3.986004415e14, R = 6.3781363e6);",
-  "run": true
- },
- {
-  "name": "shCoefficients.plus",
-  "example": "gsm = g + gad;                        % epoch-checked restore",
-  "run": true
- },
- {
-  "name": "shCoefficients.minus",
-  "example": "dg = g - gMean;                       % anomaly about the mean field",
-  "run": true
- },
- {
-  "name": "shCoefficients.uminus",
-  "example": "gNeg = -g;",
-  "run": true
- },
- {
-  "name": "shCoefficients.mtimes",
-  "example": "gHalf = 0.5 * g;                      % scalar scaling, sigmas follow",
-  "run": true
- },
- {
-  "name": "shCoefficients.compare",
-  "example": "rep = g.compare(gF, Names = [\"raw\", \"G350\"]);",
-  "run": true
- },
- {
-  "name": "shCoefficients.times",
-  "example": "gW = w .* g;                          % per-coefficient weighting",
-  "run": true
- },
- {
-  "name": "shCoefficients.truncate",
-  "example": "g60 = g.truncate(60);",
-  "run": true
- },
- {
-  "name": "shCoefficients.setCoefficient",
-  "example": "g = g.setCoefficient(2, 0, c20slr);   % SLR C20 by hand",
-  "run": true
- },
- {
-  "name": "shCoefficients.applyTN14",
-  "example": "g = g.applyTN14(tn14);                % C20/C30 replacement",
-  "run": true
- },
- {
-  "name": "shCoefficients.addDegree1",
-  "example": "g = g.addDegree1(tn13);               % nearest epoch within 0.05 yr",
-  "run": true
- },
- {
-  "name": "shCoefficients.destripe",
-  "example": "g = g.destripe(minOrder = 6);",
-  "run": true
- },
- {
-  "name": "shCoefficients.gaussian",
-  "example": "g = g.gaussian(350);                  % radius in km",
-  "run": true
- },
- {
-  "name": "shCoefficients.degreeRMS",
-  "example": "spec = g.degreeRMS();                  % degree amplitude + error spectrum",
-  "run": true
- },
- {
-  "name": "shCoefficients.crossover",
-  "example": "nc = g.crossover();                   % needs formal sigmas",
-  "run": true
- },
- {
-  "name": "shCoefficients.spectrum",
-  "example": "g.spectrum(Kaula = true, MarkCrossover = true);",
-  "run": true
- },
- {
-  "name": "shCoefficients.triangle",
-  "example": "g.triangle();                          % butterfly plot",
-  "run": true
- },
- {
-  "name": "shCoefficients.synthesis",
-  "example": "ewh = g.synthesis(-89:89, 0:359, quantity = \"ewh\", kn = kn);",
-  "run": true
- },
- {
-  "name": "shCoefficients.toReference",
-  "example": "g = g.toReference(GM = 3.986004415e14, R = 6.3781363e6);",
-  "run": true
- },
- {
-  "name": "shCoefficients.subtractNormalField",
-  "example": "g = g.subtractNormalField(System = \"GRS80\");",
-  "run": true
- },
- {
-  "name": "shCoefficients.map",
-  "example": "g.map(quantity = \"geoid\", Title = \"Geoid 2008-04 [m]\");",
-  "run": true
- },
- {
-  "name": "shCoefficients.fan",
-  "example": "g = g.fan(350, 200);",
-  "run": true
- },
- {
-  "name": "shCoefficients.deformation",
-  "example": "[up, no, ea] = g.deformation(latPts, lonPts, kn = LN.kn, hn = LN.hn, ...\n    ln = LN.ln, Mode = \"points\");",
-  "run": true
- },
- {
-  "name": "shCoefficients.applyDDK",
-  "example": "g = g.applyDDK(\"DDK3\");",
-  "run": true
- },
- {
-  "name": "shCoefficients.evalAt",
-  "example": "g2015 = g.evalAt(2015.5);              % gfct variable terms AT AN EPOCH",
-  "run": true
- },
- {
-  "name": "shCoefficients.write",
-  "example": "g.write(\"out.gfc\");",
-  "run": true
- },
- {
-  "name": "shCoefficients.vec",
-  "example": "x = g10.vec(idx);                     % idx-ordered coefficient vector",
-  "run": true
- },
- {
-  "name": "shCoefficients.disp",
-  "example": "disp(g)                                % degree, epoch, history",
-  "run": true
- },
- {
-  "name": "shCoefficients.read",
-  "example": "g = shCoefficients.read(\"ITSG-Grace2018_n60_2008-04.gfc\", Epoch = 2008.29);",
-  "run": true
- },
- {
-  "name": "shCoefficients.fromVec",
-  "example": "g2 = shCoefficients.fromVec(x, idx, g10);   % sizes/GM/R from template",
-  "run": true
- },
- {
-  "name": "shCoefficients.analysis",
-  "example": "g2 = shCoefficients.analysis(grid, lat, lon, 10, Kaula = 1e-10);",
-  "run": true
- },
- {
-  "name": "shSeries.shSeries",
-  "example": "ts = shSeries(Cs, Ss = Ss, Epochs = tYears);",
-  "run": true
- },
- {
-  "name": "shSeries.at",
-  "example": "g = ts.at(37);                         % single month as shCoefficients",
-  "run": true
- },
- {
-  "name": "shSeries.mean",
-  "example": "gM = ts.mean;                          % NaN-month tolerant",
-  "run": true
- },
- {
-  "name": "shSeries.climatology",
-  "example": "[clim, resid] = ts.climatology(Robust = true, ARCorrect = true);",
-  "run": true
- },
- {
-  "name": "shSeries.trendBreaks",
-  "example": "out = ts.trendBreaks(Breaks = 2021.0); % F-test on the hinge",
-  "run": true
- },
- {
-  "name": "shSeries.fan",
-  "example": "tsF = ts.fan(350, 200);",
-  "run": true
- },
- {
-  "name": "shSeries.applyTN14",
-  "example": "ts = ts.applyTN14(tn14);               % epoch-matched per month",
-  "run": true
- },
- {
   "name": "shSeries.addDegree1",
   "example": "ts = ts.addDegree1(tn13);",
-  "run": true
- },
- {
-  "name": "shSeries.removeGIA",
-  "example": "ts = ts.removeGIA(giaModel);           % e.g. ICE-6G trend gfc",
   "run": true
  },
  {
@@ -640,48 +675,13 @@
   "run": true
  },
  {
-  "name": "shSeries.compare",
-  "example": "rep = ts.compare({tsGFZ, tsJPL}, Names = [\"ref\", \"GFZ\", \"JPL\"]);",
+  "name": "shSeries.applyTN14",
+  "example": "ts = ts.applyTN14(tn14);               % epoch-matched per month",
   "run": true
  },
  {
-  "name": "shSeries.restore",
-  "example": "ts = ts.restore(tsGAD);                % GSM + GAD, epoch-matched",
-  "run": true
- },
- {
-  "name": "shSeries.minus",
-  "example": "dts = ts - ts.mean;",
-  "run": true
- },
- {
-  "name": "shSeries.destripe",
-  "example": "ts = ts.destripe(minOrder = 6);",
-  "run": true
- },
- {
-  "name": "shSeries.gaussian",
-  "example": "ts = ts.gaussian(300);",
-  "run": true
- },
- {
-  "name": "shSeries.truncate",
-  "example": "ts8 = ts.truncate(8);                  % keep low degrees",
-  "run": true
- },
- {
-  "name": "shSeries.dropNaN",
-  "example": "ts = ts.dropNaN;                       % remove gap months",
-  "run": true
- },
- {
-  "name": "shSeries.select",
-  "example": "ts = ts.select(ts.epochs > 2018.5);    % GRACE-FO era only",
-  "run": true
- },
- {
-  "name": "shSeries.filter",
-  "example": "[tsF, op, info] = ts.filter(\"tvANS\", Constraints = Ac, Blocks = \"off\");",
+  "name": "shSeries.at",
+  "example": "g = ts.at(37);                         % single month as shCoefficients",
   "run": true
  },
  {
@@ -690,13 +690,38 @@
   "run": true
  },
  {
+  "name": "shSeries.climatology",
+  "example": "[clim, resid] = ts.climatology(Robust = true, ARCorrect = true);",
+  "run": true
+ },
+ {
+  "name": "shSeries.compare",
+  "example": "rep = ts.compare({tsGFZ, tsJPL}, Names = [\"ref\", \"GFZ\", \"JPL\"]);",
+  "run": true
+ },
+ {
+  "name": "shSeries.destripe",
+  "example": "ts = ts.destripe(minOrder = 6);",
+  "run": true
+ },
+ {
   "name": "shSeries.disp",
   "example": "disp(ts)",
   "run": true
  },
  {
-  "name": "shSeries.read",
-  "example": "ts2 = shSeries.read(\"ITSG-Grace*_n60_*.gfc\");   % wildcard, epoch-sorted",
+  "name": "shSeries.dropNaN",
+  "example": "ts = ts.dropNaN;                       % remove gap months",
+  "run": true
+ },
+ {
+  "name": "shSeries.fan",
+  "example": "tsF = ts.fan(350, 200);",
+  "run": true
+ },
+ {
+  "name": "shSeries.filter",
+  "example": "[tsF, op, info] = ts.filter(\"tvANS\", Constraints = Ac, Blocks = \"off\");",
   "run": true
  },
  {
@@ -705,68 +730,53 @@
   "run": false
  },
  {
-  "name": "shClimatology.withNote",
-  "example": "clim = clim.withNote(\"GIA: ICE-6G_D removed\");",
+  "name": "shSeries.gaussian",
+  "example": "ts = ts.gaussian(300);",
   "run": true
  },
  {
-  "name": "shClimatology.removeGIA",
-  "example": "clim = clim.removeGIA(giaModel);",
+  "name": "shSeries.mean",
+  "example": "gM = ts.mean;                          % NaN-month tolerant",
   "run": true
  },
  {
-  "name": "shClimatology.eval",
-  "example": "g2020 = clim.eval(2020.0);             % model field at an epoch",
+  "name": "shSeries.minus",
+  "example": "dts = ts - ts.mean;",
   "run": true
  },
  {
-  "name": "shClimatology.bias",
-  "example": "g0 = clim.bias();",
+  "name": "shSeries.read",
+  "example": "ts2 = shSeries.read(\"ITSG-Grace*_n60_*.gfc\");   % wildcard, epoch-sorted",
   "run": true
  },
  {
-  "name": "shClimatology.trend",
-  "example": "gT = clim.trend();                     % [units/yr], sigmas attached",
+  "name": "shSeries.removeGIA",
+  "example": "ts = ts.removeGIA(giaModel);           % e.g. ICE-6G trend gfc",
   "run": true
  },
  {
-  "name": "shClimatology.cosAnnual",
-  "example": "gc = clim.cosAnnual();",
+  "name": "shSeries.restore",
+  "example": "ts = ts.restore(tsGAD);                % GSM + GAD, epoch-matched",
   "run": true
  },
  {
-  "name": "shClimatology.sinAnnual",
-  "example": "gs = clim.sinAnnual();",
+  "name": "shSeries.select",
+  "example": "ts = ts.select(ts.epochs > 2018.5);    % GRACE-FO era only",
   "run": true
  },
  {
-  "name": "shClimatology.cosSemiannual",
-  "example": "gc2 = clim.cosSemiannual();",
+  "name": "shSeries.shSeries",
+  "example": "ts = shSeries(Cs, Ss = Ss, Epochs = tYears);",
   "run": true
  },
  {
-  "name": "shClimatology.sinSemiannual",
-  "example": "gs2 = clim.sinSemiannual();",
+  "name": "shSeries.trendBreaks",
+  "example": "out = ts.trendBreaks(Breaks = 2021.0); % F-test on the hinge",
   "run": true
  },
  {
-  "name": "shClimatology.periodic",
-  "example": "[gc, gs] = clim.periodic(1);           % extra Periods= component",
+  "name": "shSeries.truncate",
+  "example": "ts8 = ts.truncate(8);                  % keep low degrees",
   "run": true
- },
- {
-  "name": "shClimatology.amplitudeMap",
-  "example": "[A, lat, lon] = clim.amplitudeMap(\"annual\", -89:89, 0:359, quantity = \"ewh\", kn = kn);",
-  "run": true
- },
- {
-  "name": "shClimatology.disp",
-  "example": "disp(clim)",
-  "run": true
- },
- {
-  "name": "shClimatology.fromCoef",
-  "example": "clim = shClimatology.fromCoef(coef, t0, ts);",
-  "run": false
  }
 ]
