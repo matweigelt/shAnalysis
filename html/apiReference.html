@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.2.1)</h1>
+<h1>shAnalysis API reference (v3.2.2)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -964,7 +964,7 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <p class="h1line">Canonical GRACE/GRACE-FO post-processing in one call.</p>
 <p>[TS, REP] = shLowLevel.standardChain(FOLDER) encodes the standard chain as a single, correctly ordered entry point: 1. read all monthly solutions from FOLDER (shSeries.fromFolder) 2. replace C20/C30 with the SLR values (TN-14) 3. add the degree-1 (geocenter) coefficients (TN-13) 4. optionally subtract a GIA trend field 5. filter (Gaussian radius, a DDK, or a shLowLevel.designFilter W) The order matters (TN corrections BEFORE filtering, GIA on the corrected series) and getting it wrong is the classic beginner error this function exists to prevent. Every step is recorded in REP and in the series history; steps are skippable for sensitivity studies. Data files come from the persistent data folder by default (setup_shAnalysis fetches them) and can be overridden with explicit paths for reproducible pipelines.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.gfc*&quot;</td></tr><tr><td><code>Truncate</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>TN14</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>TN14File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Degree1</code></td><td>1 x 1</td><td>string</td><td>&quot;GFZ&quot;</td></tr><tr><td><code>Degree1File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIA</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.gfc*&quot;</td></tr><tr><td><code>Truncate</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>TN14</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>TN14File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Degree1</code></td><td>1 x 1</td><td>string</td><td>&quot;GFZ&quot;</td></tr><tr><td><code>Degree1File</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIA</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;gauss300&quot;</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.05</td></tr><tr><td><code>OnMissing</code></td><td>1 x 1</td><td>string</td><td>&quot;drop&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>ts</code></td><td>(1,1) shSeries  the processed series (full history)</td></tr>
 <tr><td><code>rep</code></td><td>(1,1) struct  fields: files (1,T string), steps (1,K string, applied stages with parameters), nmax (1,1 double), epochs (T,1 double), version (1,1 string, shLowLevel.version at run time), created (1,1 string)</td></tr>
@@ -1472,7 +1472,7 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <h3><code>shCoefficients.write(obj, filename, opts)</code></h3>
 <p class="h1line">Export to an ICGEM .gfc file (round-trip tested).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Comment</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Comment</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Sidecar</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Example</b><pre>g.write(&quot;out.gfc&quot;);</pre>
 </div>
 <h2>shSeries methods</h2><p class="toc">
@@ -1870,4 +1870,4 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 </table>
 <b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.2.1). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.2.2). Generated by tools - do not edit.</p></body></html>

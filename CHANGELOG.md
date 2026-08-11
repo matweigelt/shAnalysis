@@ -3,6 +3,32 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.2.2] - 2026-08-11
+
+### Fixed
+- `standardChain` stopped with "No TN-13 entry within 0.050 yr" whenever
+  the correction tables trailed the solutions - which they always do,
+  since TN-13/TN-14 are published weeks after the monthly fields. On a
+  current 257-month ITSG series the two newest epochs were uncovered and
+  the whole chain failed. Uncovered epochs are now dropped and the fact
+  recorded in `rep.steps`; `OnMissing="error"` restores the old
+  behaviour and `Tolerance=` is settable. Dropping beats the
+  alternative of keeping them, which would splice UNCORRECTED months
+  onto corrected ones - a step in the series exactly where people look
+  for the newest signal.
+- `shSeries.read` / `fromFolder` treated `writeGFC`'s
+  `<file>.gfc.provenance.json` sidecars as solutions: the read pattern
+  has to be loose enough for `.gfc.gz`, so `*.gfc*` matched them and a
+  folder written BY the toolbox could not be read back BY the toolbox.
+- `shCoefficients.write` gained `Sidecar=`, which only the low-level
+  `writeGFC` had, so class-API users could not turn the sidecar off.
+
+### Notes
+- All three were found by running the toolbox against a full 24-year
+  ITSG series (257 monthly n96 solutions, 2002-2026) rather than against
+  fixtures. The suite is fixture-bound by necessity; the failures it
+  cannot see are the ones that need real data of real length.
+
 ## [3.2.1] - 2026-08-11
 
 ### Added

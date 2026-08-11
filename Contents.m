@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.2.1 (R2026a-compatible) 11-Aug-2026
+% Version 3.2.2 (R2026a-compatible) 11-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,20 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.2.2 (fixes found by running on a full 24-year series)
+%   standardChain no longer stops when the TN-13/TN-14 tables trail the
+%     solutions. They always do - a provider publishes the correction
+%     weeks after the monthly field - so the newest months of a fresh
+%     series were routinely uncovered and the chain simply errored.
+%     Uncovered epochs are dropped and recorded in the report;
+%     OnMissing="error" restores the old behaviour, Tolerance= is now
+%     settable.
+%   shSeries.read/fromFolder no longer mistake writeGFC's
+%     "<file>.gfc.provenance.json" sidecars for solutions: a folder
+%     written BY the toolbox could not be read back BY the toolbox.
+%   shCoefficients.write gained Sidecar=, which only the low-level
+%     writeGFC had.
 %
 % New in v3.2.1 (scientific regression suite - roadmap item 9)
 %   tests/testScience.m checks the toolbox against values published
