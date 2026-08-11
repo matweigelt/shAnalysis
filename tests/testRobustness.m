@@ -1117,25 +1117,43 @@ zip(zf, {f1, f2});
 row = table("01_TEST", "TC", "Series A", "01_TEST/TC/Series A", ...
     "file://" + string(mir), string(zf), 'VariableNames', ...
     {'group', 'center', 'series', 'path', 'url', 'zip'});
-% archive mode: local zip -> unzip -> files
+% DEFAULT = archive-first: one request (local zip) -> unzip -> files
 dA = tempname; cA = onCleanup(@() rmdir(dA, 's')); %#ok<NASGU>
-[fsA, iA] = shLowLevel.fetchICGEM(row, Archive = true, Dest = dA, ...
-    Quiet = true);
+[fsA, iA] = shLowLevel.fetchICGEM(row, Dest = dA, Quiet = true);
 verifyEqual(tc, numel(fsA), 2);
+verifyEqual(tc, iA.mode, "archive");           % zip was the path taken
 verifyFalse(tc, iA.failed);
-[fsA2, iA2] = shLowLevel.fetchICGEM(row, Archive = true, Dest = dA, ...
-    Quiet = true);
+[fsA2, iA2] = shLowLevel.fetchICGEM(row, Dest = dA, Quiet = true);
 verifyTrue(tc, iA2.skipped);                   % resume semantics
 verifyEqual(tc, numel(fsA2), 2);
-% per-file mode via FileList (local urls), Pause = 0 offline
+% forced per-file mode via FileList (local urls), Pause = 0 offline
 FL = table((1:2)', ["ITSG-Grace2018_n60_2008-04.gfc"; ...
     "ITSG-Grace2018_n60_2008-05.gfc"], [string(f1); string(f2)], ...
     'VariableNames', {'idx', 'name', 'url'});
 dB = tempname; cB = onCleanup(@() rmdir(dB, 's')); %#ok<NASGU>
-[fsB, iB] = shLowLevel.fetchICGEM(row, FileList = FL, Dest = dB, ...
-    Pause = 0, Quiet = true);
+[fsB, iB] = shLowLevel.fetchICGEM(row, Mode = "files", FileList = FL, ...
+    Dest = dB, Pause = 0, Quiet = true);
 verifyEqual(tc, numel(fsB), 2);
+verifyEqual(tc, iB.mode, "files");
 verifyFalse(tc, iB.failed);
+% auto-FALLBACK: broken zip -> per-file takes over transparently
+rowBad = row; rowBad.zip = string(fullfile(mir, 'no_such.zip'));
+dC = tempname; cC = onCleanup(@() rmdir(dC, 's')); %#ok<NASGU>
+[fsC, iC] = shLowLevel.fetchICGEM(rowBad, FileList = FL, Dest = dC, ...
+    Pause = 0, Quiet = true);
+verifyEqual(tc, numel(fsC), 2);
+verifyEqual(tc, iC.mode, "files");             % fallback engaged
+% forced archive on the broken zip must error, not fall back
+% (the exact ID is platform/protocol dependent - the contract is THAT
+% it throws instead of silently switching modes)
+threw = false;
+try
+    shLowLevel.fetchICGEM(rowBad, Mode = "archive", ...
+        Dest = tempname, Quiet = true);
+catch
+    threw = true;
+end
+verifyTrue(tc, threw);
 % verified-before-swap: files parse
 g = shLowLevel.shReadGFC(char(fsB(1)));
 verifyEqual(tc, g.nmax, 60);
@@ -1143,8 +1161,8 @@ verifyEqual(tc, g.nmax, 60);
 ts = shSeries.fromFolder(fileparts(char(fsB(1))), Pattern = "*.gfc*");
 verifyEqual(tc, ts.nEpochs, 2);
 % Files= filter contract
-verifyError(tc, @() shLowLevel.fetchICGEM(row, FileList = FL, ...
-    Dest = tempname, Files = "*.nope", Quiet = true), ...
+verifyError(tc, @() shLowLevel.fetchICGEM(row, Mode = "files", ...
+    FileList = FL, Dest = tempname, Files = "*.nope", Quiet = true), ...
     'shLowLevel:fetchICGEM:emptySeries');
 end
 
