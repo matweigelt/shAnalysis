@@ -10,7 +10,8 @@ function s = vceRescale(N, Xres, idx, opts)
 %   stationary filter ignores.
 %
 %   Options:
-%     MinDegree  (round(2/3*Lmax))  lower bound of the noise-dominated band
+%     MinDegree (round(2/3 * idx.Lmax))  lower bound of the
+%             noise-dominated band
 %     Rows (true(0, 1))  extra logical row mask restricting the
 %         variance-component estimation to a subset of the
 %         coefficient vector; this is how VCEBands estimates one

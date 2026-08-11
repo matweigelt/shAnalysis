@@ -31,7 +31,9 @@ function [S, grid, info] = seaLevelFingerprint(loadRegion, ocean, idx, opts)
 %     LoadValue (1)        kg/m^2 for polygon loads
 %     rho_water (1000), rho_ave (5517), R (6378136.3)
 %     OverSample (2)       quadrature refinement (mask fidelity)
-%     MaxIter (50), Tol (1e-8 * |eustatic|)  convergence on max|dS|
+%     MaxIter (50)  maximum sea-level-equation iterations
+%     Tol (1e-8)  convergence threshold on max|dS|, RELATIVE to
+%             |eustatic| (the absolute bound is Tol * |eustatic|)
 %   Outputs
 %     S     (Ngrid,1) double  relative sea-level change over the ocean
 %                             [m per unit load], 0 on land

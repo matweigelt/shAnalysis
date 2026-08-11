@@ -3,6 +3,35 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.1.3] - 2026-08-11
+
+### Added
+- `tools/doc_sync_audit.py`, a sixth quality gate, wired into CI before
+  the MATLAB setup step. The five existing gates were all green while
+  the API reference listed 5 of 12 `fetchICGEM` options, eleven help
+  pages were unreachable from the Help browser, the v3.1.1 tag reported
+  3.1.0 and the guide advertised a call that threw - none of that was
+  detectable automatically. The gate checks doc snippets against the
+  parsed contracts (including option VALUE types, which is the class a
+  name-only check misses), API-reference freshness, `helptoc.xml`
+  reachability, version consistency, help placeholders and defaults, and
+  a narrative-coverage floor. Every check is verified by deliberately
+  breaking the repository and confirming it fires.
+- `tools/dev/README.md`: gate order, regeneration order, the SIGPIPE
+  trap, and the guide-asset recovery note.
+
+### Fixed
+- `fetchITSG` help claimed `Nmax (96)` unconditionally. The default is
+  NaN, which resolves to 96 for monthly and 40 for daily solutions, and
+  120 is also accepted for monthly - the help listed neither.
+- `seaLevelFingerprint` documented `Tol` as `1e-8 * |eustatic|`, mixing
+  the option's value with its effect; the default is 1e-8 and the
+  tolerance is relative.
+- `vceRescale` help wrote `round(2/3*Lmax)` where the arguments block
+  says `round(2/3 * idx.Lmax)`.
+- `shCoefficients.mtimes`/`uminus` and `shClimatology.withNote`/
+  `fromCoef` were documented only in the generated API reference.
+
 ## [3.1.2] - 2026-08-11
 
 ### Added

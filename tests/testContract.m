@@ -996,3 +996,28 @@ verifyEmpty(testCase, bad, sprintf( ...
     'placeholder help ("see arguments block") in: %s', ...
     strjoin(bad, ', ')));
 end
+
+% -------------------------------------------------- documentation sync gate
+function testDocSyncAuditIsWired(testCase)
+%TESTDOCSYNCAUDITISWIRED The sixth gate exists and runs in CI.
+%   The five older gates were all green while the API reference was
+%   stale, eleven help pages were unreachable and the guide advertised a
+%   call that threw. tools/doc_sync_audit.py closes that hole, so pin
+%   that it is present and actually wired into the required CI job -
+%   a gate nobody runs is not a gate.
+root = fileparts(fileparts(mfilename('fullpath')));
+gate = fullfile(root, 'tools', 'doc_sync_audit.py');
+verifyTrue(testCase, isfile(gate), 'tools/doc_sync_audit.py is missing');
+
+wf = fullfile(root, '.github', 'workflows', 'ci.yml');
+assumeTrue(testCase, isfile(wf), 'no workflow file in this checkout');
+txt = string(fileread(wf));
+verifyTrue(testCase, contains(txt, "tools/doc_sync_audit.py"), ...
+    'doc_sync_audit.py is not run by the CI workflow');
+% it must run BEFORE MATLAB: a python gate that only fires after a
+% 2-minute toolbox install wastes the fast feedback it exists for
+iGate = strfind(txt, "tools/doc_sync_audit.py");
+iML = strfind(txt, "matlab-actions/setup-matlab");
+verifyTrue(testCase, ~isempty(iML) && iGate(1) < iML(1), ...
+    'doc_sync_audit.py must run before the MATLAB setup step');
+end
