@@ -1144,8 +1144,16 @@ dC = tempname; cC = onCleanup(@() rmdir(dC, 's')); %#ok<NASGU>
 verifyEqual(tc, numel(fsC), 2);
 verifyEqual(tc, iC.mode, "files");             % fallback engaged
 % forced archive on the broken zip must error, not fall back
-verifyError(tc, @() shLowLevel.fetchICGEM(rowBad, Mode = "archive", ...
-    Dest = tempname, Quiet = true), 'MATLAB:COPYFILE:FileDoesNotExist');
+% (the exact ID is platform/protocol dependent - the contract is THAT
+% it throws instead of silently switching modes)
+threw = false;
+try
+    shLowLevel.fetchICGEM(rowBad, Mode = "archive", ...
+        Dest = tempname, Quiet = true);
+catch
+    threw = true;
+end
+verifyTrue(tc, threw);
 % verified-before-swap: files parse
 g = shLowLevel.shReadGFC(char(fsB(1)));
 verifyEqual(tc, g.nmax, 60);
