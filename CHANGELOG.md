@@ -3,6 +3,35 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
+## [3.7.0] - 2026-08-11
+
+### Added
+- `shLowLevel.sensitivityKernel`: a basin kernel that trades leakage
+  against propagated GRACE noise explicitly (Swenson & Wahr 2002 - the
+  construction behind the ESA CCI and GravIS gridded ice products),
+  rather than by choosing a filter radius and hoping. Minimises
+  leakage + Alpha * noise SUBJECT TO unit response over the basin,
+  closed form via one Lagrange multiplier. No iteration and no stopping
+  criterion, which is exactly its advantage over `leakageCorrect`:
+  nothing about the answer depends on where you stop.
+- Sweep `Alpha`, plot `info.leakage` against `info.noise`, take the
+  L-curve corner. `Noise` accepts a full covariance, a sigma vector, or
+  falls back to a degree-dependent default; a real covariance is what
+  makes the kernel *tailored* rather than merely smoothed.
+
+### Notes on getting it right
+- The UNIT-RESPONSE CONSTRAINT is what makes the result an average.
+  Without it the cheapest way to cut noise is to shrink the kernel
+  towards zero: during development `info.gain` fell to 0.28 at
+  Alpha = 0.1 and 0.001 at Alpha = 100, i.e. the "optimal" kernel
+  measured almost none of the basin it was averaging - and the
+  comparison against a Gaussian came out backwards for that reason.
+- Measured benefit over a Gaussian at matched noise AND matched gain:
+  **2% to 16%** less leakage across plausible far-field weightings.
+  The largest margin comes with a high-degree weighting, which is not
+  the intuitive ordering. The help says so rather than quoting a
+  headline number.
+
 ## [3.6.0] - 2026-08-11
 
 ### Added

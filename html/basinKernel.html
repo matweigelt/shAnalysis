@@ -39,6 +39,32 @@ th { background: #f5f7fa; }
 <tr><td>b</td><td>(P,1) double</td><td>kernel coefficients, idx ordering</td></tr>
 <tr><td>info</td><td>struct</td><td>areaFraction, nGridPoints, buffered, tapered</td></tr></table>
 <div class="note">Best practice: match <code class="inline">TaperKm</code> to the smoothing radius of your coefficient filter; use <code class="inline">BufferKm</code> to trade leakage-in against leakage-out. Theory and worked examples: workflow guide, &ldquo;Basin averages&rdquo;.</div>
+<h2>Tailored sensitivity kernels <span class="tag">v3.7.0</span></h2>
+<p><code class="inline">basinKernel</code> returns the band-limited exact indicator: perfect
+recovery from perfect data. Real data are noisy, and the indicator has energy at every degree, so it
+amplifies the high-degree error without limit. The usual remedy is to smooth &mdash; which trades
+noise against leakage by picking a radius and hoping.</p>
+<p><code class="inline">shLowLevel.sensitivityKernel</code> makes the trade explicit, minimising
+leakage plus <code class="inline">Alpha</code> times propagated noise, <b>subject to unit response
+over the basin</b>. Closed form via one Lagrange multiplier &mdash; no iteration, no stopping
+criterion. This is the construction behind the ESA CCI and GravIS gridded ice products.</p>
+<pre>for a = logspace(-2, 4, 20)                    % sweep, then choose
+    [k, s(end+1)] = shLowLevel.sensitivityKernel(idx, basin, ...
+        Alpha = a, Noise = sigmaVec);
+end
+loglog([s.leakage], [s.noise])                 % the L-curve; take the corner</pre>
+<div class="note"><b>The unit-response constraint is what makes it an average.</b> Without it the
+cheapest way to cut noise is to shrink the kernel towards zero, and the "optimal" kernel measures
+almost nothing &mdash; during development <code class="inline">info.gain</code> fell to 0.28 at
+<code class="inline">Alpha = 0.1</code>. Check <code class="inline">info.gain</code>: the constraint
+holds it at 1.</div>
+<p>How much better than a Gaussian? At matched noise <em>and</em> matched gain, between <b>2% and
+16%</b> less leakage across plausible far-field weightings &mdash; largest, counter-intuitively, for
+a high-degree weighting where a Gaussian's fixed shape is furthest from optimal. Measure it for your
+own case rather than quoting a headline. A real error covariance in
+<code class="inline">Noise</code> is what makes the kernel <em>tailored</em> rather than merely
+smoothed.</p>
+
 <h2>See also</h2><p class="seealso"><a href="shAnalysis.html">Overview</a> <a href="tvANS.html">tvANS</a> <a href="slepianBasis.html">slepianBasis</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.2 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
