@@ -515,6 +515,11 @@
   "run": true
  },
  {
+  "name": "shLowLevel.safeMove",
+  "example": "shLowLevel.shReadGFC(tmpf);                 % verify BEFORE the swap\nshLowLevel.safeMove(tmpf, \"ITSG-Grace2018_n60_2008-04.gfc\");",
+  "run": false
+ },
+ {
   "name": "shLowLevel.seaLevelFingerprint",
   "example": "S = shLowLevel.seaLevelFingerprint(gLoad, oceanMask, idx, kn = LN.kn, hn = LN.hn);",
   "run": false

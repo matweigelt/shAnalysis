@@ -210,7 +210,7 @@ for m = mm
                 webFetch(url, tmpf, opts.Timeout, opts.Proxy);
             end
             shLowLevel.shReadGFC(tmpf);                % verify BEFORE swap
-            movefile(tmpf, fp, 'f');
+            shLowLevel.safeMove(tmpf, fp);
             files(end+1) = string(fp); %#ok<AGROW>
             if present
                 updated(end+1) = string(fp); %#ok<AGROW>

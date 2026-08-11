@@ -1021,3 +1021,94 @@ iML = strfind(txt, "matlab-actions/setup-matlab");
 verifyTrue(testCase, ~isempty(iML) && iGate(1) < iML(1), ...
     'doc_sync_audit.py must run before the MATLAB setup step');
 end
+
+% ------------------------------------------------------------- safeMove
+function testSafeMoveContract(testCase)
+%TESTSAFEMOVECONTRACT The fetchers' final swap: verify, retry, report.
+%   safeMove replaces a bare movefile in all six fetchers. It must move
+%   the file, VERIFY the outcome rather than trust the status flag,
+%   retry a configurable number of times, and fail with an actionable
+%   identifier rather than a bare OS message.
+d = fullfile(tempdir, sprintf('shx_move_%d', randi(1e9)));
+mkdir(d);
+cl = onCleanup(@() rmdir(d, 's')); %#ok<NASGU>
+src = fullfile(d, 'a.bin');
+dst = fullfile(d, 'b.bin');
+
+% happy path: one attempt, file actually moved
+writematrix(magic(4), src, 'FileType', 'text');
+n = shLowLevel.safeMove(src, dst);
+verifyEqual(testCase, n, 1);
+verifyTrue(testCase, isfile(dst));
+verifyFalse(testCase, isfile(src));
+
+% overwriting an existing destination is the normal fetcher case
+writematrix(magic(3), src, 'FileType', 'text');
+verifyEqual(testCase, shLowLevel.safeMove(src, dst), 1);
+verifyEqual(testCase, readmatrix(dst, 'FileType', 'text'), magic(3));
+
+% a missing source is a caller bug, not a lock: say so immediately
+verifyError(testCase, @() shLowLevel.safeMove(fullfile(d, 'nope'), dst), ...
+    'shLowLevel:safeMove:noSource');
+
+% a missing destination folder cannot be cured by waiting: report it
+% at once, and do not blame a scanner for a caller bug
+writematrix(1, src, 'FileType', 'text');
+bad = fullfile(d, 'no_such_dir', 'c.bin');
+t0 = tic;
+verifyError(testCase, @() shLowLevel.safeMove(src, bad), ...
+    'shLowLevel:safeMove:noDestFolder');
+verifyLessThan(testCase, toc(t0), 1, ...
+    'an impossible move must not spend the retry budget');
+verifyTrue(testCase, isfile(src), ...
+    'a failed move must leave the source in place');
+end
+
+
+function testSafeMoveSurvivesALockedDestination(testCase)
+%TESTSAFEMOVESURVIVESALOCKEDDESTINATION The case this function exists for.
+%   On Windows an antivirus or sync client holds a freshly written file
+%   for a moment and movefile fails with a sharing violation. Reproduced
+%   here by keeping the destination open and releasing it from a timer
+%   while safeMove retries.
+%
+%   This is the ONLY test of the retry loop, deliberately. POSIX renames
+%   over open files, and permission tricks do not substitute: the CI
+%   runner is root, so a read-only destination folder does not block it
+%   either (tried; the move succeeded). Rather than fake a failure on
+%   Linux, the loop is tested on the platform whose behaviour it exists
+%   for - which is also the acceptance machine.
+assumeTrue(testCase, ispc, ...
+    'file locking during a move is Windows behaviour');
+d = fullfile(tempdir, sprintf('shx_lock_%d', randi(1e9)));
+mkdir(d);
+cl = onCleanup(@() rmdir(d, 's')); %#ok<NASGU>
+src = fullfile(d, 'a.bin');
+dst = fullfile(d, 'b.bin');
+writematrix(magic(4), src, 'FileType', 'text');
+fid = fopen(dst, 'w');
+fwrite(fid, 'held by a scanner');
+verifyFalse(testCase, movefile(src, dst, 'f'), ...
+    'the destination is not actually locked - test cannot conclude');
+
+% Retries = 0 is a plain movefile: it must fail against the held file,
+% spend no time waiting, and leave the source in place
+t0 = tic;
+verifyError(testCase, @() shLowLevel.safeMove(src, dst, Retries = 0), ...
+    'shLowLevel:safeMove:locked');
+verifyLessThan(testCase, toc(t0), 1);
+verifyTrue(testCase, isfile(src), ...
+    'a failed move must leave the source in place');
+
+% with retries, the lock is outlived: released at 0.4 s from a timer
+rel = timer('StartDelay', 0.4, 'TimerFcn', @(~, ~) fclose(fid));
+clT = onCleanup(@() delete(rel)); %#ok<NASGU>
+start(rel);
+t0 = tic;
+n = shLowLevel.safeMove(src, dst, Pause = 0.15, Retries = 6);
+verifyGreaterThan(testCase, n, 1, ...
+    'the first attempt must have failed against the held file');
+verifyGreaterThanOrEqual(testCase, toc(t0), 0.15);   % backoff was spent
+verifyTrue(testCase, isfile(dst));
+verifyFalse(testCase, isfile(src));
+end

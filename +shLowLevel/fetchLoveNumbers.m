@@ -87,7 +87,7 @@ for nm = names(:)'
                     opts.Timeout, opts.Proxy);
             end
             parseGroopsMatrix(tmpf);            % verify BEFORE swap
-            movefile(char(tmpf), fp, 'f');
+            shLowLevel.safeMove(tmpf, fp);
             files(end+1) = string(fp); %#ok<AGROW>
             if present, info.updated(end+1) = string(fp);
             else, info.fetched(end+1) = string(fp); end

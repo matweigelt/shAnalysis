@@ -222,7 +222,7 @@ catch err
     end
     rethrow(err);
 end
-movefile(tmpf, file, 'f');
+shLowLevel.safeMove(tmpf, file);
 info.updated = present;
 info.failed = false;
 if ~opts.Quiet
@@ -356,7 +356,7 @@ for j = 1:height(F)
     try
         fetchWithBackoff(F.url(j), tmpf, opts);
         shLowLevel.shReadGFC(tmpf);             % verify BEFORE swap
-        movefile(tmpf, fp, 'f');
+        shLowLevel.safeMove(tmpf, fp);
         files(1, end+1) = string(fp); %#ok<AGROW>
         nFetched = nFetched + 1;
     catch err
