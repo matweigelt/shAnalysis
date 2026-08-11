@@ -1160,6 +1160,22 @@ verifyEqual(tc, g.nmax, 60);
 % the advertised workflow end-to-end
 ts = shSeries.fromFolder(fileparts(char(fsB(1))), Pattern = "*.gfc*");
 verifyEqual(tc, ts.nEpochs, 2);
+% v3.1.2: NUMERIC selection of a series through the BULK loop - the
+% path that produced 'left and right sides have a different number of
+% elements' in the field (283 files assigned into strings(1,K))
+T2 = [row; row]; T2.idx = (1:2)';
+T2.series(2) = "Series B";
+dD = tempname; cD = onCleanup(@() rmdir(dD, 's')); %#ok<NASGU>
+dE = tempname; cE = onCleanup(@() rmdir(dE, 's')); %#ok<NASGU>
+% distinct Dest per row is not expressible in bulk - use default-dest
+% only for shape checks: route both rows into explicit folders via two
+% single calls is the normal path; here the BULK CONTRACT is under test
+out = evalc(['[fD, iD] = shLowLevel.fetchICGEM([1 2], List = T2, ' ...
+    'Type = "temporal", Dest = dD, Pause = 0);']);
+verifyEqual(tc, numel(fD), 4);                 % 2 series x 2 files
+verifyEqual(tc, numel(iD), 2);
+verifyTrue(tc, all([iD.mode] == "archive"));   % uniform info fields
+verifyTrue(tc, contains(out, '2 of 2 selections ok (4 files)'));
 % Files= filter contract
 verifyError(tc, @() shLowLevel.fetchICGEM(row, Mode = "files", ...
     FileList = FL, Dest = tempname, Files = "*.nope", Quiet = true), ...
