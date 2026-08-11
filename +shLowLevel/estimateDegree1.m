@@ -19,8 +19,11 @@ function [d1, info] = estimateDegree1(ts, ocean, opts)
 %   The argument: a surface mass field is land plus ocean. GRACE observes
 %   degrees 2 and up of the total. The degree-1 terms are then whatever,
 %   when added, makes the OCEAN part of the field agree with an ocean
-%   model - a 3x3 least-squares problem per epoch, solved over the ocean
-%   domain with area weighting.
+%   model - a small least-squares problem per epoch, solved over the
+%   ocean domain with area weighting. A constant term is carried
+%   alongside the three patterns to absorb any mass imbalance between
+%   data and ocean model; without it that offset lands on C10 (a 153%
+%   error on the reference problem) because C10 has a large ocean mean.
 %
 %   Inputs
 %     ts         (1,1) shSeries  the solutions, degrees 2+ (a GSM series;
@@ -52,7 +55,7 @@ function [d1, info] = estimateDegree1(ts, ocean, opts)
 %                shLowLevel.readTN13 returns, so it drops straight into
 %                shSeries.addDegree1 / shCoefficients.addDegree1
 %     info       (1,1) struct  fields: cond (T,1 double, condition
-%                number of the 3x3 system per epoch - a rising value
+%                number of the design matrix per epoch - a rising value
 %                warns that the ocean domain is too small or too
 %                lopsided BEFORE the noise shows it), oceanFraction
 %                (1,1 double, area fraction used), nPixels, hasModel
@@ -123,7 +126,15 @@ end
 % the three degree-1 surface-mass patterns, in EWH metres
 B = degree1Basis(lat, lon, opts.kn);
 w = cosd(LA);
-A = [B{1}(isOc), B{2}(isOc), B{3}(isOc)] .* sqrt(w(isOc));
+% A CONSTANT column goes with the three patterns. The ocean residual
+% generally contains a degree-0 (total mass) component - the observed
+% field is degrees 2+, any mass imbalance between data and ocean model
+% shows up as an offset - and without a constant to absorb it, that
+% offset is projected onto C10, which has a large ocean-mean value. On
+% the reference problem this alone produced a 153% error. The constant
+% is a nuisance parameter: estimated, then discarded.
+A = [B{1}(isOc), B{2}(isOc), B{3}(isOc), ones(nnz(isOc), 1)] ...
+    .* sqrt(w(isOc));
 
 C10 = zeros(T, 1); C11 = zeros(T, 1); S11 = zeros(T, 1);
 cnd = zeros(T, 1); rms = zeros(T, 1);
@@ -138,7 +149,7 @@ for k = 1:T
     end
     b = d(isOc) .* sqrt(w(isOc));
     x = A \ b;
-    C10(k) = x(1); C11(k) = x(2); S11(k) = x(3);
+    C10(k) = x(1); C11(k) = x(2); S11(k) = x(3);   % x(4): mass nuisance
     cnd(k) = cond(A);
     rms(k) = sqrt(mean((A * x - b).^2));
 end
