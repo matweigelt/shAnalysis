@@ -19,13 +19,19 @@ th { background: #f5f7fa; }
 </style>
 </head>
 <body><div class="content">
-<body><div class="content">
 <span class="tag">Toolbox</span>
-<h1>shAnalysis v2 &mdash; overview</h1>
+<h1>shAnalysis &mdash; overview</h1>
 <p>Spherical harmonic (Stokes coefficient) analysis for GRACE/GRACE-FO, GOCE, and static gravity
-field models. Three user-facing classes cover the whole chain; numerical internals live in the
-<code class="inline">+shLowLevel</code> package; the v1 function API remains available in
-<code class="inline">compat/</code>.</p>
+field models. Three user-facing classes cover the whole chain; every numerical building block
+lives in the <code class="inline">+shLowLevel</code> package and is callable directly. Base
+MATLAB only &mdash; no toolboxes.</p>
+<p class="note">v3.0.0 was a breaking release: the package was renamed
+<code class="inline">+shx</code> &rarr; <code class="inline">+shLowLevel</code> (error identifiers
+<code class="inline">shLowLevel:*</code>), and the <code class="inline">compat/</code> folder with
+the v1 function API was removed. Call <code class="inline">shLowLevel.shReadGFC(...)</code> instead
+of <code class="inline">shReadGFC(...)</code>, or use the classes. Run
+<code class="inline">shLowLevel.version</code> for the installed version; the
+<a href="apiReference.html">API reference</a> is generated from the source on every release.</p>
 
 <h2>The three classes</h2>
 <table>
@@ -44,7 +50,7 @@ tsA = dts.destripe(minOrder=6).gaussian(300);        % classic
 [tsF, op] = dts.filter("tvANS");                     % optimal
 avg = tsF.basinAverage(B, Deconvolve=true, Op=op);</pre>
 
-<h2>v1 function pages</h2>
+<h2>Package function pages</h2>
 <p class="seealso">
 <a href="shReadGFC.html">shReadGFC</a> <a href="shEvalGFCT.html">shEvalGFCT</a>
 <a href="legendreALF.html">legendreALF</a> <a href="shDegreeRMS.html">shDegreeRMS</a>
@@ -52,8 +58,9 @@ avg = tsF.basinAverage(B, Deconvolve=true, Op=op);</pre>
 <a href="plotSHCoeffTriangle.html">plotSHCoeffTriangle</a> <a href="shDestripe.html">shDestripe</a>
 <a href="shGaussianWeights.html">shGaussianWeights</a> <a href="shGaussianFilter.html">shGaussianFilter</a>
 <a href="shSynthesis.html">shSynthesis</a></p>
-<p>These signatures still work unchanged from <code class="inline">compat/</code> and delegate to the
-same <code class="inline">+shLowLevel</code> internals the classes use.</p>
+<p>These are the numerical cores the classes call. Since v3.0.0 they are reached through the
+package namespace, e.g. <code class="inline">shLowLevel.shSynthesis(...)</code>; the pages document
+the low-level contract, the <a href="apiReference.html">API reference</a> the exact signatures.</p>
 
 <h2>New in v2.1</h2>
 <table>
@@ -79,15 +86,18 @@ for the GRACE&harr;GRACE-FO gap; irregular sampling handled natively downstream.
 </table>
 
 <h2>Validation</h2>
-<p><code class="inline">runAllTests</code> executes five suites: numerical correctness (golden and
+<p><code class="inline">runAllTests</code> executes four suites: numerical correctness (golden and
 analytic values), API contract (error identifiers, immutability, dimensions), robustness (NaN
-stacks, degenerate basins, corrupted files, poles), the complete unmodified v1 suite against the
-compat layer, and performance benchmarks (with a Legendre-cache speedup assertion). tvANS numerics
-were additionally cross-validated in Python before the MATLAB port.</p>
+stacks, degenerate basins, corrupted files, poles) and performance benchmarks (with a
+Legendre-cache speedup assertion). The v1 legacy suite went with <code class="inline">compat/</code>
+in v3.0.0. Every numerical method was cross-validated in Python (numpy/scipy) before the MATLAB
+implementation, and every field failure since has been converted into a fixture plus a contract
+test. The suite is CI-safe: all fetchers run offline against fixtures.</p>
 
 <div class="note">Policy: no physical tables are hardcoded &mdash; Love numbers, TN-14 corrections
 etc. are always user-supplied and parsed, never assumed.</div>
 <hr style="margin-top:40px;border:none;border-top:1px solid #e2e2e2;">
-<p style="color:#888;font-size:11.5px;">shAnalysis v2 &middot; Claude (Fable 5), 2026-08-07</p>
+<p style="color:#888;font-size:11.5px;">shAnalysis &middot; version and date: run
+<code>shLowLevel.version</code> &middot; Claude (Fable 5)</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </body></html>

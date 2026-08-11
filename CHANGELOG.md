@@ -3,7 +3,7 @@
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 
-## [3.1.1] - Unreleased
+## [3.1.1] - 2026-08-11
 
 ### Added
 - `fetchICGEM` fetches TIME SERIES: temporal-catalogue rows (from
@@ -25,6 +25,28 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   outputs are now collected per selection and concatenated; `info`
   carries a uniform `mode` field ("model"|"archive"|"files") across
   all paths; the summary reports selections and files separately.
+- `shSeries.filter("tvANS", ...)` accepts and forwards `Shrinkage`,
+  `VCEMinDegree` and `VCEBands`. The workflow guide has advertised
+  `ts.filter("tvANS", Blocks="auto", VCEBands=[0 16 33 61])` since
+  Edition 2; the class method rejected it (`MATLAB:TooManyInputs`), so
+  banded VCE was reachable only through the low-level entry point. The
+  defaults stay in `shLowLevel.tvANSFilter` - `[]` means "do not
+  override" - so there is exactly one home for each default.
+- Documentation metadata brought back in sync with the code: `Contents.m`
+  is at 3.1.1 (the v3.1.1 tag shipped a 3.1.0 version line, so
+  `ver('shAnalysis')` under-reported), `CITATION.cff` follows, and the
+  `[3.1.0]`/`[3.0.1]`/`[2.7.0]` sections are dated instead of
+  "Unreleased". `Contents.m` no longer advertises the `compat/` folder
+  and the legacy v1 suite, both removed in v3.0.0, and its first line is
+  now a short product name (MATLAB's `ver` printed a truncated sentence).
+- `apiReference.html` regenerated: it predated the series work and listed
+  5 of the 12 `fetchICGEM` options. `make_apiref.py` now parses the
+  version from `Contents.m` instead of carrying a hardcoded string.
+- `helptoc.xml` reaches all 43 help pages (11 were unreachable from the
+  Help browser) and its labels no longer name superseded versions;
+  `shAnalysis.html` is a v3 page again instead of describing `compat/`.
+- `shCoefficients.disp`, `shSeries.disp` and `shClimatology.disp` have
+  help text; `help_audit.py` no longer exempts `disp`.
 - `shReadGFC` bulk parser survives ragged record groups: EIGEN-5S/5C
   carry a single gfc line with a trailing epoch among thousands of
   uniform ones, which silently misaligned the rectangular sscanf and
@@ -33,7 +55,7 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   when ragged, and guarded by an n/m integer/bound sanity net; dirty
   groups still fall back to the line parser.
 
-## [3.1.0] - Unreleased
+## [3.1.0] - 2026-08-10
 
 ### Fixed
 - `shReadGFC` ICGEM 2.0 acos/asin column order corrected to the
@@ -88,7 +110,7 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 - Workflow guide version stamp is generated from Contents.m (the PDF
   title claimed v2.5 since the beginning).
 
-## [3.0.1] - Unreleased
+## [3.0.1] - 2026-08-10
 
 ### Added
 - `tools/help_audit.py`: documentation completeness gate, run in CI
@@ -122,7 +144,7 @@ All notable changes to shAnalysis. The version line in `Contents.m`
 - Generated API reference page `html/apiReference.html` (inputs,
   options with defaults, outputs for every public function/method).
 
-## [2.7.0] - Unreleased
+## [2.7.0] - 2026-08-10
 
 ### Added
 - `shLowLevel.poleTideConvert`: C21/S21 conversion between the IERS2010 and

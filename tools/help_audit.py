@@ -150,7 +150,7 @@ def main():
             while j < len(lines) and not endre.match(lines[j]):
                 if public and re.match(r"^\s*function\s", lines[j]):
                     e = parse_from(lines, j, "")
-                    if e and e["name"] not in seen and e["name"] != "disp":
+                    if e and e["name"] not in seen:
                         seen.add(e["name"])
                         probs += audit(e, cls[:-2] + "." + e["name"], examples)
                 j += 1

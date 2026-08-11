@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.0.0)</h1>
+<h1>shAnalysis API reference (v3.1.1)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -338,7 +338,7 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 <p class="h1line">Download a static gravity field model from ICGEM.</p>
 <p>FILE = shLowLevel.fetchICGEM(&quot;EGM2008&quot;) resolves the model name against shLowLevel.listICGEM (case-insensitive exact match, else unique prefix) and downloads the .gfc into &lt;dataFolder&gt;/icgem. Existing files are skipped. Load with shCoefficients.read(FILE).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>-</td><td>-</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>300</td></tr><tr><td><code>List</code></td><td>-</td><td>table</td><td>table()</td></tr><tr><td><code>Proxy</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>300</td></tr><tr><td><code>List</code></td><td>-</td><td>table</td><td>table()</td></tr><tr><td><code>Proxy</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Pause</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Retries</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Type</code></td><td>1 x 1</td><td>string</td><td>&quot;static&quot;</td></tr><tr><td><code>Files</code></td><td>1 x 1</td><td>string</td><td>&quot;*.gfc*&quot;</td></tr><tr><td><code>Mode</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>FileList</code></td><td>-</td><td>table</td><td>table()</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>file</code></td><td>string   local path</td></tr>
 <tr><td><code>info</code></td><td>struct: url, skipped (true if already present)</td></tr>
@@ -1234,6 +1234,7 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <div class="entry" id="shCoefficients.disp">
 <h3><code>shCoefficients.disp(obj)</code></h3>
 <p class="h1line">Compact display: size, epoch, GM/R, processing history.</p>
+<p>disp(G) prints one header line with the model name, one contract line (nmax, epoch, product type, tide system, GM, R), whether formal sigmas are attached and how many gfct variable terms are carried, followed by the processing history. Called automatically when an shCoefficients object is shown without a semicolon.</p>
 <b>Example</b><pre>disp(g)                                % degree, epoch, history</pre>
 </div>
 <div class="entry" id="shCoefficients.evalAt">
@@ -1545,6 +1546,7 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <div class="entry" id="shSeries.disp">
 <h3><code>shSeries.disp(obj)</code></h3>
 <p class="h1line">Compact display: months, span, gaps, processing history.</p>
+<p>disp(TS) prints the product type, the number of epochs, the maximum degree and the covered epoch range, followed by the processing history. Called automatically when an shSeries object is shown without a semicolon.</p>
 <b>Example</b><pre>disp(ts)</pre>
 </div>
 <div class="entry" id="shSeries.dropNaN">
@@ -1569,9 +1571,9 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <div class="entry" id="shSeries.filter">
 <h3><code>shSeries.filter(obj, method, opts)</code></h3>
 <p class="h1line">Optimal time-variable filtering of the series.</p>
-<p>[TSF, OP, INFO] = ts.filter(&quot;tvANS&quot;, Constraints ([])=..., NoiseCov ([])=..., SignalMode (&quot;isotropic&quot;)=&quot;isotropic&quot;|&quot;inhomogeneous&quot;, NIterSignal (3)=3, Robust (false)=false, MinDegree (2)=2) runs the tvANS chain (see shLowLevel.tvANSFilter): deterministic-model separation, empirical or supplied noise covariance, monthly VCE scaling, data-driven signal covariance, per-month anisotropic Wiener filter, optional hard constraints. OP is the stored linear operator - required for basinAverage(..., Deconvolve=true) and shLowLevel.resolutionMap. v2.1: Blocks (&quot;auto&quot;)=&quot;auto&quot;|&quot;on&quot;|&quot;off&quot; engages the block-diagonal fast path (isotropic + empirical N + no constraints; identical results, tractable to Lmax ~ 120). The filtered series carries per-coefficient posterior 1-sigma stacks in OUT.sigmaCs/Ss (from info.sigmaXfres; degrees below MinDegree are NaN).</p>
+<p>[TSF, OP, INFO] = ts.filter(&quot;tvANS&quot;, Constraints ([])=..., NoiseCov ([])=..., SignalMode (&quot;isotropic&quot;)=&quot;isotropic&quot;|&quot;inhomogeneous&quot;, NIterSignal (3)=3, Robust (false)=false, MinDegree (2)=2) runs the tvANS chain (see shLowLevel.tvANSFilter): deterministic-model separation, empirical or supplied noise covariance, monthly VCE scaling, data-driven signal covariance, per-month anisotropic Wiener filter, optional hard constraints. OP is the stored linear operator - required for basinAverage(..., Deconvolve=true) and shLowLevel.resolutionMap. v2.1: Blocks (&quot;auto&quot;)=&quot;auto&quot;|&quot;on&quot;|&quot;off&quot; engages the block-diagonal fast path (isotropic + empirical N + no constraints; identical results, tractable to Lmax ~ 120). The filtered series carries per-coefficient posterior 1-sigma stacks in OUT.sigmaCs/Ss (from info.sigmaXfres; degrees below MinDegree are NaN). v3.1.1: the three noise-covariance tuning options of shLowLevel.tvANSFilter are forwarded, so the class method is the full single point of access: Shrinkage ([])=empirical noise- covariance shrinkage, VCEMinDegree ([])=first degree entering the variance-component estimation, VCEBands ([])=order-band edges for per-band monthly VCE factors (block path only). [] means &quot;leave the shLowLevel.tvANSFilter default in place&quot; (0.1, round(2/3*Lmax) and no banding respectively) - the defaults are NOT duplicated here, they have exactly one home.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>method</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>NoiseCov</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Constraints</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>SignalMode</code></td><td>1 x 1</td><td>string</td><td>&quot;isotropic&quot;</td></tr><tr><td><code>NIterSignal</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Robust</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MinDegree</code></td><td>1 x 1</td><td>double</td><td>2</td></tr><tr><td><code>Blocks</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>NoiseCov</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Constraints</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>SignalMode</code></td><td>1 x 1</td><td>string</td><td>&quot;isotropic&quot;</td></tr><tr><td><code>NIterSignal</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>Robust</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MinDegree</code></td><td>1 x 1</td><td>double</td><td>2</td></tr><tr><td><code>Blocks</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>Shrinkage</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>VCEMinDegree</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>VCEBands</code></td><td>1 x :</td><td>double</td><td>[]</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   tvANS-filtered series with sigmaCs/Ss posterior stacks (exact incl. constraints, v2.5)</td></tr>
 <tr><td><code>op</code></td><td>struct   stored linear operator (V/Ut/lam/s or blocks, model, detLeverage/detResVar) for deconvolution and resolution maps</td></tr>
@@ -1748,6 +1750,7 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <div class="entry" id="shClimatology.disp">
 <h3><code>shClimatology.disp(obj)</code></h3>
 <p class="h1line">Compact display: fitted components, reference epoch, note.</p>
+<p>disp(CLIM) prints the maximum degree and the reference epoch t0, the list of fitted components (bias, trend, annual and semi-annual cosine/sine, plus any extra Periods) and the processing history including the GIA note. Called automatically when an shClimatology object is shown without a semicolon.</p>
 <b>Example</b><pre>disp(clim)</pre>
 </div>
 <div class="entry" id="shClimatology.eval">
@@ -1825,4 +1828,4 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 </table>
 <b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 2026-08-10 (v3.0.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.1.1). Generated by tools - do not edit.</p></body></html>

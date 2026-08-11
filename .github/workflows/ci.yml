@@ -57,7 +57,8 @@ jobs:
             assert(isfolder('+shLowLevel'), 'repo layout: +shLowLevel missing in %s', pwd);
             assert(isfolder('tests'), 'repo layout: tests missing in %s', pwd);
             d = dir(fullfile('+shLowLevel', '*.m'));
-            fprintf('files in +shLowLevel: %d (expect 78)\n', numel(d));
+            fprintf('files in +shLowLevel: %d\n', numel(d));
+            assert(numel(d) >= 80, 'repo layout: only %d files in +shLowLevel', numel(d));
             addpath(pwd);
             fprintf('shLowLevel.legendreCached resolves to: %s\n', ...
                 which('shLowLevel.legendreCached'));

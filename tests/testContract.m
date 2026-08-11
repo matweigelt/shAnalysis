@@ -851,3 +851,122 @@ verifyError(testCase, @() shLowLevel.readDDK("DDK7"), 'shLowLevel:readDDK:notFet
 verifyError(testCase, @() shLowLevel.fetchDDK(0), 'MATLAB:validators:mustBeInRange');
 end
 
+
+% ------------------------------------------------- tvANS option forwarding
+function testFilterForwardsTvANSOptions(testCase)
+%TESTFILTERFORWARDSTVANSOPTIONS ts.filter is the full single point of access.
+%   The workflow guide has advertised
+%   ts.filter("tvANS", Blocks="auto", VCEBands=[...]) since Edition 2 while
+%   the method rejected the option (MATLAB:TooManyInputs). Pin the three
+%   forwarded tuning options AND the "[] does not override" contract, so
+%   the defaults keep exactly one home (shLowLevel.tvANSFilter).
+rng(11);
+L = 6; T = 30; n1 = L + 1;
+tY = 2019 + (0:T-1)'/12;
+mL = tril(true(n1)); mL1 = mL; mL1(:, 1) = false;
+Cs = zeros(n1, n1, T); Ss = Cs;
+for t = 1:T
+    Cs(:,:,t) = (mL .* randn(n1)) * 1e-9 + (mL * 2e-9) * cos(2*pi*tY(t));
+    Ss(:,:,t) = (mL1 .* randn(n1)) * 1e-9;
+end
+ts = shSeries(Cs, Ss = Ss, Epochs = tY);
+
+% 1. the three options are accepted (this is what used to throw)
+[tsB, ~, infoB] = ts.filter("tvANS", Blocks = "on", VCEBands = [0 3 7]);
+verifyClass(testCase, tsB, 'shSeries');
+verifySize(testCase, tsB.Cs, [n1 n1 T]);
+
+% 2. banding actually reaches tvANSFilter: the banded run must differ from
+%    the unbanded one (a silently dropped option would give equality)
+[tsU, ~, infoU] = ts.filter("tvANS", Blocks = "on");
+verifyTrue(testCase, max(abs(tsB.Cs(:) - tsU.Cs(:))) > 0);
+verifyTrue(testCase, isfield(infoB, 'sigmaXfres') && ...
+    isfield(infoU, 'sigmaXfres'));
+
+% 3. [] means "do not override": explicit empties reproduce the defaults
+%    bit for bit, so no default is duplicated in shSeries
+tsE = ts.filter("tvANS", Blocks = "on", Shrinkage = [], ...
+    VCEMinDegree = [], VCEBands = []);
+verifyEqual(testCase, tsE.Cs, tsU.Cs);
+verifyEqual(testCase, tsE.Ss, tsU.Ss);
+
+% 4. Shrinkage and VCEMinDegree are forwarded too
+tsS = ts.filter("tvANS", Blocks = "on", Shrinkage = 0.5);
+verifyTrue(testCase, max(abs(tsS.Cs(:) - tsU.Cs(:))) > 0);
+tsV = ts.filter("tvANS", Blocks = "on", VCEMinDegree = 2);
+verifyTrue(testCase, max(abs(tsV.Cs(:) - tsU.Cs(:))) > 0);
+
+% 5. scalar validators still bite
+verifyError(testCase, @() ts.filter("tvANS", Shrinkage = [0.1 0.2]), ...
+    'MATLAB:validators:mustBeScalarOrEmpty');
+
+% 6. the low-level entry point rejects banding off the block path -
+%    the forwarded option must not swallow that guard
+verifyError(testCase, ...
+    @() ts.filter("tvANS", Blocks = "off", VCEBands = [0 3 7]), ...
+    'shLowLevel:tvANSFilter:bandsNeedBlocks');
+end
+
+% --------------------------------------------- documentation-metadata sync
+function testVersionMetadataIsConsistent(testCase)
+%TESTVERSIONMETADATAISCONSISTENT One version, parsed from Contents.m.
+%   Contents.m is the single source of truth (five bugs died from
+%   hardcoded version strings). CITATION.cff, the CHANGELOG top section
+%   and the generated API reference must agree with it, and ver() must
+%   report a short product name rather than a truncated sentence.
+root = fileparts(fileparts(mfilename('fullpath')));
+v = shLowLevel.version();
+verifyMatches(testCase, v.Version, '^\d+\.\d+\.\d+$');
+
+cff = string(fileread(fullfile(root, 'CITATION.cff')));
+tok = regexp(cff, 'version:\s*"([^"]+)"', 'tokens', 'once');
+verifyEqual(testCase, string(tok{1}), v.Version, ...
+    'CITATION.cff version must match Contents.m');
+
+chg = string(fileread(fullfile(root, 'CHANGELOG.md')));
+tok = regexp(chg, '##\s*\[([^\]]+)\]', 'tokens', 'once');
+verifyEqual(testCase, string(tok{1}), v.Version, ...
+    'the top CHANGELOG section must be the current version');
+openSec = regexp(chg, '^##\s*\[[^\]]+\]\s*-\s*Unreleased', ...
+    'match', 'lineanchors');
+verifyEmpty(testCase, openSec, ...
+    'a tagged release must not leave "Unreleased" sections behind');
+
+api = string(fileread(fullfile(root, 'html', 'apiReference.html')));
+verifyTrue(testCase, contains(api, "API reference (v" + v.Version + ")"), ...
+    'html/apiReference.html is stale - regenerate it');
+
+% ver() name: short, no version number, no dangling sentence
+mv = ver('shAnalysis');
+assumeNotEmpty(testCase, mv, ...
+    'ver() needs the toolbox folder to be named shAnalysis');
+verifyEqual(testCase, numel(mv), 1);
+verifyEqual(testCase, string(mv.Version), v.Version);
+verifyLessThan(testCase, strlength(string(mv.Name)), 60);
+verifyFalse(testCase, contains(string(mv.Name), digitsPattern));
+end
+
+function testHelpBrowserTocIsComplete(testCase)
+%TESTHELPBROWSERTOCISCOMPLETE Every help page is reachable from helptoc.xml.
+%   Eleven pages were orphaned (invisible in the Help browser) while the
+%   files sat in html/. Both directions are pinned: no orphan pages, no
+%   dead targets.
+root = fileparts(fileparts(mfilename('fullpath')));
+hdir = fullfile(root, 'html');
+toc = string(fileread(fullfile(hdir, 'helptoc.xml')));
+tk = regexp(toc, 'target="([^"]+)"', 'tokens');
+targets = unique(string(cellfun(@(c) c{1}, tk, 'UniformOutput', false)));
+d = dir(fullfile(hdir, '*.html'));
+files = string({d.name}');
+verifyEmpty(testCase, setdiff(files, targets), ...
+    'help pages missing from helptoc.xml');
+verifyEmpty(testCase, setdiff(targets, files), ...
+    'helptoc.xml points at files that do not exist');
+% the removed compat/ folder must not be advertised anywhere as current
+lp = string(fileread(fullfile(hdir, 'shAnalysis.html')));
+verifyFalse(testCase, contains(lp, "remains available"), ...
+    'the landing page still advertises the removed compat/ folder');
+cm = string(fileread(fullfile(root, 'Contents.m')));
+verifyFalse(testCase, contains(cm, "folder compat/, add to path"), ...
+    'Contents.m still advertises the removed compat/ folder');
+end

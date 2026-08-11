@@ -13,3 +13,4 @@ Desktop.ini
 tests/test_data/*.snx
 tests/test_data/*.snx.gz
 !tests/test_data/ITSG-Grace2018_n96_2008-04_head12.snx
+__pycache__/
