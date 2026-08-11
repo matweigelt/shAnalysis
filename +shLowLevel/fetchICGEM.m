@@ -20,11 +20,13 @@ function [file, info] = fetchICGEM(model, opts)
 %                         numeric selections and names resolve against
 %                         (mirrors shLowLevel.listICGEM)
 %     Files ("*.gfc*")    filename filter in series mode
-%     Archive (false)     series mode: download the server's whole-
-%                         series zip in ONE request (fast first grab,
-%                         often hundreds of MB, no per-file resume)
-%                         instead of file-by-file (default: resumable,
-%                         each file verified before swap)
+%     Mode ("auto")       series download strategy: "auto" fetches the
+%                         server's whole-series ZIP in ONE request (the
+%                         rate limiter punishes hundreds of per-file
+%                         requests) and falls back to file-by-file on
+%                         failure; "archive" | "files" force either.
+%                         Per-file is resumable with every file
+%                         verified before the swap.
 %     FileList (table())  series mode: use this file table (from
 %                         listICGEM(Series=...)) instead of querying -
 %                         for subsetting or offline mirrors
@@ -64,7 +66,8 @@ arguments
     opts.Type (1,1) string {mustBeMember(opts.Type, ...
         ["static", "temporal"])} = "static"
     opts.Files (1,1) string = "*.gfc*"
-    opts.Archive (1,1) logical = false
+    opts.Mode (1,1) string {mustBeMember(opts.Mode, ...
+        ["auto", "archive", "files"])} = "auto"
     opts.FileList table = table()
 end
 % ---- v3.0.0: numeric idx vector (rows of shLowLevel.listICGEM), "all", or a
@@ -107,7 +110,7 @@ if isnumeric(model) || ...
                 Proxy = opts.Proxy, Update = opts.Update, ...
                 Quiet = opts.Quiet, Retries = opts.Retries, ...
                 Type = opts.Type, Files = opts.Files, ...
-                Archive = opts.Archive, List = T);
+                Mode = opts.Mode, List = T);
             if k < K && ~infos{k}.skipped
                 pause(opts.Pause);              % ICGEM rate limit
             end
@@ -256,8 +259,12 @@ end
 
 function [files, info] = fetchSeries(row, opts)
 % one temporal-catalogue row: fetch a whole monthly series into its own
-% folder - per file (resumable, verified, throttled) or as the server's
-% whole-series zip (Archive = true; one request, no resume granularity)
+% folder. Mode = "auto" (default) downloads the server's whole-series
+% ZIP in ONE request - the ICGEM rate limiter punishes hundreds of
+% sequential per-file requests ("too many connections" stalls observed
+% in the field) - and falls back to file-by-file (resumable, each file
+% verified before swap) when the archive path fails. "archive"/"files"
+% force either.
 dest = opts.Dest;
 if strlength(dest) == 0
     tag = regexprep(char(row.group + "_" + row.center + "_" + row.series), ...
@@ -266,39 +273,53 @@ if strlength(dest) == 0
 end
 if ~isfolder(dest), mkdir(dest); end
 info = struct('url', row.url, 'skipped', false, 'updated', false, ...
-    'failed', false);
+    'failed', false, 'mode', "");
 listF = @() string(reshape({dir(fullfile(char(dest), '**', ...
     char(opts.Files))).folder}, [], 1)) + filesep + ...
     string(reshape({dir(fullfile(char(dest), '**', char(opts.Files))).name}, [], 1));
 have = listF();
-if ~isempty(have) && ~opts.Update && opts.Archive
+if ~isempty(have) && ~opts.Update
     files = have; info.skipped = true;
     if ~opts.Quiet
         fprintf('  %s: %d files present, skipped\n', row.series, numel(have));
     end
     return
 end
-if opts.Archive
-    if ~opts.Quiet
-        fprintf('  fetching series archive %s (can be hundreds of MB)...\n', ...
-            row.series);
+% ---- archive first: ONE request per series
+if opts.Mode ~= "files"
+    try
+        if ~opts.Quiet
+            fprintf(['  fetching series archive %s in one request ' ...
+                '(can be hundreds of MB)...\n'], row.series);
+        end
+        tDl = tic;
+        tmpf = fullfile(char(dest), 'series.zip.part');
+        fetchWithBackoff(row.zip, tmpf, opts);
+        unzip(tmpf, char(dest));
+        delete(tmpf);
+        files = listF();
+        assert(~isempty(files), 'shLowLevel:fetchICGEM:emptySeries', ...
+            'Archive of "%s" contained no files matching %s.', ...
+            row.series, opts.Files);
+        shLowLevel.shReadGFC(char(files(1)));   % sanity: archive intact
+        info.mode = "archive";
+        if ~opts.Quiet
+            fprintf('  done: %d files in %.0f s\n', numel(files), toc(tDl));
+        end
+        return
+    catch errA
+        if isfile(tmpf), delete(tmpf), end
+        if opts.Mode == "archive"
+            rethrow(errA);
+        end
+        if ~opts.Quiet
+            fprintf(['  archive failed (%s) - falling back to ' ...
+                'file-by-file\n'], errA.message);
+        end
     end
-    tDl = tic;
-    tmpf = fullfile(char(dest), 'series.zip.part');
-    fetchWithBackoff(row.zip, tmpf, opts);
-    unzip(tmpf, char(dest));                    % verify BEFORE accepting
-    delete(tmpf);
-    files = listF();
-    assert(~isempty(files), 'shLowLevel:fetchICGEM:emptySeries', ...
-        'Archive of "%s" contained no files matching %s.', ...
-        row.series, opts.Files);
-    if ~opts.Quiet
-        d = dir(char(dest));
-        fprintf('  done: %d files in %.0f s\n', numel(files), toc(tDl));
-    end
-    return
 end
-% per-file mode (default): resumable, each file verified before swap
+% ---- per-file fallback: resumable, each file verified before swap
+info.mode = "files";
 if isempty(opts.FileList)
     F = shLowLevel.listICGEM(Type = "temporal", Series = row.path, ...
         Timeout = opts.Timeout);

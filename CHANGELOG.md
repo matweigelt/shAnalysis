@@ -10,8 +10,10 @@ All notable changes to shAnalysis. The version line in `Contents.m`
   `listICGEM(Type="temporal")`) download a whole monthly series into
   `<dataFolder>/icgem/series/<group>_<center>_<series>/` - per file
   (resumable, throttled, each file verified before swap; `Files=`
-  filter, `FileList=` injection for subsets/mirrors) or as the
-  server's whole-series zip (`Archive=true`, one request). `Type=`
+  filter, `FileList=` injection for subsets/mirrors). DEFAULT is the
+  server's whole-series ZIP in ONE request (`Mode="auto"`; the rate
+  limiter punishes hundreds of per-file requests), with automatic
+  per-file fallback; `Mode="archive"|"files"` force either. `Type=`
   mirrors listICGEM so numeric/name selection works on either
   catalogue; the result folder feeds `shSeries.fromFolder` and
   `standardChain` directly.
