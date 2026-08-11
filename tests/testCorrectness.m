@@ -1712,6 +1712,49 @@ verifyLessThan(testCase, info.step(end), 1e-4, ...
     'convergence is judged on the step, not the residual');
 end
 
+function testLeakageCorrectStopsOnTheDiscrepancyPrinciple(testCase)
+%TESTLEAKAGECORRECTSTOPSONTHEDISCREPANCYPRINCIPLE Stopping IS regularisation.
+%   The iteration semiconverges: the error against the truth falls, then
+%   rises, while the residual keeps shrinking - so a step-size tolerance
+%   is the wrong rule (validated in tools/dev/validate_stopping.py: the
+%   final solution is 361x worse than the best, and Tol = 1e-3 stops 89x
+%   past the optimum). With NoiseLevel the run stops when the residual
+%   reaches the noise, which is what makes the answer reproducible.
+[lat, lon, truth, obs, mask, nmax] = leakageFixture();
+rng(17);
+noise = 0.02 * max(abs(obs(:)));
+obsN = obs + noise * randn(size(obs));
+
+[mD, iD] = shLowLevel.leakageCorrect(obsN, lat, lon, Filter = "gauss500", ...
+    Mask = mask, Nmax = nmax, Gain = 2, MaxIter = 400, ...
+    NoiseLevel = noise, Quiet = true);
+verifyEqual(testCase, iD.stoppedBy, "discrepancy");
+verifyTrue(testCase, iD.converged);
+verifyLessThanOrEqual(testCase, iD.residualRMS, 1.2 * noise * 1.001);
+verifyLessThan(testCase, iD.iterations, 400, ...
+    'the discrepancy principle must stop before the cap');
+
+% and it must stop EARLIER and land CLOSER to the truth than running on
+[mL, iL] = shLowLevel.leakageCorrect(obsN, lat, lon, Filter = "gauss500", ...
+    Mask = mask, Nmax = nmax, Gain = 2, MaxIter = 400, Quiet = true);
+verifyGreaterThan(testCase, iL.iterations, iD.iterations);
+errD = norm(mD(mask) - truth(mask));
+errL = norm(mL(mask) - truth(mask));
+verifyLessThan(testCase, errD, errL, ...
+    'stopping at the noise level must beat iterating past it');
+
+% a run without NoiseLevel is unregularised and must say so out loud
+verifyWarning(testCase, @() shLowLevel.leakageCorrect(obsN, lat, lon, ...
+    Filter = "gauss500", Mask = mask, Nmax = nmax, MaxIter = 20, ...
+    Quiet = true), 'shLowLevel:leakageCorrect:unregularised');
+
+% Tau scales the stopping point
+[~, iT] = shLowLevel.leakageCorrect(obsN, lat, lon, Filter = "gauss500", ...
+    Mask = mask, Nmax = nmax, Gain = 2, MaxIter = 400, ...
+    NoiseLevel = noise, Tau = 3, Quiet = true);
+verifyLessThanOrEqual(testCase, iT.iterations, iD.iterations);
+end
+
 function testLeakageCorrectContract(testCase)
 %TESTLEAKAGECORRECTCONTRACT Identity, zero, divergence, bad input.
 [lat, lon, ~, obs, mask, nmax] = leakageFixture();

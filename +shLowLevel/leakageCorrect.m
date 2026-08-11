@@ -42,7 +42,31 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %     latDeg     (1 x nLat | nLat x 1) double  geocentric latitudes [deg]
 %     lonDeg     (1 x nLon | nLon x 1) double  longitudes [deg]
 %
+%   STOPPING IS REGULARISATION. This is an ill-posed inverse problem and
+%   the iteration SEMICONVERGES: the error against the truth falls,
+%   reaches a minimum, and then RISES again as the iteration begins to
+%   fit noise. Meanwhile the residual keeps shrinking, so "iterate until
+%   nothing changes" is precisely the wrong instruction - on the
+%   reference problem in tools/dev/validate_stopping.py the final
+%   solution is 361x worse than the best one, and a step-size tolerance
+%   of 1e-3 stops 89x past the optimum (1e-4 never triggers at all).
+%
+%   Give NOISELEVEL and the run stops on the discrepancy principle
+%   (Morozov): as soon as the residual reaches the noise level of the
+%   data, because fitting the data more closely than its own noise is
+%   fitting noise. On the reference problem that lands within 2% of the
+%   best attainable solution. Without NoiseLevel the iteration is
+%   UNREGULARISED, the answer depends on MaxIter, and a warning says so.
+%
 %   Options
+%     NoiseLevel (0)  RMS noise of GRID, in GRID's units. The standard
+%             estimate is the RMS of the field over the open ocean far
+%             from any signal (> 1000 km from the coast), which is what
+%             GRACE processing centres use as a noise metric. 0 disables
+%             the discrepancy principle and falls back to Tol
+%     Tau (1.2)  safety factor in the discrepancy principle; stop when
+%             rms(residual) <= Tau * NoiseLevel. Values of 1.2 to 1.5
+%             land nearest the optimum, 1.0 slightly overfits
 %     Filter ("gauss300")  the chain the DATA saw: "none" |
 %             "gauss<radiusKm>" | "DDKn" | a W struct from
 %             shLowLevel.readDDK / shLowLevel.designFilter. Getting this
@@ -64,7 +88,8 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %             the step criterion is met (0.997 of the truth after 80 of
 %             those 260), so a run that stops at MaxIter is usually
 %             usable; check info.step to see how close it got
-%     Tol (1e-4)  stop when the relative CHANGE OF THE SOLUTION between
+%     Tol (1e-4)  fallback stopping rule, used ONLY when NoiseLevel is 0.
+%             Stop when the relative CHANGE OF THE SOLUTION between
 %             two iterations falls below this. Not the residual: with a
 %             mask the problem is inconsistent (no field confined to the
 %             region reproduces an observation that has energy outside
@@ -87,6 +112,11 @@ function [mCorr, info] = leakageCorrect(grid, latDeg, lonDeg, opts)
 %                it, a rising curve means Gain is too large),
 %                step (1,K double, the relative change of the solution
 %                per iteration; this is what Tol tests),
+%                stoppedBy (1,1 string: "discrepancy" | "step" |
+%                "maxIter" | "zeroField" - always check this, it says
+%                whether the result was regularised),
+%                residualRMS (1,1 double) and noiseLevel (1,1 double,
+%                as given), so the discrepancy ratio is inspectable,
 %                converged (1,1 logical), nmax (1,1 double),
 %                filter (1,1 string), masked (1,1 logical)
 %
@@ -116,6 +146,8 @@ arguments
     opts.Mask = []
     opts.Nmax (1,1) double = NaN
     opts.Gain (1,1) double {mustBePositive} = 1
+    opts.NoiseLevel (1,1) double {mustBeNonnegative} = 0
+    opts.Tau (1,1) double {mustBePositive} = 1.2
     opts.MaxIter (1,1) double {mustBeInteger, mustBePositive} = 200
     opts.Tol (1,1) double {mustBePositive} = 1e-4
     opts.GM (1,1) double = 3.986004415e14
@@ -150,13 +182,15 @@ scale = max(abs(grid(:)));
 if scale == 0                            % nothing to correct
     mCorr = grid;
     info = struct('iterations', 0, 'residual', 0, 'history', [], ...
-        'step', [], 'converged', true, 'nmax', nmax, ...
+        'step', [], 'converged', true, 'stoppedBy', "zeroField", ...
+        'residualRMS', 0, 'noiseLevel', opts.NoiseLevel, 'nmax', nmax, ...
         'filter', string(filterName(opts.Filter)), 'masked', useMask);
     return
 end
 
 m = grid;
 if useMask, m(~mask) = 0; end
+stoppedBy = "maxIter";
 hist = zeros(1, opts.MaxIter);
 step = zeros(1, opts.MaxIter);
 converged = false;
@@ -166,6 +200,15 @@ for k = 1:opts.MaxIter
     m = m + opts.Gain * r;
     if useMask, m(~mask) = 0; end
     hist(k) = max(abs(r(:))) / scale;
+    rmsR = sqrt(mean(r(:).^2));
+    % DISCREPANCY PRINCIPLE (Morozov): once the residual has reached the
+    % noise level of the data, further iterations fit noise. This is the
+    % regularisation; see the note on semiconvergence in the help.
+    if opts.NoiseLevel > 0 && rmsR <= opts.Tau * opts.NoiseLevel
+        stoppedBy = "discrepancy";
+        converged = true;
+        break
+    end
     % Convergence is judged on the CHANGE IN THE SOLUTION, not on the
     % residual. With a mask the problem is inconsistent - no field
     % confined to the region reproduces an observation that has energy
@@ -182,7 +225,8 @@ for k = 1:opts.MaxIter
              'filter; 1 is safe and values above ~3 are not.'], ...
             k, hist(k), hist(1), opts.Gain);
     end
-    if step(k) < opts.Tol
+    if opts.NoiseLevel == 0 && step(k) < opts.Tol
+        stoppedBy = "step";
         converged = true;
         break
     end
@@ -191,8 +235,21 @@ hist = hist(1:k);
 step = step(1:k);
 mCorr = m;
 info = struct('iterations', k, 'residual', hist(end), 'history', hist, ...
-    'step', step, 'converged', converged, 'nmax', nmax, ...
+    'step', step, 'converged', converged, 'stoppedBy', stoppedBy, ...
+    'residualRMS', sqrt(mean((grid(:) - ...
+        reshape(applyChain(m, latDeg, lonDeg, nmax, wFilt, opts.GM, ...
+        opts.R), [], 1)).^2)), ...
+    'noiseLevel', opts.NoiseLevel, 'nmax', nmax, ...
     'filter', string(filterName(opts.Filter)), 'masked', useMask);
+if opts.NoiseLevel == 0
+    warning('shLowLevel:leakageCorrect:unregularised', ...
+        ['No NoiseLevel given, so the iteration is UNREGULARISED and ' ...
+         'the result depends on where it stops (%d iterations here). ' ...
+         'This is an ill-posed problem: the residual keeps falling ' ...
+         'long after the solution has begun to degrade. Pass ' ...
+         'NoiseLevel= (e.g. the open-ocean RMS of your field) to stop ' ...
+         'on the discrepancy principle instead.'], k);
+end
 if ~opts.Quiet
     if converged
         fprintf(['leakageCorrect: converged in %d iterations ' ...
