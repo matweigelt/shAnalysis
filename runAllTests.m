@@ -3,6 +3,11 @@ function results = runAllTests(opts)
 %
 %   RESULTS = RUNALLTESTS runs, in order:
 %     tests/testCorrectness.m   numerics vs. golden/legacy/analytic values
+%     tests/testScience.m       regression against PUBLISHED values
+%                               (defining constants, load Love numbers,
+%                               the closed-form EWH kernel, geocenter
+%                               amplitudes) - so a consistently wrong
+%                               formula has somewhere to show up
 %     tests/testContract.m      error IDs, immutability, dimensions
 %     tests/testRobustness.m    edge cases, degenerate inputs, file I/O
 %                               documented patch: kernel-ratio test masks
@@ -47,7 +52,8 @@ fprintf('%s v%s test run - %s\n', v.Name, v.Version, char(datetime('now', ...
     Format = 'yyyy-MM-dd HH:mm:ss')));
 fprintf('MATLAB %s on %s\n', version, computer);
 
-suites = {'testCorrectness', 'testContract', 'testRobustness'};
+suites = {'testCorrectness', 'testContract', 'testRobustness', ...
+    'testScience'};
 if ~opts.SkipPerformance
     suites{end+1} = 'testPerformance';
 end

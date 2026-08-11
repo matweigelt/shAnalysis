@@ -396,7 +396,7 @@ function testFetchTNSkipAndVerify(tc)
 % files (and NOT deleted, since it was not fetched by this call).
 d = tc.TestData.dataDir;
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 copyfile(fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt'), ...
     fullfile(tmp, 'TN-13_GEOC_GFZ_RL06.3.txt'));
 copyfile(fullfile(d, 'TN-13_GEOC_CSR_RL06.3.txt'), tmp);
@@ -408,7 +408,7 @@ verifyEqual(tc, numel(info.skipped), 4);
 verifyTrue(tc, isempty(info.fetched) && isempty(info.failed));
 % corrupt present file -> failed, not deleted
 tmp2 = tempname; mkdir(tmp2);
-cleanup2 = onCleanup(@() rmdir(tmp2, 's')); %#ok<NASGU>
+cleanup2 = onCleanup(@() rmIfFolder(tmp2)); %#ok<NASGU>
 bad = fullfile(tmp2, 'TN-13_GEOC_CSR_RL06.3.txt');
 writelines("this is not a TN-13 file", bad);
 w0 = warning('off', 'shLowLevel:fetchTN:failed');
@@ -429,9 +429,9 @@ function testFetchTNUpdateFromMirror(tc)
 % the BaseURL local-mirror folder mode.
 d = tc.TestData.dataDir;
 mir = tempname; mkdir(mir);
-c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+c1 = onCleanup(@() rmIfFolder(mir)); %#ok<NASGU>
 dst = tempname; mkdir(dst);
-c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+c2 = onCleanup(@() rmIfFolder(dst)); %#ok<NASGU>
 nmC = 'TN-13_GEOC_CSR_RL06.3.txt';
 % mirror holds the true CSR file; dest is pre-seeded with GFZ content
 % under the CSR name (a VALID TN-13, but different bytes)
@@ -467,7 +467,7 @@ verifyTrue(tc, any(f2 == string(fullfile(dst, nm14))));
 verifyTrue(tc, isfile(fullfile(dst, nm14)));
 % (4) fresh dest: mirror serves a NEW file (fetched, not updated)
 dst2 = tempname; mkdir(dst2);
-c3 = onCleanup(@() rmdir(dst2, 's')); %#ok<NASGU>
+c3 = onCleanup(@() rmIfFolder(dst2)); %#ok<NASGU>
 [f3, i3] = shLowLevel.fetchTN(Dest = dst2, BaseURL = mir, Providers = "CSR", ...
     TN14 = false, Quiet = true);
 verifyEqual(tc, numel(f3), 1);
@@ -480,7 +480,7 @@ function testFetchProxyPlumbing(tc)
 % explicit ProxyURI. Offline-deterministic: 127.0.0.1 refuses instantly
 % on both paths; the mirror mode copies files and ignores Proxy.
 dst = tempname; mkdir(dst);
-c1 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+c1 = onCleanup(@() rmIfFolder(dst)); %#ok<NASGU>
 % websave path (no proxy): unreachable base -> clean failure report
 [~, i0] = shLowLevel.fetchTN(Dest = dst, BaseURL = "https://127.0.0.1:1", ...
     Providers = "CSR", TN14 = false, Timeout = 2, Quiet = true);
@@ -493,7 +493,7 @@ verifyEqual(tc, numel(i1.failed), 1);
 % mirror mode: local copy, Proxy irrelevant, succeeds
 d = tc.TestData.dataDir;
 mir = tempname; mkdir(mir);
-c2 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+c2 = onCleanup(@() rmIfFolder(mir)); %#ok<NASGU>
 nmC = 'TN-13_GEOC_CSR_RL06.3.txt';
 copyfile(fullfile(d, nmC), fullfile(mir, nmC));
 [f2, i2] = shLowLevel.fetchTN(Dest = dst, BaseURL = mir, Providers = "CSR", ...
@@ -672,7 +672,7 @@ function testRealTN13GzipRoundTrip(tc)
 f = fullfile(tc.TestData.dataDir, 'TN-13_GEOC_GFZ_RL06_3.txt');
 assumeTrue(tc, isfile(f), 'real TN-13 file not present');
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 gz = gzip(f, tmp);
 tn  = shLowLevel.readTN13(f);
 tnZ = shLowLevel.readTN13(gz{1});
@@ -761,7 +761,7 @@ end
 function testDDKRoundTripAndIdentity(tc)
 % ASCII exchange format roundtrip + identity filter is a no-op
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 f = fullfile(tmp, 'ddk_test.txt');
 fid = fopen(f, 'w');
 fprintf(fid, '# synthetic DDK exchange fixture\n');
@@ -804,7 +804,7 @@ function testReadLoveNumbersLayouts(tc)
 % (Blewitt 2003 PREM: CE (-0.290, 0.113, 0.021) -> CF (-0.269, 0.134);
 % pchip-in-log(1+n) reconstruction error 1.3e-4 on Farrell sampling).
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 w = @(name, txt) writelines(txt, fullfile(tmp, name));
 
 % 2-column default with a prose comment
@@ -924,7 +924,7 @@ end
 function testMasconReaderSyntheticNC(tc)
 % synthetic JPL-style netCDF roundtrip (base MATLAB nccreate/ncread)
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 f = fullfile(tmp, 'mascon_test.nc');
 lat = (-89.75:0.5:89.75)'; lon = (0.25:0.5:359.75)'; tt = [100; 130.5];
 nccreate(f, 'lat', 'Dimensions', {'lat', numel(lat)});
@@ -959,7 +959,7 @@ verifyEqual(tc, est.kind, 'estimate');
 verifyTrue(tc, isempty(est.M));
 % gz variant through the streaming path
 tmp = tempname; mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 gz = gzip(f, tmp);
 estZ = shLowLevel.readSINEX(gz{1}, Only = "estimate");
 verifyEqual(tc, estZ.x, full_.x, 'AbsTol', 0);
@@ -1108,7 +1108,7 @@ d = tc.TestData.dataDir;
 src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 assumeTrue(tc, isfile(src));
 mir = tempname; mkdir(mir);
-c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+c1 = onCleanup(@() rmIfFolder(mir)); %#ok<NASGU>
 f1 = fullfile(mir, 'ITSG-Grace2018_n60_2008-04.gfc');
 f2 = fullfile(mir, 'ITSG-Grace2018_n60_2008-05.gfc');
 copyfile(src, f1); copyfile(src, f2);
@@ -1118,7 +1118,7 @@ row = table("01_TEST", "TC", "Series A", "01_TEST/TC/Series A", ...
     "file://" + string(mir), string(zf), 'VariableNames', ...
     {'group', 'center', 'series', 'path', 'url', 'zip'});
 % DEFAULT = archive-first: one request (local zip) -> unzip -> files
-dA = tempname; cA = onCleanup(@() rmdir(dA, 's')); %#ok<NASGU>
+dA = tempname; cA = onCleanup(@() rmIfFolder(dA)); %#ok<NASGU>
 [fsA, iA] = shLowLevel.fetchICGEM(row, Dest = dA, Quiet = true);
 verifyEqual(tc, numel(fsA), 2);
 verifyEqual(tc, iA.mode, "archive");           % zip was the path taken
@@ -1130,7 +1130,7 @@ verifyEqual(tc, numel(fsA2), 2);
 FL = table((1:2)', ["ITSG-Grace2018_n60_2008-04.gfc"; ...
     "ITSG-Grace2018_n60_2008-05.gfc"], [string(f1); string(f2)], ...
     'VariableNames', {'idx', 'name', 'url'});
-dB = tempname; cB = onCleanup(@() rmdir(dB, 's')); %#ok<NASGU>
+dB = tempname; cB = onCleanup(@() rmIfFolder(dB)); %#ok<NASGU>
 [fsB, iB] = shLowLevel.fetchICGEM(row, Mode = "files", FileList = FL, ...
     Dest = dB, Pause = 0, Quiet = true);
 verifyEqual(tc, numel(fsB), 2);
@@ -1138,7 +1138,7 @@ verifyEqual(tc, iB.mode, "files");
 verifyFalse(tc, iB.failed);
 % auto-FALLBACK: broken zip -> per-file takes over transparently
 rowBad = row; rowBad.zip = string(fullfile(mir, 'no_such.zip'));
-dC = tempname; cC = onCleanup(@() rmdir(dC, 's')); %#ok<NASGU>
+dC = tempname; cC = onCleanup(@() rmIfFolder(dC)); %#ok<NASGU>
 [fsC, iC] = shLowLevel.fetchICGEM(rowBad, FileList = FL, Dest = dC, ...
     Pause = 0, Quiet = true);
 verifyEqual(tc, numel(fsC), 2);
@@ -1165,8 +1165,7 @@ verifyEqual(tc, ts.nEpochs, 2);
 % elements' in the field (283 files assigned into strings(1,K))
 T2 = [row; row]; T2.idx = (1:2)';
 T2.series(2) = "Series B";
-dD = tempname; cD = onCleanup(@() rmdir(dD, 's')); %#ok<NASGU>
-dE = tempname; cE = onCleanup(@() rmdir(dE, 's')); %#ok<NASGU>
+dD = tempname; cD = onCleanup(@() rmIfFolder(dD)); %#ok<NASGU>
 % distinct Dest per row is not expressible in bulk - use default-dest
 % only for shape checks: route both rows into explicit folders via two
 % single calls is the normal path; here the BULK CONTRACT is under test
@@ -1192,7 +1191,7 @@ src = fullfile(d, 'loadLoveNumbers_Gegout97.txt');
 assumeTrue(tc, isfile(src));
 mir = tempname; mkdir(mir); copyfile(src, mir);
 dst = tempname; mkdir(dst);
-c1 = onCleanup(@() rmdir(mir, 's')); c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+c1 = onCleanup(@() rmIfFolder(mir)); c2 = onCleanup(@() rmIfFolder(dst)); %#ok<NASGU>
 [f, inf] = shLowLevel.fetchLoveNumbers("loadLoveNumbers_Gegout97.txt", ...
     BaseURL = mir, Dest = dst, Quiet = true);
 verifyEqual(tc, numel(f), 1);
@@ -1222,14 +1221,14 @@ assumeTrue(tc, isfile(src));
 % two months, correct n96 naming for enumeration
 copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-04.gfc'));
 copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-05.gfc'));
-c1 = onCleanup(@() rmdir(mir, 's')); %#ok<NASGU>
+c1 = onCleanup(@() rmIfFolder(mir)); %#ok<NASGU>
 T = shLowLevel.listITSG(BaseURL = mir);
 verifyEqual(tc, T.idx, (1:height(T))');
 verifyTrue(tc, any(T.release == "ITSG-Grace2018" & T.product == "monthly" ...
     & T.nmax == 96));
 verifyTrue(tc, any(T.product == "daily"));
 dst = tempname; mkdir(dst);
-c2 = onCleanup(@() rmdir(dst, 's')); %#ok<NASGU>
+c2 = onCleanup(@() rmIfFolder(dst)); %#ok<NASGU>
 [f, inf] = shLowLevel.fetchITSG("all", Release = "ITSG-Grace2018", Nmax = 96, ...
     BaseURL = mir, Dest = dst, Quiet = true);
 verifyEqual(tc, numel(f), 2);
@@ -1317,7 +1316,7 @@ verifyError(testCase, ...
 % exact-name resolution finds the row (skip download: file marker trick)
 tmp = fullfile(tempdir, sprintf('shx_icgem_%d', randi(1e9)));
 mkdir(tmp);
-cleanup = onCleanup(@() rmdir(tmp, 's')); %#ok<NASGU>
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 row = T(T.name == "Tongji-GMMG2025S", :);
 [~, b, e] = fileparts(char(row.url));
 fid = fopen(fullfile(tmp, [b, e]), 'w'); fclose(fid);   % pretend cached
