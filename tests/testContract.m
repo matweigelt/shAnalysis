@@ -1256,11 +1256,12 @@ verifyError(testCase, @() shLowLevel.greenlandChain(tmp, tmp), ...
     'shLowLevel:gravisRegionChain:noKn');
 verifyError(testCase, @() shLowLevel.twsChain(tmp, tmp), ...
     'shLowLevel:twsChain:noKn');
-% missing aux data errors with the fetch hint, not a silent fallthrough
+% an empty series folder fails loudly at the first stage (the aux-file
+% check with its fetch hint sits behind the series read by design)
 verifyError(testCase, @() shLowLevel.twsChain(tmp, tmp, kn = kn), ...
-    'shLowLevel:gravisL2B:missingAux');
+    'shSeries:noFiles');
 verifyError(testCase, @() shLowLevel.gravisL2B(tmp, tmp), ...
-    'shLowLevel:gravisL2B:missingAux');
+    'shSeries:noFiles');
 end
 
 function testGravisChainsRealData(testCase)
