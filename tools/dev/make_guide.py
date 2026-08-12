@@ -1579,7 +1579,9 @@ story += [para("Every number in V1&ndash;V8 is reproducible in one "
                "call. The shipped <font face='Courier'>data/gravis"
                "</font> copies (frozen 2026-08-12) cover the aux "
                "tables, the NFIL mean, the ICE-6G_D GIA rate and the "
-               "GravIS basin polygons; only the monthly series folder "
+               "GravIS basin polygons (<font face='Courier'>shLowLevel."
+               "gravisDataFolder</font> returns the path); only the "
+               "monthly series folder "
                "and the Love numbers are yours to supply. Greenland, "
                "with the guide-V4c ocean mask:")]
 story += code("""kn = readmatrix("loadLoveNumbers_Gegout97.txt", FileType = "text", ...
