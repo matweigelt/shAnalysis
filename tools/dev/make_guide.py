@@ -1681,7 +1681,14 @@ story += [para("Full ocean restoration (Chambers &amp; Willis 2010) "
                "per-epoch ocean mean of the atmospheric product - the "
                "land-ocean air-mass term GRACE sees but that is not "
                "water. Epoch coverage is reported, never silent: REP "
-               "carries nGadRestored and nGaaApplied.")]
+               "carries nGadRestored and nGaaApplied. Accepted on the "
+               "full COST-G RL02.1 series (252 months, 251 covered): "
+               "the annual amplitude rises from 8.0 to 9.1 mm - the "
+               "published manometric range - while the trend moves "
+               "only 0.08 mm/yr (+1.41 &plusmn; 0.03), confirming that "
+               "AOD1B is trend-free by construction; the residual RMS "
+               "grows from 1.21 to 1.49 cm because GAD puts REAL "
+               "sub-annual ocean variability back into the field.")]
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
