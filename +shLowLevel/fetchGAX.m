@@ -31,6 +31,15 @@ function [files, info] = fetchGAX(dest, opts)
 %     BudgetSec (Inf) (1 x 1) wall-clock budget; on expiry the fetch
 %              stops CLEANLY, keeps what it has, and reports the
 %              remainder (info.nRemaining) - never a hung call
+%     MaxFailures (5) (1 x 1) consecutive-failure cap per product;
+%              on hitting it the product loop stops with a warning
+%              instead of failing every remaining file one by one
+%     PauseSec (1.5) (1 x 1) polite pause between downloads [s] - the
+%              ICGEM server rate-limits bursts (HTTP 429; observed live)
+%     RetryAfterCap (30) (1 x 1) on a 429 the download is retried ONCE
+%              after this wait [s]; a second 429 counts as a failure
+%              (websave does not expose the Retry-After header, so a
+%              fixed cap replaces server-driven waits)
 %     Quiet (false)  (1 x 1) suppress progress output
 %
 %   Outputs
@@ -62,6 +71,9 @@ arguments
     opts.Downloader (1,1) string ...
         {mustBeMember(opts.Downloader, ["websave", "httpFetch"])} = "websave"
     opts.BudgetSec (1,1) double {mustBePositive} = Inf
+    opts.MaxFailures (1,1) double {mustBePositive} = 5
+    opts.PauseSec (1,1) double {mustBeNonnegative} = 1.5
+    opts.RetryAfterCap (1,1) double {mustBePositive} = 30
     opts.Quiet (1,1) logical = false
 end
 t0 = tic;
@@ -103,10 +115,21 @@ for pi = 1:numel(prods)
             end
             try
                 if opts.Downloader == "websave"
-                    websave(out, U(k), weboptions('Timeout', 60));
+                    try
+                        websave(out, U(k), weboptions('Timeout', 60));
+                    catch MEi
+                        if strcmp(MEi.identifier, ...
+                                'MATLAB:webservices:HTTP429StatusCodeError')
+                            pause(opts.RetryAfterCap);        % once, capped
+                            websave(out, U(k), weboptions('Timeout', 60));
+                        else
+                            rethrow(MEi);
+                        end
+                    end
                 else
                     shLowLevel.httpFetch(U(k), out);
                 end
+                if opts.PauseSec > 0, pause(opts.PauseSec); end
                 nD = nD + 1; files(end+1, 1) = string(out); %#ok<AGROW>
                 if ~opts.Quiet && mod(nD, 25) == 0
                     fprintf('  %s: %d files\n', p, nD);
@@ -115,6 +138,13 @@ for pi = 1:numel(prods)
                 nF = nF + 1;
                 if ~opts.Quiet
                     fprintf('  [fail] %s: %s\n', N(k), ME.identifier);
+                end
+                if nF >= opts.MaxFailures
+                    warning('shLowLevel:fetchGAX:tooManyFailures', ...
+                        '%s: stopping after %d failures (last: %s); %d files not attempted.', ...
+                        p, nF, ME.identifier, numel(U) - k);
+                    nRem = nRem + numel(U) - k;
+                    break
                 end
             end
         end
