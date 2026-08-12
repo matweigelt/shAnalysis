@@ -22,7 +22,7 @@ function [out, rep] = oceanChain(folder, opts)
 %     folder  (1 x 1) string  monthly .gfc folder (GSM-2_*, any centre)
 %
 %   Options
-%     kn (required)      (N x 2 | N x 1) load Love numbers
+%     kn ([])            (N x 2 | N x 1) REQUIRED load Love numbers
 %     OceanMask ([])     (fn handle | nLat x nLon logical) REQUIRED ocean
 %                        decision @(lat, lon) -> logical, MUST be false
 %                        over land (oceanRMS contract; the chains'
