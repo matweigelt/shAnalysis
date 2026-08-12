@@ -843,5 +843,15 @@
   "name": "shLowLevel.gravisRegionChain",
   "example": "% called by greenlandChain / antarcticaChain; direct use mirrors them",
   "run": false
+ },
+ {
+  "name": "shLowLevel.oceanChain",
+  "example": "[out, rep] = shLowLevel.oceanChain(\"E:/series/COSTG\", kn = kn, OceanMask = oc);\nplot(out.epochs, out.oceanMean)          % barystatic curve, +1.49 mm/yr",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.slepianProject",
+  "example": "a = shLowLevel.slepianProject(ts.Cs, ts.Ss, G(:, 1:K), idx);\nplot(ts.epochs, a)                      % regional Slepian modes",
+  "run": false
  }
 ]

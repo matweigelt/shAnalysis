@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.8.10)</h1>
+<h1>shAnalysis API reference (v3.9.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -65,6 +65,7 @@ code itself.</p>
 <a href="#shLowLevel.mcPropagate">mcPropagate</a>
 <a href="#shLowLevel.nashSutcliffe">nashSutcliffe</a>
 <a href="#shLowLevel.normalFieldCS">normalFieldCS</a>
+<a href="#shLowLevel.oceanChain">oceanChain</a>
 <a href="#shLowLevel.oceanRMS">oceanRMS</a>
 <a href="#shLowLevel.opApply">opApply</a>
 <a href="#shLowLevel.parseGraceFilename">parseGraceFilename</a>
@@ -102,6 +103,7 @@ code itself.</p>
 <a href="#shLowLevel.shSynthesisDeformation">shSynthesisDeformation</a>
 <a href="#shLowLevel.shSynthesisGradientTensor">shSynthesisGradientTensor</a>
 <a href="#shLowLevel.slepianBasis">slepianBasis</a>
+<a href="#shLowLevel.slepianProject">slepianProject</a>
 <a href="#shLowLevel.spatialStats">spatialStats</a>
 <a href="#shLowLevel.standardChain">standardChain</a>
 <a href="#shLowLevel.synthesisMatrix">synthesisMatrix</a>
@@ -680,6 +682,27 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: GM, a, f, omega, J2, e2, m, q0, system</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.oceanChain">
+<h3><code>shLowLevel.oceanChain(folder, opts)</code></h3>
+<p class="h1line">Global-ocean mass chain: barystatic series from GSM + GravIS.</p>
+<p>[OUT, REP] = shLowLevel.oceanChain(FOLDER, kn = KN, OceanMask = OC) runs the ocean sibling of the validated chains (roadmap item 7): gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA rate ON by default - the ocean-floor GIA correction matters for barystatic trends) -&gt; global EWH synthesis on a GridStep graticule -&gt; area-weighted ocean-mean series [cm] -&gt; trend + annual fit. The residual after the per-pixel trend+seasonal fit is what remains for the noise proxy: this chain SEPARATES the real open-ocean signal (barystatic rise + seasonal circulation) from the residual that oceanRMS should see - the guide-V6 finding (&quot;the trend&#x27;s open-ocean RMS is mostly real barystatic signal, not error&quot;) as an API.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>required</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
+<tr><td><code>epochs</code></td><td>(T x 1) decimal years oceanMean (T x 1) area-weighted ocean-mean EWH [cm]</td></tr>
+<tr><td><code>trend</code></td><td>(1 x 1) barystatic trend [mm/yr]</td></tr>
+<tr><td><code>trendGt</code></td><td>(1 x 1) the same as mass rate [Gt/yr] over the mask trendSigma (1 x 1) OLS 1-sigma of the trend [mm/yr] (no AR correction - stated, not hidden) ampAnnual (1 x 1) annual amplitude of the ocean mean [mm]</td></tr>
+<tr><td><code>sigMon</code></td><td>(1 x 1) open-ocean residual RMS after the per-pixel trend+seasonal fit [m] (the honest noise proxy) oceanArea (1 x 1) mask area [m^2]</td></tr>
+<tr><td><code>rep</code></td><td>(1 x 1) struct  steps, version, dropped/uncovered epochs</td></tr>
+</table>
+<b>Example</b><pre>    kn = readmatrix(&quot;loadLoveNumbers_Gegout97.txt&quot;, FileType = &quot;text&quot;, ...
+        NumHeaderLines = 2);
+    oc = @(la, lo) abs(la) &lt;= 66 &amp; ~yourLandFcn(la, lo);
+    [out, rep] = shLowLevel.oceanChain(&quot;E:/series/COSTG&quot;, kn = kn, ...
+        OceanMask = oc);
+    plot(out.epochs, out.oceanMean)   % barystatic curve [cm]</pre>
+</div>
 <div class="entry" id="shLowLevel.oceanRMS">
 <h3><code>shLowLevel.oceanRMS(grid, latDeg, lonDeg, ocean, opts)</code></h3>
 <p class="h1line">Open-ocean RMS of a field - the standard GRACE noise metric.</p>
@@ -1075,6 +1098,21 @@ code itself.</p>
 <tr><td><code>lam</code></td><td>(NKeep,1) double  concentrations, descending in [0,1]</td></tr>
 <tr><td><code>info</code></td><td>struct: shannon (= areaFraction*P, exact by the addition theorem), areaFraction, lamAll (P x 1)</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.slepianProject">
+<h3><code>shLowLevel.slepianProject(Cs, Ss, G, idx)</code></h3>
+<p class="h1line">Project coefficient sets onto a Slepian basis (and back).</p>
+<p>[A, REC] = shLowLevel.slepianProject(CS, SS, G, IDX) projects one or many coefficient sets onto the Slepian tapers G from shLowLevel.slepianBasis: A = G&#x27; * X where X stacks the (C, S) coefficients in IDX ordering. This is the missing application half of the concentration problem (roadmap item 8): a regional time series analysis estimates only the ~Shannon leading Slepian coefficients instead of all P spherical-harmonic ones - the well-posed alternative to Kaula-regularized regional least squares. REC returns the reconstruction G*A repacked to (C, S) arrays for direct synthesis.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Cs</code></td><td>n+1 x n+1 x T</td><td>double</td><td>required</td></tr><tr><td><code>Ss</code></td><td>n+1 x n+1 x T</td><td>double</td><td>required</td></tr><tr><td><code>G</code></td><td>: x :</td><td>double</td><td>required</td></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>a</code></td><td>(K x T) Slepian-domain coefficient time series</td></tr>
+<tr><td><code>rec</code></td><td>(1 x 1) struct with fields Cs (n+1 x n+1 x T) reconstructed cosine coefficients Ss (n+1 x n+1 x T) reconstructed sine coefficients</td></tr>
+</table>
+<b>Example</b><pre>    idx = shLowLevel.shIndex(30, MinDegree = 0);
+    [G, lam, info] = shLowLevel.slepianBasis(idx, @(la, lo) la &gt; 60);
+    K = round(info.shannon);
+    a = shLowLevel.slepianProject(ts.Cs, ts.Ss, G(:, 1:K), idx);
+    plot(ts.epochs, a&#x27;)          % regional modes vs time</pre>
 </div>
 <div class="entry" id="shLowLevel.spatialStats">
 <h3><code>shLowLevel.spatialStats(A, B, latDeg, lonDeg, opts)</code></h3>
@@ -1961,4 +1999,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.8.10). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.9.0). Generated by tools - do not edit.</p></body></html>

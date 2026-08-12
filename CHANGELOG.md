@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.9.0] - 2026-08-12 - oceanChain, Slepian application, gfc dot terms
+
+oceanChain delivers the barystatic ocean-mean series (+1.49 +/- 0.02
+mm/yr, +312 Gt/yr on COST-G RL02.1 with the ICE-6G_D ocean-floor GIA
+lever of +0.89 mm/yr measured); the ocean mean is filter-invariant to
+0.01 mm/yr and sigMon 0.0121 m is the honest post-separation noise
+proxy. slepianProject adds the application half of slepianBasis
+(cross-validated against an independent Python quadrature). ICGEM
+'dot' secular lines are read as 'trnd' synonyms via the line parser.
+
 ## [3.8.10] - 2026-08-12 - NV convention, quantity "none", setup preferences
 
 Name-value casing convention codified (Capitalized canonical for

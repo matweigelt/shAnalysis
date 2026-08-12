@@ -1634,6 +1634,44 @@ story += [para("The two ice chains share one engine (<font "
                "(regression-tested), and <font face='Courier'>quantity"
                "='none'</font> is the dimensionless passthrough for "
                "synthesizing raw coefficient fields.")]
+story += [para("V10. Ocean and Slepian: closing the chain family", "h2")]
+story += [para("The ocean is the missing member: <font face='Courier'>"
+               "oceanChain</font> runs the same gravisL2B core, applies "
+               "the ICE-6G_D ocean-floor GIA rate (a measured "
+               "+0.89&nbsp;mm/yr lever on the barystatic trend) and "
+               "gauss445, and returns the area-weighted ocean-mean "
+               "series. Acceptance run on COST-G RL02.1 (252 months, "
+               "|lat|&le;66&deg;, crude-continent mask): "
+               "<b>+1.49&nbsp;&plusmn;&nbsp;0.02&nbsp;mm/yr "
+               "(+312&nbsp;Gt/yr)</b>, annual amplitude 8.0&nbsp;mm. "
+               "The ocean MEAN is filter-invariant to 0.01&nbsp;mm/yr "
+               "while unfiltered pixel residuals are stripe-dominated "
+               "(1.62&nbsp;m measured) &mdash; sigMon&nbsp;=&nbsp;"
+               "0.0121&nbsp;m after the trend+seasonal separation is "
+               "the honest noise proxy the V6 finding demanded. "
+               "GAD/GAA restoration is a declared limitation "
+               "(<font face='Courier'>GADFolder=</font> adds GAD where "
+               "available; AOD1B carries no secular trend by "
+               "construction).")]
+story += code("""[out, rep] = shLowLevel.oceanChain("E:/series/COSTG", kn = kn, ...
+    OceanMask = oc);                       % -> +1.49 mm/yr, +312 Gt/yr
+plot(out.epochs, out.oceanMean)            % barystatic curve [cm]
+noGia = shLowLevel.oceanChain("E:/series/COSTG", kn = kn, ...
+    OceanMask = oc, GIAFile = "");         % the +0.89 mm/yr lever""")
+story += [para("Slepian analysis gets its application half: project "
+               "any coefficient series onto the ~Shannon leading "
+               "tapers of a region and analyze those few well-posed "
+               "modes instead of all P coefficients. The localization "
+               "kernel is cross-validated against an independent "
+               "Python ring quadrature (30&deg; cap, "
+               "&lambda;&#8321;&nbsp;=&nbsp;0.999981), and ICGEM "
+               "<font face='Courier'>dot</font> secular lines now read "
+               "as <font face='Courier'>trnd</font> synonyms.")]
+story += code("""idx = shLowLevel.shIndex(30, MinDegree = 0);
+[G, lam, info] = shLowLevel.slepianBasis(idx, @(la, lo) double(la > 60));
+K = round(info.shannon);                   % ~N useful modes
+a = shLowLevel.slepianProject(ts.Cs, ts.Ss, G(:, 1:K), idx);
+plot(ts.epochs, a')                        % regional modes vs time""")
 story += [PageBreak()]
 
 story += [para("Demo gallery", "h1"),

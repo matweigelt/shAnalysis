@@ -23,12 +23,13 @@ function [out, rep] = oceanChain(folder, opts)
 %
 %   Options
 %     kn (required)      (N x 2 | N x 1) load Love numbers
-%     OceanMask (required) (fn handle | nLat x nLon logical) ocean
+%     OceanMask ([])     (fn handle | nLat x nLon logical) REQUIRED ocean
 %                        decision @(lat, lon) -> logical, MUST be false
 %                        over land (oceanRMS contract; the chains'
 %                        documented 5 Gt/yr latitude-band lesson)
 %     gravisFolder ("")  GravIS aux folder; "" = shipped data/gravis
-%     GIAFile (GravIS ICE-6G_D)  "" disables the GIA rate; the default
+%     GIAFile ("GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz")
+%                        "" disables the GIA rate; the default
 %                        ocean-floor correction raises the barystatic
 %                        trend by about +1 mm/yr (the guide-V10 lever)
 %     GIAEpoch (2011)    (1 x 1) GIA reference epoch
