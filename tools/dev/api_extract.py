@@ -120,7 +120,33 @@ def parse_help(block):
             ex.append(s.rstrip())
             idx += 1
         example = "\n".join(x for x in ex).strip("\n")
-    return h1, " ".join(desc), outputs, example
+    # Inputs/Options sections: "name (size/type) description", continuation
+    # lines indented deeper. Collected for merging into arguments-block args.
+    iodocs = {}
+    for hdr in ("Inputs?", "Options?"):
+        for k, L in enumerate(lines):
+            if re.match(r"^\s*" + hdr + r"\s*$", L):
+                idx = k + 1
+                while idx < len(lines):
+                    t = lines[idx]
+                    if t.strip() == "" or re.match(
+                            r"^\s*(Inputs?|Options?|Outputs?|Example|Notes?"
+                            r"|Developed|Error identifiers)", t):
+                        break
+                    mo = re.match(r"^\s{1,8}([\w.]+)\s+(.*)$", t)
+                    if mo and not t.startswith("        "):
+                        nm = mo.group(1)
+                        rest = mo.group(2).strip()
+                        sz = ""
+                        ms = re.match(r"\(([^)]{1,24})\)\s*(.*)$", rest)
+                        if ms:
+                            sz = ms.group(1); rest = ms.group(2).strip()
+                        iodocs[nm] = [sz, rest]
+                    elif iodocs:
+                        last = list(iodocs)[-1]
+                        iodocs[last][1] += " " + t.strip()
+                    idx += 1
+    return h1, " ".join(desc), outputs, example, iodocs
 
 
 def leading_help(lines, i):
@@ -130,6 +156,78 @@ def leading_help(lines, i):
         block.append(lines[i])
         i += 1
     return block, i
+
+
+
+def merge_iodocs(args, iodocs):
+    """Merge help Inputs/Options docs into arguments-block args and fill
+    missing sizes: help-declared size first, then n x 1 for vector-ish
+    entries, n x m otherwise (per the API-table convention)."""
+    for a in args:
+        low = {k.lower(): v for k, v in iodocs.items()}
+        doc = (iodocs.get(a["name"]) or iodocs.get("opts." + a["name"])
+               or low.get(a["name"].lower())
+               or low.get("opts." + a["name"].lower()))
+        if doc:
+            sz, de = doc
+            if de and not a.get("desc"):
+                a["desc"] = de
+            if not a["size"] and sz:
+                szc = sz.replace(",", " x ").replace(":", "n")
+                if re.fullmatch(r"[\w. +*-]+( x [\w. +*-]+)*", szc):
+                    a["size"] = szc
+        if not a["size"]:
+            de = (a.get("desc") or "") + " " + a.get("validators", "")
+            if a.get("cls") in ("string", "char", "logical") or \
+               re.search(r"mustBeScalar|\(1 x 1\)", de):
+                a["size"] = "1 x 1"
+            elif re.search(r"vector|column|list of|1 x N|N x 1", de, re.I):
+                a["size"] = "n x 1"
+            else:
+                a["size"] = "n x m"
+        if not a.get("desc"):
+            key = a["name"].lower()
+            stem = re.sub(r"(vec|deg|grid|0|1)$", "", key)
+            a["desc"] = (CONVENTION_DESCS.get(key)
+                         or CONVENTION_DESCS.get(stem, ""))
+    return args
+
+
+# Toolbox-wide fixed meanings (C(n+1,m+1) indexing, geocentric latitudes,
+# user-supplied Love numbers). Used only when a help section adds nothing.
+CONVENTION_DESCS = {
+    "obj": "the object the method is called on",
+    "gm": "gravitational constant times Earth mass [m^3/s^2] "
+          "(default 3.986004415e14, overridable)",
+    "r": "reference radius [m] (default 6378136.3, overridable)",
+    "kn": "load Love numbers, (degree, kn) table or column vector - "
+          "always user-supplied, no reference frame is assumed",
+    "hn": "load Love numbers h_n, same layout as kn",
+    "c": "cosine Stokes coefficients, C(n+1, m+1) indexing",
+    "s": "sine Stokes coefficients, S(n+1, m+1) indexing",
+    "cs": "stacked cosine coefficients, C(n+1, m+1, T)",
+    "ss": "stacked sine coefficients, S(n+1, m+1, T)",
+    "lat": "geocentric latitudes [deg]",
+    "latdeg": "geocentric latitudes [deg]",
+    "lon": "longitudes [deg], lon in [0, 360)",
+    "londeg": "longitudes [deg], lon in [0, 360)",
+    "nmax": "maximum spherical harmonic degree",
+    "nmin": "minimum spherical harmonic degree",
+    "n": "spherical harmonic degree",
+    "m": "spherical harmonic order",
+    "idx": "index struct from shLowLevel.shIndex (fields n, m, cs, P, "
+           "Lmax, minDegree, pos)",
+    "epoch": "epoch [decimal years]",
+    "epochs": "epochs [decimal years]",
+    "quiet": "suppress progress output",
+    "quantity": "functional of the field, see shLowLevel.kernelFactors",
+    "folder": "folder path",
+    "grid": "field values on the (lat, lon) grid",
+    "w": "filter container from shLowLevel.readDDK / designFilter, or "
+         "degree weights",
+    "ts": "shSeries object",
+    "tn": "correction-table struct as returned by the matching reader",
+}
 
 
 def parse_function_file(path):
@@ -148,7 +246,7 @@ def parse_function_file(path):
     name = m.group(2)
     ins = [a.strip() for a in m.group(3).split(",") if a.strip()]
     hb, j = leading_help(lines, i + 1)
-    h1, desc, outdocs, example = parse_help(hb)
+    h1, desc, outdocs, example, iodocs = parse_help(hb)
     args = []
     jl = _join_continuations(lines[j:j + 200])
     for k, L in enumerate(jl):
@@ -157,6 +255,7 @@ def parse_function_file(path):
             break
         if re.match(r"^\s*function\s", L):
             break                    # never cross into local functions
+    args = merge_iodocs(args, iodocs)
     return dict(kind="function", name=name, inputs=ins, outputs=outs,
                 h1=h1, desc=desc, outdocs=outdocs, example=example,
                 args=args)
@@ -168,7 +267,7 @@ def parse_classdef(path):
     cname = re.search(r"^classdef\s+(\w+)", src, re.M).group(1)
     ci = [i for i, L in enumerate(lines) if L.startswith("classdef")][0]
     hb, _ = leading_help(lines, ci + 1)
-    ch1, cdesc, _, _ = parse_help(hb)
+    ch1, cdesc, _, _, _ = parse_help(hb)
     props = []
     for pm in re.finditer(r"^properties\s*(\([^)]*\))?\s*$(.*?)^end\s*$",
                           src, re.M | re.S):
@@ -215,7 +314,7 @@ def parse_classdef(path):
                 ins = [a.strip() for a in fm.group(3).split(",")
                        if a.strip()]
                 hb, j = leading_help(lines, i + 1)
-                h1, desc, outdocs, example = parse_help(hb)
+                h1, desc, outdocs, example, iodocs = parse_help(hb)
                 jl = _join_continuations(lines[j:j + 120])
                 margs = []
                 for k, L2 in enumerate(jl):
@@ -224,6 +323,7 @@ def parse_classdef(path):
                         break
                     if re.match(r"^\s*function\s", L2):
                         break
+                margs = merge_iodocs(margs, iodocs)
                 methods.append(dict(
                     kind="method", cls=cname, name=mname, static=static,
                     inputs=ins, outputs=outs, h1=h1, desc=desc,

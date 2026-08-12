@@ -15,9 +15,12 @@ function webFetch(url, dest, timeoutSec, proxy)
 %                implements the safe-swap semantics
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
-%   2026-08-10 (v2.7.0).
+%   2026-08-10 (v2.7.0); Retry-After path 2026-08-12 (v3.8.9).
 if strlength(proxy) == 0
-    websave(dest, url, weboptions('Timeout', timeoutSec));
+    % Retry-After-aware path (v3.8.9): matlab.net.http exposes the
+    % response headers websave discards, so 429/5xx bursts (the GravIS
+    % portal case, guide V7/V8) back off politely instead of failing.
+    shLowLevel.httpFetch(url, dest, Timeout = timeoutSec);
     return
 end
 httpOpts = matlab.net.http.HTTPOptions( ...

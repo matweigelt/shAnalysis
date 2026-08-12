@@ -29,6 +29,15 @@ function [S, info] = buildSignalCov(Xres, N, idx, opts)
 %     MapSmooth   (true)  cap the variance map dynamic range to [0.1, 10]
 %
 %   info: c per iteration (per-coefficient variances), variance map (mode 2).
+%   Inputs
+%     Xres (P x T) residual coefficient vectors (shIndex ordering)
+%     N    (struct) noise covariance container from buildNoiseCov
+%   Options
+%     Mode ("isotropic")  "isotropic" | "inhomogeneous" signal model
+%     NIter (3)      (1 x 1) re-estimation iterations
+%     FloorRel (0.01)(1 x 1) relative variance floor
+%     MapSmooth (0)  (1 x 1) spatial smoothing of the variance map [deg]
+%
 %   Outputs
 %     S          (P x P) double   signal covariance in idx ordering
 %     info       struct: mode, iterations, degree-variance model

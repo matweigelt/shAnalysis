@@ -88,7 +88,16 @@ end
 end
 
 function names = hrefDirs(url, timeout)
-html = webread(url, weboptions('Timeout', timeout));
+html = "";
+for wfTry = 1:4
+    try
+        html = webread(url, weboptions('Timeout', timeout)); %#ok<*AGROW>
+        break
+    catch wfME
+        if wfTry == 4, rethrow(wfME); end
+        pause(shLowLevel.httpRetryDelay(wfTry, NaN));
+    end
+end
 tok = regexp(html, 'href="([^"/?][^"?]*)/"', 'tokens');
 names = string(cellfun(@(t) t{1}, tok, 'UniformOutput', false));
 names = unique(names, 'stable');

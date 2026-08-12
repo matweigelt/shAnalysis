@@ -1049,6 +1049,12 @@ methods (Static)
         %     lonVec  (P,1) double  observation longitudes [deg]
         %     latVec  (P,1) double  observation latitudes [deg, geocentric]
         %            nmax (1,1) double
+        %   Options
+        %     Method ("quadrature")  "quadrature" | "lsq", see shAnalysisGrid
+        %     Weights ([])  (nLat x 1) latitude quadrature weights
+        %     Kaula (0)     (1 x 1) Kaula regularization for "lsq"
+        %     Name ("")     (1 x 1) string stored as the object name
+        %
         %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs
         %     obj        (1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)

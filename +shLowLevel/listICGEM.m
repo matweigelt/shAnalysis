@@ -70,8 +70,17 @@ else
     if listFiles
         page = base + "/sp/" + strrep(opts.Series, " ", "%20");
     end
-    html = webread(page, weboptions('Timeout', opts.Timeout, ...
-        'ContentType', 'text', 'CharacterEncoding', 'UTF-8'));
+    html = "";
+    for wfTry = 1:4
+        try
+            html = webread(page, weboptions('Timeout', opts.Timeout, ...
+                'ContentType', 'text', 'CharacterEncoding', 'UTF-8'));
+            break
+        catch wfME
+            if wfTry == 4, rethrow(wfME); end
+            pause(shLowLevel.httpRetryDelay(wfTry, NaN));
+        end
+    end
     src = page;
 end
 info = struct('source', src, 'retrieved', datetime('now'), 'note', "");

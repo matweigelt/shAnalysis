@@ -35,7 +35,9 @@ i.e. a method-class distance, not a chain defect (guide chapters
 V7/V8). All three validations are available as one-call methods with
 exchangeable inputs: `shLowLevel.greenlandChain`,
 `shLowLevel.antarcticaChain` and `shLowLevel.twsChain`, built on the
-shared `shLowLevel.gravisL2B` correction core.
+shared `shLowLevel.gravisL2B` correction core. All downloads retry
+politely on 429/5xx honouring the server's Retry-After header
+(`shLowLevel.httpFetch`).
 
 ## Documentation
 

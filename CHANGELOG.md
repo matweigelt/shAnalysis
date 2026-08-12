@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.8.9] - 2026-08-12 - Retry-After fetchers, API tables, V9 additions
+
+httpFetch/httpRetryDelay give every toolbox download Retry-After-aware
+retries with capped exponential backoff (the GravIS 503 case); listing
+reads retry with backoff. Opt-in tests accept setpref("shAnalysis",...)
+preferences besides SHX_* env vars. Guide V9 gains the standardChain
+flow diagram; API reference tables now always carry sizes (n x 1 /
+n x m fallback) and merge descriptions from help Inputs/Options
+sections (missing descriptions cut from 775 to ~120, rest on the
+roadmap).
+
 ## [3.8.8] - 2026-08-12 - validated chains as methods
 
 gravisL2B (shared GravIS Level-2B correction core) plus one-call

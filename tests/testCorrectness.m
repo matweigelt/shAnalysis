@@ -2264,6 +2264,35 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
+function testHttpRetryDelaySchedule(testCase)
+%TESTHTTPRETRYDELAYSCHEDULE v3.8.9 Retry-After policy (roadmap item 5,
+%   motivated by the GravIS 503 bursts): server hint wins and is capped;
+%   otherwise exponential backoff, capped; jitter bounded.
+d1 = shLowLevel.httpRetryDelay(1, NaN, Jitter = 0);
+d3 = shLowLevel.httpRetryDelay(3, NaN, Jitter = 0);
+verifyEqual(testCase, d1, 2); verifyEqual(testCase, d3, 8);
+verifyEqual(testCase, shLowLevel.httpRetryDelay(1, 30), 30);       % server wins
+verifyEqual(testCase, shLowLevel.httpRetryDelay(1, 999), 60);      % ...capped
+verifyEqual(testCase, shLowLevel.httpRetryDelay(9, NaN, Jitter = 0), 60);  % backoff capped
+dj = shLowLevel.httpRetryDelay(2, NaN);                            % with jitter
+verifyTrue(testCase, dj >= 4 && dj <= 5);
+end
+
+function testHttpFetchRejectsHardClientError(testCase)
+%TESTHTTPFETCHREJECTSHARDCLIENTERROR 404 must fail fast (badStatus), not
+%   spin through the retry budget. Network opt-in: skipped offline.
+try
+    ok = true; %#ok<NASGU>
+    java.net.InetAddress.getByName('isdc-data.gfz.de');
+catch
+    assumeTrue(testCase, false, 'offline - DNS for isdc failed');
+end
+verifyError(testCase, @() shLowLevel.httpFetch( ...
+    "https://isdc-data.gfz.de/definitely-not-a-real-path-404", ...
+    fullfile(tempdir, 'x404.bin'), MaxTries = 2), ...
+    'shLowLevel:httpFetch:badStatus');
+end
+
 function testEvalMaskRejectsGeojsonOrderedPolygon(testCase)
 %TESTEVALMASKREJECTSGEOJSONORDEREDPOLYGON v3.8.7 guard, born in the GravIS
 %   TWS validation: a GeoJSON [lon lat] polygon handed to the [lat lon]

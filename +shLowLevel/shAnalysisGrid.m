@@ -39,6 +39,15 @@ function [C, S, info] = shAnalysisGrid(grid, latVec, lonVec, nmax, opts)
 %               rank deficiency raises shLowLevel:shAnalysisGrid:rankDeficient.
 %     ChunkSize points per accumulation chunk for "ls" (default 2000)
 %
+%   Options
+%     Method ("quadrature")  "quadrature" | "lsq" analysis operator
+%     Weights ([])   (nLat x 1) latitude quadrature weights; [] derives
+%         them from the grid spacing
+%     Kaula (0)      (1 x 1) Kaula regularization strength for "lsq"
+%     rho_ave (5517) (1 x 1) mean Earth density [kg/m^3] for "ewh"
+%     rho_water (1000) (1 x 1) water density [kg/m^3] for "ewh"
+%     ChunkSize (2000) (1 x 1) grid points per Legendre chunk (memory cap)
+%
 %   Outputs
 %     C     (nmax+1 x nmax+1) double  estimated cosine coefficients
 %     S     (nmax+1 x nmax+1) double  estimated sine coefficients
