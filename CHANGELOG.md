@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.10.1] - 2026-08-12 - fetch robustness (ICGEM 429)
+
+fetchGAX hardening: consecutive-failure cap, polite inter-download
+pause, single capped retry on HTTP 429. Root cause of the bridge
+hangs identified: ICGEM rate-limits bursts and httpFetch honoured the
+server's Retry-After so faithfully that calls outgrew the tool window.
+
 ## [3.10.0] - 2026-08-12 - fetchGAX, full ocean restoration, API completeness
 
 fetchGAX downloads the AOD1B GAA/GAB/GAC/GAD monthly means from the

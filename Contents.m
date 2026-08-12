@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.10.0 (R2026a-compatible) 12-Aug-2026
+% Version 3.10.1 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,14 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.10.1 (fetch robustness against ICGEM rate limiting)
+%   - fetchGAX: MaxFailures cap (a machine-side failure no longer walks
+%     through every remaining file at full retry cost), polite PauseSec
+%     between downloads, and a single capped retry on HTTP 429 - the
+%     ICGEM server rate-limits bursts (observed live on the acceptance
+%     machine; the Retry-After-aware httpFetch waited so faithfully on
+%     429 storms that calls exceeded the MCP bridge window).
 %
 % New in v3.10.0 (fetchGAX; full ocean restoration; API completeness)
 %   - shLowLevel.fetchGAX downloads the AOD1B monthly means (GAA/GAB/
