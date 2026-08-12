@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.8.8] - 2026-08-12 - validated chains as methods
+
+gravisL2B (shared GravIS Level-2B correction core) plus one-call
+greenlandChain (-225.6 Gt/yr, 32 s), antarcticaChain (-125.7 + per-basin
+table) and twsChain (amplitude ratio 1.001, trend RMS 0.032 cm/yr vs
+GravIS) - the executed guide V1-V8 validations with exchangeable inputs,
+provenance reports, TrendGrid= re-use for sensitivity studies, and a
+user-supplied OceanMask for the sigma_trend policy (must be false over
+land: a bare latitude band verifiably shifts the answer by 5 Gt/yr).
+
 ## [3.8.7] - 2026-08-12 - Antarctica + TWS validation
 
 Guide chapters V7/V8: the GravIS chain validated against Antarctica

@@ -1245,3 +1245,37 @@ verifyError(testCase, @() shLowLevel.makeTutorials(Dest = d, ...
     Cases = "D99", Convert = false, Quiet = true), ...
     'shLowLevel:makeTutorials:unknownCase');
 end
+
+function testGravisChainsContract(testCase)
+%TESTGRAVISCHAINSCONTRACT v3.8.8 chains fail loudly on missing pieces.
+kn = [(0:4)', zeros(5,1)];
+tmp = tempname; mkdir(tmp);
+cl = onCleanup(@() rmdir(tmp, 's'));
+% kn is required - no frame is assumed
+verifyError(testCase, @() shLowLevel.greenlandChain(tmp, tmp), ...
+    'shLowLevel:gravisRegionChain:noKn');
+verifyError(testCase, @() shLowLevel.twsChain(tmp, tmp), ...
+    'shLowLevel:twsChain:noKn');
+% an empty series folder fails loudly at the first stage (the aux-file
+% check with its fetch hint sits behind the series read by design)
+verifyError(testCase, @() shLowLevel.twsChain(tmp, tmp, kn = kn), ...
+    'shSeries:noFiles');
+verifyError(testCase, @() shLowLevel.gravisL2B(tmp, tmp), ...
+    'shSeries:noFiles');
+end
+
+function testGravisChainsRealData(testCase)
+%TESTGRAVISCHAINSREALDATA Opt-in science anchor (SHX_GRAVIS_FOLDER +
+%   SHX_SERIES_FOLDER + SHX_DDK_FOLDER): twsChain must reproduce the
+%   validated Amazonas numbers (guide V8) on the real series.
+gf = getenv('SHX_GRAVIS_FOLDER'); sf = getenv('SHX_SERIES_FOLDER');
+df = getenv('SHX_DDK_FOLDER');
+assumeTrue(testCase, ~isempty(gf) && ~isempty(sf) && ~isempty(df), ...
+    'set SHX_GRAVIS_FOLDER, SHX_SERIES_FOLDER, SHX_DDK_FOLDER to enable');
+kn = readmatrix(fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
+    'loadLoveNumbers_Gegout97.txt'), FileType = 'text', NumHeaderLines = 2);
+out = shLowLevel.twsChain(sf, gf, kn = kn, DDKFolder = df, ...
+    Basins = "Amazonas", Quiet = true);
+verifyEqual(testCase, out.trend(1), 0.01, AbsTol = 0.05);
+verifyEqual(testCase, out.amplitude(1), 20.6, AbsTol = 0.5);
+end
