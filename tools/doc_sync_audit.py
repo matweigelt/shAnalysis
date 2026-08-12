@@ -522,6 +522,20 @@ def main():
             probs.append("%s is documented ONLY in the generated API "
                          "reference - no narrative page or guide section" % k)
 
+    # structural (audit F-6): content after </html> renders by browser
+    # error recovery and passes every text-presence check above
+    for fn in sorted(os.listdir(HTML)):
+        if not fn.endswith(".html"):
+            continue
+        d = open(os.path.join(HTML, fn), encoding="utf-8").read()
+        i = d.rfind("</html>")
+        if i < 0:
+            probs.append("%s: no closing </html>" % fn)
+        elif d[i + 7:].strip():
+            probs.append("%s: %d bytes after </html>" % (fn, len(d[i + 7:].strip())))
+        if d.count("</html>") > 1:
+            probs.append("%s: multiple </html>" % fn)
+
     if probs:
         print("doc_sync_audit: %d finding(s)" % len(probs))
         for p in probs:

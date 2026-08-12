@@ -48,13 +48,16 @@ function [k, info] = sensitivityKernel(idx, region, opts)
 %     FarField ([])  (P x 1) double  per-coefficient weight for the
 %             leakage term ([]: 1/(n+1), which emphasises the low
 %             degrees where a compact basin's leakage lives). The
-%             benefit over a Gaussian depends strongly on this choice -
-%             measured at 2% to 16% less leakage at matched noise and
-%             matched gain across plausible weightings, with the LARGEST
-%             margin for a high-degree weighting, where a Gaussian's
-%             fixed shape is furthest from optimal. Worth choosing
-%             deliberately rather than accepting, and worth measuring
-%             for your own case rather than quoting a headline
+%             benefit over a Gaussian depends strongly on this choice
+%             AND on the problem's dimensionality. The 1-D zonal
+%             validation (tools/dev/validate_senskernel.py) measured
+%             2% to 16% less leakage at matched noise and gain, largest
+%             at a high-degree weighting; on full 2-D basins the audit
+%             (2026-08-12) measured 1% to 42%, LARGEST at the low-degree
+%             default, because a 2-D kernel exploits azimuthal freedom a
+%             Gaussian lacks precisely where low degrees dominate. The
+%             method beat the Gaussian in every configuration measured;
+%             the MARGIN is yours to measure, not a headline to quote
 %     BufferKm (0), TaperKm (0), R (6378136.3), OverSample (2)
 %             passed to shLowLevel.basinKernel for the exact indicator
 %

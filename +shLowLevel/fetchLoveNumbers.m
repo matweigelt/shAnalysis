@@ -117,8 +117,18 @@ function v = parseGroopsMatrix(fp)
 % 'Matrix( N x 1 )', then N values
 txt = fileread(char(fp));
 lines = strsplit(strtrim(txt), '\n');
-assert(numel(lines) >= 3 && contains(lines{1}, 'groops matrix'), ...
-    'shLowLevel:fetchLoveNumbers:badFormat', 'Not a GROOPS matrix file.');
+if numel(lines) < 3 || ~contains(lines{1}, 'groops matrix')
+    % the GROOPS loading folder itself ships BOTH layouts: Gegout97
+    % carries the two-line matrix header, the ak135 variants are bare
+    % single-column numeric (audit F-12). Accept the bare form when it
+    % parses cleanly as one finite column.
+    v = sscanf(txt, '%f');
+    ok = numel(v) >= 100 && all(isfinite(v)) && ...
+        numel(v) == nnz(~cellfun(@(s) isempty(strtrim(s)), lines));
+    assert(ok, 'shLowLevel:fetchLoveNumbers:badFormat', ...
+        'Neither a GROOPS matrix file nor a bare numeric column.');
+    return
+end
 tok = regexp(lines{2}, 'Matrix\(\s*(\d+)\s*x\s*(\d+)\s*\)', 'tokens', 'once');
 assert(~isempty(tok) && str2double(tok{2}) == 1, ...
     'shLowLevel:fetchLoveNumbers:badFormat', 'Expected an N x 1 GROOPS matrix.');

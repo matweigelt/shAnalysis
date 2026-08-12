@@ -662,7 +662,7 @@ h = shLowLevel.taylorDiagram(1.0, [0.8, 1.1], [0.9, 0.95], ...
 verifyTrue(testCase, isgraphics(h));
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(testCase, isfile(fG));
+verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
 [~, h1] = shLowLevel.compareSolutions(g, g.gaussian(500), Plot = true, ...
     LatDeg = -85:5:85, LonDeg = 0:9:351);

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.5 (R2026a-compatible) 11-Aug-2026
+% Version 3.8.6 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -213,6 +213,40 @@
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
 %
+% New in v3.8.6 (independent audit: 20 findings fixed)
+%   An adversarial audit (2026-08-12) reproduced the GravIS chain
+%   end-to-end and attacked suite, docs, numerics and error handling.
+%   Fixed here, each with a regression test:
+%   - readMascon: attribute lookup is case-insensitive (CSR writes
+%     'Units'), unrecognized time units ERROR instead of returning raw
+%     days as decimal years, grids orient by dimension NAME (a square
+%     grid was un-orientable by size), duplicate help Outputs removed.
+%   - 22 shipped-fixture assumeTrue(isfile) -> verifyTrue: a renamed
+%     fixture now FAILS ~20 tests instead of silently filtering them
+%     (the testStandardChain mechanism, suite-wide this time).
+%   - testPublishedTrendOnARealSeries now requires Greenland to LOSE
+%     mass - it passed a sign-flipped trend before (demonstrated).
+%   - shReadGFC warns on truncated files (record count vs the header's
+%     max_degree triangle) and on corrupt values parsed to NaN.
+%   - kernelFactors validates kn/hn length and 1+kn ~= 0 (CM-frame
+%     k1 = -1 gave a silent Inf kernel).
+%   - leakageCorrect rejects NaN inside Mask/ResidualRegion with the
+%     cause (it used to report 'diverged'); NaN outside stays allowed.
+%   - basinKernel warns on zero-area regions; gridScaling gained Quiet=.
+%   - fetchLoveNumbers accepts the GROOPS folder's own headerless
+%     single-column files (ak135); shCoefficients.read falls back to
+%     the filename stem when the header has no modelname, so
+%     shSeries.names is populated for COST-G and friends.
+%   - sensitivityKernel help: the 2-16% margin and its ordering are
+%     properties of the 1-D validation; on 2-D basins the audit
+%     measured 1-42% with the ordering reversed. (The full-covariance
+%     Noise path was CONFIRMED correct and is now pinned by a test.)
+%   - testEigTrickEquivalence exercised zero toolbox code; it now
+%     reconstructs tvANSFilter's output from its own op struct.
+%   - Three HTML pages carried content after </html>; repaired, and
+%     doc_sync_audit now checks document structure.
+%   - README/Contents pin the GravIS span dates next to the 2.8%.
+%
 % New in v3.8.5 (documentation audit)
 %   html/shAnalysis.html - the page a user lands on from `doc
 %   shAnalysis` - said v3.0.0 for eight releases. Nothing checked it:
@@ -304,7 +338,10 @@
 %     so a global residual never reaches the noise level and the
 %     principle silently never fires. info.residualRMSGlobal exposes it.
 %   Guide: the GravIS comparison rerun with a real stopping criterion.
-%     -224.6 Gt/yr against a published -231.1 (2.8 %), replacing an
+%     -224.6 Gt/yr against a published -231.1 (2.8 %; span
+%     2002-04..2023-02, n = 217 - quote the dates with the number,
+%     the reference moves ~10 Gt/yr over two years of end date),
+%     replacing an
 %     earlier -227.4 that came from stopping at an arbitrary iteration.
 %     Also: the noise level must match the quantity inverted - the
 %     open-ocean RMS of a TREND field is mostly barystatic sea level,

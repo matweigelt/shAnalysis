@@ -189,8 +189,9 @@ function testPublishedTrendOnARealSeries(testCase)
 %   It is deliberately not wired to the persistent data folder, so a
 %   routine acceptance run never touches a network or archive drive.
 %
-%   What it checks is a published, uncontroversial fact rather than a
-%   specific number: after the standard corrections the global mean mass
+%   What it checks are published, uncontroversial facts rather than a
+%   specific number: Greenland loses mass over the GRACE era (which a
+%   sign-flipped or mislocated trend cannot satisfy), and: after the standard corrections the global mean mass
 %   is conserved to a small fraction of the regional signal, and the
 %   secular change over the GRACE era is dominated by degree 2 and the
 %   polar regions.
@@ -220,4 +221,20 @@ low = mean(spec.degAmplitude(3:6));       % degrees 2..5
 high = mean(spec.degAmplitude(end-4:end));
 verifyGreaterThan(testCase, low / high, 5, ...
     'the trend field should be dominated by low degrees');
+
+% audit F-2: everything above survives a SIGN-FLIPPED trend (executed and
+% demonstrated on the real 257-month ITSG series). The published fact
+% this test is named after is that Greenland LOSES mass over the GRACE
+% era - so synthesize the trend over Greenland and require the loss.
+d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+kn = readmatrix(fullfile(d, 'loadLoveNumbers_Gegout97.txt'), ...
+    FileType = 'text', NumHeaderLines = 2);
+gLat = (61:2:83)'; gLon = (288:2:340)';   % Greenland box, lon in [0,360)
+G = shLowLevel.shSynthesis(trend.C, trend.S, ts.GM, ts.R, gLat, gLon, ...
+    'quantity', 'ewh', 'kn', kn, 'nmin', 2);
+mG = mean(G(:), 'omitnan');               % m/yr EWH over the box
+verifyLessThan(testCase, mG, -0.01, ...
+    'Greenland must LOSE mass: a sign-flipped trend fails here');
+verifyGreaterThan(testCase, mG, -1.0, ...
+    'and by a physically plausible amount');
 end

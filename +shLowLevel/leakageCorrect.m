@@ -212,6 +212,16 @@ if isempty(resReg)
 else
     resSel = resReg;
 end
+% non-finite data where the model or the stopping rule looks is fatal:
+% the iteration diverges and reports 'diverged', which points the user
+% at the wrong cause. NaN OUTSIDE both regions is tolerated (masked
+% oceans/land gaps are common in real grids). (audit F-20)
+sel = resSel;
+if ~isempty(mask), sel = sel | mask; end
+badPix = ~isfinite(grid) & sel;
+assert(~any(badPix(:)), 'shLowLevel:leakageCorrect:nanInput', ...
+    ['%d non-finite pixel(s) inside Mask/ResidualRegion - the inversion ' ...
+     'cannot run on them. NaN outside both regions is allowed.'], nnz(badPix));
 
 scale = max(abs(grid(:)));
 if scale == 0                            % nothing to correct

@@ -17,8 +17,15 @@ Requires MATLAB R2021a or newer (`arguments` name=value syntax) and
 **nothing beyond base MATLAB**: no toolboxes.
 
 Validated against the published GravIS Greenland ice-mass series: 2.8%
-on the mass trend, matching their documented processing step for step
-(see the guide's *Validation against GravIS* chapter).
+on the mass trend over 2002-04..2023-02 (217 monthly solutions - the
+span of the auxiliary correction tables at the time of the
+reproduction), matching their documented processing step for step
+(see the guide's *Validation against GravIS* chapter). The span dates
+matter: the reference trend moves by ~10 Gt/yr over two years of end
+date, so the percentage is only meaningful together with them.
+An independent 2026-08 audit reproduced the chain end-to-end from
+public data (headline -225.7 vs -224.6 Gt/yr; the wrong-noise control
+-201.0 exactly).
 
 ## Documentation
 

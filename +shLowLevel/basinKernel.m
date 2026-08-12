@@ -54,4 +54,9 @@ if opts.TaperKm > 0
 end
 info = struct('areaFraction', w' * mask, 'nGridPoints', numel(mask), ...
     'buffered', opts.BufferKm ~= 0, 'tapered', opts.TaperKm > 0);
+if info.areaFraction <= 0
+    warning('shLowLevel:basinKernel:zeroArea', ...
+        ['The region has zero area on the sphere - the kernel is 0 and ' ...
+         'any basin average built from it divides by nothing.']);
+end
 end

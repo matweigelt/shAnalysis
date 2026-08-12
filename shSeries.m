@@ -84,10 +84,6 @@ methods
         %     SigmaSs ([])  formal 1-sigma stack for Ss, same size
         %     History (string.empty(0,1))  initial processing history; every
         %         operation appends one line
-        %
-        %   Outputs
-        %     obj  (1,1) shSeries  modified copy; the operation is appended to the
-        %              history (immutable value-class pattern)
         arguments
             in
             opts.Ss double = []
@@ -1078,10 +1074,6 @@ methods (Static)
         %   Options
         %     Truncate (NaN)  truncate every field to this nmax while
         %         reading (NaN: keep the file resolution)
-        %
-        %   Outputs
-        %     obj  (1,1) shSeries  modified copy; the operation is appended to the
-        %              history (immutable value-class pattern)
         arguments
             files
             opts.Truncate (1,1) double = NaN
