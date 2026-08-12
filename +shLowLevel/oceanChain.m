@@ -94,13 +94,8 @@ if ~isempty(opts.SpanEnd), l2bArgs = [l2bArgs, {'SpanEnd', opts.SpanEnd}]; end
 [ts, repL] = shLowLevel.gravisL2B(folder, opts.gravisFolder, l2bArgs{:});
 ep = ts.epochs(:); T = numel(ep);
 steps = repL.steps;
-% ---- optional GAD restore (begin-matched on filenames)
 nGad = 0;
-if strlength(opts.GADFolder) > 0
-    [ts, nGad] = local_addGAD(ts, opts.GADFolder);
-    steps(end+1) = sprintf("GAD restored for %d/%d epochs (folder %s)", ...
-        nGad, T, opts.GADFolder);
-end
+
 % ---- global synthesis + masks
 st = opts.GridStep;
 lat = (-90+st/2 : st : 90-st/2)'; lon = (st/2 : st : 360-st/2)';
@@ -113,6 +108,11 @@ end
 kn = opts.kn; if size(kn, 2) > 1, kn = kn(:, 2); end
 Cs = ts.Cs; Ss = ts.Ss;                     % value class: local working copy
 nmaxS = size(Cs, 1) - 1;
+if strlength(opts.GADFolder) > 0            % optional GAD restore
+    [Cs, Ss, nGad] = local_addGAD(Cs, Ss, ep, opts.GADFolder);
+    steps(end+1) = sprintf("GAD restored for %d/%d epochs (folder %s)", ...
+        nGad, T, opts.GADFolder);
+end
 if opts.Filter ~= "none"
     rkm = double(extractAfter(opts.Filter, "gauss"));
     wf = shLowLevel.shGaussianWeights(nmaxS, rkm); wf = wf(:);
@@ -166,7 +166,7 @@ rep = struct('steps', steps(:), 'version', shLowLevel.version(), ...
 if ~opts.Quiet, fprintf('%s\n', steps); end
 end
 
-function [ts, nGad] = local_addGAD(ts, gadFolder)
+function [Cs, Ss, nGad] = local_addGAD(Cs, Ss, ep, gadFolder)
 % add back GAD-2 monthly means, matched on the begin date in the name
 df = dir(fullfile(char(gadFolder), 'GAD-2_*.gfc'));
 tok = regexp({df.name}, 'GAD-2_(\d{4})(\d{3})-', 'tokens', 'once');
@@ -176,14 +176,14 @@ for k = 1:numel(tok)
     y = str2double(tok{k}{1}); d = str2double(tok{k}{2});
     begG(k) = y + (d-1)/yd(y);
 end
-nGad = 0; nmax = size(ts.Cs, 1) - 1;
-for k = 1:ts.nEpochs
-    [dmin, j] = min(abs(begG - (ts.epochs(k) - 15/365)));  % ~mid - half month
+nGad = 0; nmax = size(Cs, 1) - 1;
+for k = 1:numel(ep)
+    [dmin, j] = min(abs(begG - (ep(k) - 15/365)));  % ~mid - half month
     if isempty(dmin) || dmin > 0.05, continue; end
     g = shCoefficients.read(fullfile(df(j).folder, df(j).name));
     nm = min(nmax, size(g.C, 1) - 1);
-    ts.Cs(1:nm+1, 1:nm+1, k) = ts.Cs(1:nm+1, 1:nm+1, k) + g.C(1:nm+1, 1:nm+1);
-    ts.Ss(1:nm+1, 1:nm+1, k) = ts.Ss(1:nm+1, 1:nm+1, k) + g.S(1:nm+1, 1:nm+1);
+    Cs(1:nm+1, 1:nm+1, k) = Cs(1:nm+1, 1:nm+1, k) + g.C(1:nm+1, 1:nm+1);
+    Ss(1:nm+1, 1:nm+1, k) = Ss(1:nm+1, 1:nm+1, k) + g.S(1:nm+1, 1:nm+1);
     nGad = nGad + 1;
 end
 end
