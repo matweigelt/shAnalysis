@@ -22,7 +22,9 @@ function [grid, lat, lon, P] = shSynthesis(C, S, GM, R, latVec, lonVec, varargin
 %          the identical latVec and nmax -- skips recomputing the
 %          recursion. No validation is done that latVec/nmax actually
 %          match; passing a mismatched P silently gives wrong results.
-%     'quantity'  one of:
+%     'quantity'  one of ('none' = dimensionless passthrough, kernel 1,
+%                 no GM/R/kn enter - the clean way to synthesize raw
+%                 coefficient fields such as kernels or masks):
 %         'geoid'              N = R * sum Pbar_nm (Cnm cos m lon + Snm sin m lon)   [m]
 %         'gravity_anomaly'    dg = GM/R^2 * sum (n-1) Pbar_nm (...)                 [m/s^2]
 %         'gravity_disturbance' dg = GM/R^2 * sum (n+1) Pbar_nm (...)                [m/s^2]

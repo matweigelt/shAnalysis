@@ -14,6 +14,10 @@ function kernel = kernelFactors(quantity, nmax, GM, R, opts)
 %     'gravity_disturbance'   [m/s^2]    (GM/R^2)(n+1)
 %     'gravity_gradient_rr' * [1/s^2]    (GM/R^3)(n+1)(n+2)   (T_rr;
 %                             1 Eotvos = 1e-9 1/s^2)
+%     'none'                  [-]        1 (dimensionless passthrough; no
+%                                        GM, R or kn enter - synthesize the
+%                                        raw coefficient field, e.g. kernels
+%                                        or masks)
 %     'ewh'                   [m]        R rho_ave (5517)/(3 rho_w) (2n+1)/(1+kn)
 %     'surface_density'     * [kg/m^2]   R rho_ave/3 (2n+1)/(1+kn)
 %                             (= rho_w * ewh kernel; requires kn)
@@ -92,6 +96,8 @@ needKn = @(q) assert(~isempty(opts.kn), 'shSynthesis:missingLoveNumbers', ...
      'Pass them explicitly via ''kn'', e.g. from a validated ' ...
      'PREM/Wahr(1998) table.'], q);
 switch lower(char(quantity))
+    case 'none'
+        kernel = ones(nmax+1, 1);          % dimensionless passthrough
     case 'geoid'
         kernel = R * ones(nmax+1, 1);
     case 'potential'

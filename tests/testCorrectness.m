@@ -2264,6 +2264,40 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
+function testNVCasingToleranceAndConvention(testCase)
+%TESTNVCASINGTOLERANCEANDCONVENTION v3.8.10 (roadmap item 6): both NV
+%   mechanisms tolerate any casing - this pins that tolerance so future
+%   refactorings cannot silently break it. Canonical spelling stays
+%   Capitalized for arguments-block NV, lowercase for legacy
+%   inputParser names and quantity strings.
+idx = shLowLevel.shIndex(6, MinDegree = 0);
+tri = [10 10; 10 20; 20 20];
+m1 = shLowLevel.evalMask(idx, tri, oversample = 1);   % lowercase
+m2 = shLowLevel.evalMask(idx, tri, OverSample = 1);   % canonical
+verifyEqual(testCase, m1, m2);
+C = zeros(7); C(1, 1) = 1; S0 = zeros(7);
+g1 = shLowLevel.shSynthesis(C, S0, 1, 1, (0:5)', (0:5)', 'quantity', 'geoid');
+g2 = shLowLevel.shSynthesis(C, S0, 1, 1, (0:5)', (0:5)', 'Quantity', 'geoid');
+verifyEqual(testCase, g1, g2);
+end
+
+function testQuantityNonePassthrough(testCase)
+%TESTQUANTITYNONEPASSTHROUGH quantity "none" synthesizes the raw
+%   coefficient field: kernel 1, no GM/R/kn enter. Kills the documented
+%   workaround (quantity "geoid" with GM = R = 1). C00 = 1 alone must
+%   give a constant 1 field at any GM, R.
+C = zeros(7); C(1, 1) = 1; S0 = zeros(7);
+lat = (-60:30:60)'; lon = (0:60:300)';
+f = shLowLevel.shSynthesis(C, S0, 3.986e14, 6.378e6, lat, lon, ...
+    'quantity', 'none');
+verifyEqual(testCase, f, ones(numel(lat), numel(lon)), AbsTol = 1e-12);
+k = shLowLevel.kernelFactors("none", 6, 3.986e14, 6.378e6);
+verifyEqual(testCase, k, ones(7, 1));
+% and no kn is required (would error for "ewh")
+verifyError(testCase, @() shLowLevel.kernelFactors("ewh", 6, 1, 1), ...
+    'shSynthesis:missingLoveNumbers');
+end
+
 function testHttpRetryDelaySchedule(testCase)
 %TESTHTTPRETRYDELAYSCHEDULE v3.8.9 Retry-After policy (roadmap item 5,
 %   motivated by the GravIS 503 bursts): server hint wins and is capped;
