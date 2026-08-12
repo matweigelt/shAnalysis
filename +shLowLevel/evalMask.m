@@ -10,7 +10,10 @@ function [mask, grid] = evalMask(idx, region, opts)
 %     function handle  m = f(latDeg, lonDeg), vectorized, values in [0,1]
 %     K x 2 double     polygon vertices [latDeg lonDeg], lon in [0, 360);
 %                      point-in-polygon via inpolygon (lon treated
-%                      planar - split polygons crossing lon = 0 yourself)
+%                      planar - split polygons crossing lon = 0 yourself).
+%                      Vertices with |lat| > 90 raise
+%                      shLowLevel:evalMask:badPolygon - the usual cause
+%                      is a GeoJSON [lon lat] polygon passed unswapped
 %     Ngrid x 1 double mask already on the quadrature grid (validated)
 %
 %   Options
@@ -51,6 +54,13 @@ N = numel(latRow);
 if isa(region, 'function_handle')
     mask = double(region(latRow, lonRow));
 elseif isnumeric(region) && size(region, 2) == 2 && size(region, 1) >= 3
+    if any(abs(region(:, 1)) > 90)
+        error('shLowLevel:evalMask:badPolygon', ...
+            ['Polygon vertices with |lat| > 90 - the toolbox polygon ' ...
+             'convention is [latDeg lonDeg] with lon in [0, 360). A ' ...
+             'GeoJSON-ordered [lon lat] polygon lands here: swap the ' ...
+             'columns (and wrap negative longitudes) before the call.']);
+    end
     mask = double(inpolygon(lonRow, latRow, region(:,2), region(:,1)));
 elseif isnumeric(region) && numel(region) == N
     mask = double(region(:));

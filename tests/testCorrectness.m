@@ -2264,6 +2264,29 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
+function testEvalMaskRejectsGeojsonOrderedPolygon(testCase)
+%TESTEVALMASKREJECTSGEOJSONORDEREDPOLYGON v3.8.7 guard, born in the GravIS
+%   TWS validation: a GeoJSON [lon lat] polygon handed to the [lat lon]
+%   convention built a SILENT phantom basin with plausible area (Amazonas)
+%   or an empty one (Lena). Vertices with |lat| > 90 now raise an
+%   identified error; a valid [lat lon] polygon still works.
+idx = shLowLevel.shIndex(8, MinDegree = 0);
+% Lena-class swap: |lon| > 90 read as latitude is detectable...
+lenaGeojson = [103 55; 140 55; 140 70; 103 70; 103 55];     % [lon lat]
+verifyError(testCase, @() shLowLevel.evalMask(idx, lenaGeojson), ...
+    'shLowLevel:evalMask:badPolygon');
+verifyError(testCase, @() shLowLevel.basinKernel(idx, lenaGeojson), ...
+    'shLowLevel:evalMask:badPolygon');            % propagates through the front door
+% ...the Amazon class (lon within +-90) is NOT detectable by any lat
+% check - that phantom is what the basinKernel zeroArea warning and the
+% grid cross-check exist for. Valid [lat lon] input must keep working:
+lenaToolbox = [lenaGeojson(:, 2), lenaGeojson(:, 1)];
+mask = shLowLevel.evalMask(idx, lenaToolbox);
+verifyTrue(testCase, any(mask > 0.5));
+[~, bi] = shLowLevel.basinKernel(idx, lenaToolbox);
+verifyTrue(testCase, bi.areaFraction > 1e-3 && bi.areaFraction < 0.05);
+end
+
 function testBasinKernelWarnsOnZeroArea(testCase)
 %TESTBASINKERNELWARNSONZEROAREA Audit F-18: a degenerate region used to
 %   return a silent all-zero kernel that any average divides by.

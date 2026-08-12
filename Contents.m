@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.6 (R2026a-compatible) 12-Aug-2026
+% Version 3.8.7 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,27 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.7 (validation: Antarctica + terrestrial water storage)
+%   Guide chapters V7/V8 extend the GravIS validation beyond Greenland,
+%   executed end-to-end on public data (2026-08-12):
+%   - Antarctica: the unchanged chain gives -125.7 Gt/yr against the
+%     AWI joint-basin -146.9 (span 2002-04..2023-02, n=217). The GIA
+%     lever (+52.2 Gt/yr) and every stopping pathology reproduce
+%     exactly; the official TU Dresden kernel GRID product shows the
+%     SAME per-basin damping pattern (corr 0.905, RMS 8.2 vs this
+%     chain's 5.9 Gt/yr) - the 14% is the distance between map-based
+%     estimators and the Sasgen forward-modelling class.
+%   - TWS: eleven river basins, full 252-month span, DDK3 declared for
+%     GravIS' VDK blend: amplitude ratio median 1.001 (0.98..1.04);
+%     trend RMS 0.225 -> 0.032 cm/yr once the ICE-6G_D GIA rate is
+%     subtracted - the GravIS TWS product carries an undocumented GIA
+%     correction (their Technical Note omits it).
+%   - evalMask now rejects polygon vertices with |lat| > 90 with an
+%     identified error: GeoJSON is [lon lat], the toolbox convention is
+%     [lat lon], and a swapped input used to build a silent phantom
+%     basin with plausible area (caught in the wild by the v3.8.6
+%     zeroArea warning during this validation).
 %
 % New in v3.8.6 (independent audit: 20 findings fixed)
 %   An adversarial audit (2026-08-12) reproduced the GravIS chain

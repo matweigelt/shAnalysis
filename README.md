@@ -25,7 +25,14 @@ matter: the reference trend moves by ~10 Gt/yr over two years of end
 date, so the percentage is only meaningful together with them.
 An independent 2026-08 audit reproduced the chain end-to-end from
 public data (headline -225.7 vs -224.6 Gt/yr; the wrong-noise control
--201.0 exactly).
+-201.0 exactly). The same chain reproduces the GravIS terrestrial
+water storage product over eleven major river basins to 0.032 cm/yr
+trend RMS and a 1.001 median amplitude ratio (DDK3 + ICE-6G_D GIA,
+full 252-month span), and locates the Antarctic one-map-inversion
+limit at 14% against the AWI joint-basin product - with a 0.905
+difference-pattern correlation to the official TU Dresden kernel grid,
+i.e. a method-class distance, not a chain defect (guide chapters
+V7/V8).
 
 ## Documentation
 
