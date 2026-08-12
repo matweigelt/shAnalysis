@@ -16,7 +16,8 @@ function [out, rep] = twsChain(folder, gravisFolder, opts)
 %
 %   Inputs
 %     folder        (1,1) string  monthly GSM-2_*.gfc folder
-%     gravisFolder  (1,1) string  GravIS aux folder (see gravisL2B);
+%     gravisFolder  (1,1) string  GravIS aux folder; "" (default) uses
+%                   the shipped data/gravis copies (see gravisL2B);
 %                   must also hold BasinFile and, for the default
 %                   filter, the DDK binary unless full paths are given
 %
@@ -59,7 +60,7 @@ function [out, rep] = twsChain(folder, gravisFolder, opts)
 %   2026-08-12 (v3.8.8).
 arguments
     folder (1,1) string
-    gravisFolder (1,1) string
+    gravisFolder (1,1) string = ""
     opts.kn double = []
     opts.BasinFile (1,1) string = "basins_rivbas.json"
     opts.Basins string = strings(0, 1)
@@ -76,6 +77,9 @@ if isempty(opts.kn)
     error('shLowLevel:twsChain:noKn', ...
         ['Load Love numbers are required (kn=). The chain will not ' ...
          'assume a reference frame for you - see fetchLoveNumbers.']);
+end
+if strlength(gravisFolder) == 0
+    gravisFolder = shLowLevel.gravisDataFolder();
 end
 steps = strings(1, 0);
 % ---- corrected series (GIA on by default: guide V8)

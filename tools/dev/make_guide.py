@@ -1568,16 +1568,50 @@ story += [para("The hydrology test inverts the roles: small signals, "
                "harmonic series reproduces an independently produced "
                "hydrology product to three hundredths of a centimetre "
                "per year.")]
-story += [para("Everything in chapters V1&ndash;V8 is available as "
-               "one-call methods with exchangeable inputs: <font "
-               "face='Courier'>shLowLevel.greenlandChain</font>, <font "
-               "face='Courier'>antarcticaChain</font> and <font "
-               "face='Courier'>twsChain</font>, built on the shared "
-               "<font face='Courier'>gravisL2B</font> correction core (the two ice "
-               "chains share one engine, <font face='Courier'>gravisRegionChain</font>). "
-               "Their defaults ARE the tested configuration above; "
-               "every deviation is a declared sensitivity study, and "
-               "the REP output records each step.")]
+story += [para("V9. The chains: the validation as an API", "h2")]
+story += fig("chains_flow.png",
+    "The three validated chains. gravisL2B is the single shared "
+    "correction core; the ice chains share one engine "
+    "(gravisRegionChain), the TWS chain filters and averages in "
+    "per-basin boxes. Defaults ARE the tested configuration; the "
+    "shipped data/gravis folder makes the calls below run as written.")
+story += [para("Every number in V1&ndash;V8 is reproducible in one "
+               "call. The shipped <font face='Courier'>data/gravis"
+               "</font> copies (frozen 2026-08-12) cover the aux "
+               "tables, the NFIL mean, the ICE-6G_D GIA rate and the "
+               "GravIS basin polygons; only the monthly series folder "
+               "and the Love numbers are yours to supply. Greenland, "
+               "with the guide-V4c ocean mask:")]
+story += code("""kn = readmatrix("loadLoveNumbers_Gegout97.txt", FileType = "text", ...
+    NumHeaderLines = 2);
+oc = @(la, lo) abs(la) <= 55 & ~(la < -60 | ...      % crude continents
+    (la > -35 & la < 37 & mod(lo+180,360)-180 > -17 & mod(lo+180,360)-180 < 52));
+[gt, rep] = shLowLevel.greenlandChain("E:/series/COSTG", ...
+    kn = kn, OceanMask = oc);                        % -> -225.6 Gt/yr
+disp(rep.steps')""")
+story += [para("Antarctica adds the 25-basin table, and "
+               "<font face='Courier'>TrendGrid=</font> re-feeds a "
+               "previous report so a sensitivity sweep costs seconds, "
+               "not synthesis:")]
+story += code("""[gt, rep] = shLowLevel.antarcticaChain("E:/series/COSTG", ...
+    kn = kn, OceanMask = oc);                        % -> -125.7 Gt/yr
+disp(rep.basins)                                     % 301..325 [Gt/yr]
+gt2 = shLowLevel.antarcticaChain("E:/series/COSTG", kn = kn, ...
+    TrendGrid = rep, NoiseLevel = 2 * rep.sigTrend); % noise sweep, ~20 s""")
+story += [para("TWS runs full-span with GIA ON by default (the V8 "
+               "finding); switching it off reproduces the 7&times; "
+               "worse trend RMS:")]
+story += code("""[out, rep] = shLowLevel.twsChain("E:/series/COSTG", kn = kn, ...
+    Basins = ["Amazonas", "Ganges", "Mississippi River"], ...
+    DDKFolder = "E:/DDK");                           % amp 20.5/14.3/6.1 cm
+plot(out.epochs, out.series); legend(out.name)
+noGia = shLowLevel.twsChain("E:/series/COSTG", kn = kn, ...
+    Basins = "Mississippi River", DDKFolder = "E:/DDK", GIAFile = "");""")
+story += [para("The two ice chains share one engine (<font "
+               "face='Courier'>gravisRegionChain</font>); every input "
+               "above is exchangeable, every deviation from the "
+               "defaults is a declared sensitivity study, and REP "
+               "records each step with the toolbox version.")]
 story += [PageBreak()]
 
 story += [para("Demo gallery", "h1"),

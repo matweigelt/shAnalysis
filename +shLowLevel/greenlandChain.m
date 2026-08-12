@@ -14,8 +14,9 @@ function [gt, rep] = greenlandChain(folder, gravisFolder, opts)
 %
 %   Inputs
 %     folder        (1,1) string  monthly GSM-2_*.gfc folder
-%     gravisFolder  (1,1) string  GravIS aux folder (see gravisL2B); must
-%                   also hold BasinFile unless given as a full path
+%     gravisFolder  (1,1) string  GravIS aux folder; "" (default) uses
+%                   the frozen data/gravis copies shipped with the
+%                   toolbox (see gravisL2B), which also hold BasinFile
 %
 %   Options
 %     kn            ([])  load Love numbers (degree,kn) or column
@@ -70,7 +71,7 @@ function [gt, rep] = greenlandChain(folder, gravisFolder, opts)
 %   2026-08-12 (v3.8.8).
 arguments
     folder (1,1) string
-    gravisFolder (1,1) string
+    gravisFolder (1,1) string = ""
     opts.kn double = []
     opts.BasinFile (1,1) string = "basins_GIS.json"
     opts.NeighbourBoxes double = [60 84 232 300; 63 67 335 347; 76 81 10 34]

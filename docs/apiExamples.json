@@ -813,5 +813,35 @@
   "name": "shSeries.truncate",
   "example": "ts8 = ts.truncate(8);                  % keep low degrees",
   "run": true
+ },
+ {
+  "name": "shLowLevel.gravisL2B",
+  "example": "[ts, rep] = shLowLevel.gravisL2B(\"E:/series/COSTG\");   % shipped aux data\ndisp(rep.steps)",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.gravisDataFolder",
+  "example": "dir(shLowLevel.gravisDataFolder())",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.greenlandChain",
+  "example": "oc = @(la, lo) abs(la) <= 55 & la > -60;               % your ocean decision\n[gt, rep] = shLowLevel.greenlandChain(\"E:/series/COSTG\", kn = kn, OceanMask = oc);",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.antarcticaChain",
+  "example": "[gt, rep] = shLowLevel.antarcticaChain(\"E:/series/COSTG\", kn = kn, OceanMask = oc);\ndisp(rep.basins)                                       % 25 GravIS basins [Gt/yr]",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.twsChain",
+  "example": "[out, rep] = shLowLevel.twsChain(\"E:/series/COSTG\", kn = kn, ...\n    Basins = [\"Amazonas\", \"Congo\"], DDKFolder = \"E:/DDK\");\nplot(out.epochs, out.series); legend(out.name)",
+  "run": false
+ },
+ {
+  "name": "shLowLevel.gravisRegionChain",
+  "example": "% called by greenlandChain / antarcticaChain; direct use mirrors them",
+  "run": false
  }
 ]

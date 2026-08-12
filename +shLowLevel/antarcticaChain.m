@@ -14,7 +14,8 @@ function [gt, rep] = antarcticaChain(folder, gravisFolder, opts)
 %
 %   Inputs
 %     folder        (1,1) string  monthly GSM-2_*.gfc folder
-%     gravisFolder  (1,1) string  GravIS aux folder (see gravisL2B)
+%     gravisFolder  (1,1) string  GravIS aux folder; "" (default) uses
+%                   the shipped data/gravis copies (see gravisL2B)
 %
 %   Options
 %     kn            ([])  load Love numbers (degree,kn) - REQUIRED,
@@ -47,7 +48,7 @@ function [gt, rep] = antarcticaChain(folder, gravisFolder, opts)
 %   2026-08-12 (v3.8.8).
 arguments
     folder (1,1) string
-    gravisFolder (1,1) string
+    gravisFolder (1,1) string = ""
     opts.kn double = []
     opts.BasinFile (1,1) string = "basins_AIS.json"
     opts.NeighbourBoxes double = []

@@ -21,9 +21,12 @@ function [ts, rep] = gravisL2B(folder, gravisFolder, opts)
 %
 %   Inputs
 %     folder        (1,1) string  folder of monthly GSM-2_*.gfc(.gz)
-%     gravisFolder  (1,1) string  folder holding the GravIS aux files
-%                   (fetch from https://isdc-data.gfz.de/grace/GravIS/
-%                   COST-G/Level-2B/aux_data/)
+%     gravisFolder  (1,1) string  folder holding the GravIS aux files.
+%                   "" (default) uses the frozen copies shipped in
+%                   data/gravis (see shLowLevel.gravisDataFolder). The
+%                   tables trail the solutions: for epochs after the
+%                   freeze fetch fresh files from https://isdc-data.
+%                   gfz.de/grace/GravIS/COST-G/Level-2B/aux_data/
 %
 %   Options
 %     LowDegreeFile ("GRAVIS-2B_COSTG_0200_GRACE+SLR_LOW_DEGREES_0001.dat")
@@ -47,14 +50,14 @@ function [ts, rep] = gravisL2B(folder, gravisFolder, opts)
 %          begins (T,1), files, nmax, version, created
 %
 %   Example
-%     [ts, rep] = shLowLevel.gravisL2B("E:/series/COSTG", "E:/GravIS", ...
+%     [ts, rep] = shLowLevel.gravisL2B("E:/series/COSTG", ...   % shipped aux data
 %         GIAFile = "GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz");
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
 %   2026-08-12 (v3.8.8).
 arguments
     folder (1,1) string
-    gravisFolder (1,1) string
+    gravisFolder (1,1) string = ""
     opts.LowDegreeFile (1,1) string = "GRAVIS-2B_COSTG_0200_GRACE+SLR_LOW_DEGREES_0001.dat"
     opts.GeocenterFile (1,1) string = "GRAVIS-2B_COSTG_0200_GEOCENTER_0001.dat"
     opts.MeanFile (1,1) string = "GRAVIS-2B_COSTG_0200_MEAN_2002095-2020091_NFIL_0001.gz"
@@ -66,6 +69,9 @@ arguments
     opts.OnMissing (1,1) string {mustBeMember(opts.OnMissing, ["drop","error"])} = "drop"
     opts.SpanEnd (1,1) double = Inf
     opts.Quiet (1,1) logical = false
+end
+if strlength(gravisFolder) == 0
+    gravisFolder = shLowLevel.gravisDataFolder();
 end
 steps = strings(1, 0);
 resolve = @(f) local_resolve(gravisFolder, f);

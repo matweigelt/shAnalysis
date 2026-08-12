@@ -46,6 +46,7 @@ code itself.</p>
 <a href="#shLowLevel.gaussLegendre">gaussLegendre</a>
 <a href="#shLowLevel.geocentric2geodetic">geocentric2geodetic</a>
 <a href="#shLowLevel.geodetic2geocentric">geodetic2geocentric</a>
+<a href="#shLowLevel.gravisDataFolder">gravisDataFolder</a>
 <a href="#shLowLevel.gravisL2B">gravisL2B</a>
 <a href="#shLowLevel.gravisRegionChain">gravisRegionChain</a>
 <a href="#shLowLevel.greenlandChain">greenlandChain</a>
@@ -119,7 +120,7 @@ code itself.</p>
 <h3><code>shLowLevel.antarcticaChain(folder, gravisFolder, opts)</code></h3>
 <p class="h1line">The validated GravIS Antarctica ice-trend chain.</p>
 <p>[GT, REP] = shLowLevel.antarcticaChain(FOLDER, GRAVISFOLDER, kn=KN) runs the same chain as greenlandChain with the 25 GravIS AIS drainage-basin polygons as the mask (guide chapter V7). With the tested defaults and COST-G RL02.1 this returns -125.7 Gt/yr against the AWI joint-inversion -146.9 - read V7 before interpreting the 14%: it is the documented distance between map-based estimators and the Sasgen forward-modelling class (the official TU Dresden kernel grid shows the same per-basin damping, correlation 0.905), and the GIA correction (+52.2 Gt/yr over the AIS) is not optional here. REP.basins reports the per-basin masses over the 25 polygons.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>BasinFile</code></td><td>1 x 1</td><td>string</td><td>&quot;basins_AIS.json&quot;</td></tr><tr><td><code>NeighbourBoxes</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>2023.099</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>NoiseLevel</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>OceanMask</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>400</td></tr><tr><td><code>TrendGrid</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>gt</code></td><td>(1,1) double  total AIS trend over the basin union [Gt/yr]</td></tr>
@@ -455,17 +456,26 @@ code itself.</p>
 <tr><td><code>latGC</code></td><td>double array   geocentric latitudes [deg], poles/equator exact</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.gravisDataFolder">
+<h3><code>shLowLevel.gravisDataFolder()</code></h3>
+<p class="h1line">Path of the shipped GravIS auxiliary data.</p>
+<p>P = shLowLevel.gravisDataFolder() returns the absolute path of the data/gravis folder shipped with the toolbox: frozen (2026-08-12) copies of the GravIS COST-G Level-2B auxiliary files and the GravIS basin polygons that gravisL2B, greenlandChain, antarcticaChain and twsChain use when no gravisFolder is given. The correction tables trail the monthly solutions - for epochs after the freeze fetch fresh copies (see data/gravis/README.md) and pass gravisFolder=.</p>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>p</code></td><td>(1,1) string  absolute folder path</td></tr>
+</table>
+<b>Example</b><pre>    dir(shLowLevel.gravisDataFolder())</pre>
+</div>
 <div class="entry" id="shLowLevel.gravisL2B">
 <h3><code>shLowLevel.gravisL2B(folder, gravisFolder, opts)</code></h3>
 <p class="h1line">Build a GravIS-Level-2B-equivalent series from monthly fields.</p>
 <p>[TS, REP] = shLowLevel.gravisL2B(FOLDER, GRAVISFOLDER) reproduces the GravIS Level-2B correction chain (Dahle &amp; Murboeck 2025) on a folder of monthly .gfc solutions, exactly as validated against the GravIS Greenland, Antarctica and TWS Level-3 products (guide chapters V1-V8): 1. read all monthly solutions (shSeries.fromFolder) 2. replace C20, C30, C21, S21 from the GravIS GRACE+SLR low-degree table, matched on the BEGIN epoch parsed from the GSM-2_YYYYDDD-YYYYDDD filenames 3. insert degree 1 (C10, C11, S11) from the GravIS geocenter table 4. subtract the GravIS NFIL mean field (anomalies w.r.t. 2002-04..2020-03 by default) 5. optionally subtract a GIA rate field as (t - GIAEpoch) * GIA Epochs the correction tables do not reach are DROPPED and recorded (the tables always trail the solutions); OnMissing=&quot;error&quot; restores a hard stop. This is the shared core of greenlandChain, antarcticaChain and twsChain.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>LowDegreeFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GRACE+SLR_LOW_DEGREES_0001.dat&quot;</td></tr><tr><td><code>GeocenterFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GEOCENTER_0001.dat&quot;</td></tr><tr><td><code>MeanFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_MEAN_2002095-2020091_NFIL_0001.gz&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>90</td></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;GSM-2_*.gfc*&quot;</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>2e-3</td></tr><tr><td><code>OnMissing</code></td><td>1 x 1</td><td>string</td><td>&quot;drop&quot;</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>ts</code></td><td>(1,1) shSeries  corrected anomaly series (nmax = Nmax)</td></tr>
 <tr><td><code>rep</code></td><td>(1,1) struct    steps (1,K string), epochs (T,1), nDropped, begins (T,1), files, nmax, version, created</td></tr>
 </table>
-<b>Example</b><pre>    [ts, rep] = shLowLevel.gravisL2B(&quot;E:/series/COSTG&quot;, &quot;E:/GravIS&quot;, ...
+<b>Example</b><pre>    [ts, rep] = shLowLevel.gravisL2B(&quot;E:/series/COSTG&quot;, ...   % shipped aux data
         GIAFile = &quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.gravisRegionChain">
@@ -477,12 +487,14 @@ code itself.</p>
 <tr><td><code>gt</code></td><td>(1,1) double  basin-mask mass trend [Gt/yr]</td></tr>
 <tr><td><code>rep</code></td><td>(1,1) struct  trendGrid, lat, lon, sigTrend, residRMS, mask, unionMask, m, iterations, stoppedBy, basins (antarctica), steps, l2b, version, created</td></tr>
 </table>
+<b>Example</b><pre>    % called for you by the wrappers; direct use mirrors them:
+    % [gt, rep] = shLowLevel.gravisRegionChain(&quot;greenland&quot;, ser, gd, opts)</pre>
 </div>
 <div class="entry" id="shLowLevel.greenlandChain">
 <h3><code>shLowLevel.greenlandChain(folder, gravisFolder, opts)</code></h3>
 <p class="h1line">The validated GravIS Greenland ice-trend chain, one call.</p>
 <p>[GT, REP] = shLowLevel.greenlandChain(FOLDER, GRAVISFOLDER, kn=KN) reproduces guide chapters V1-V6 end to end: gravisL2B corrections with the ICE-6G_D GIA rate, EWH synthesis on a global grid, a pixel-wise trend + annual + semiannual fit, and the regularised leakage inversion stopped on the discrepancy principle with the TREND-matched noise level sigma_monthly/sqrt(Sxx) (the V4c lesson). With the tested defaults and the COST-G RL02.1 series this returns -225.7 Gt/yr against the published -231.1 (2.4%; span 2002-04..2023-02). Every input is exchangeable for sensitivity studies; every step lands in REP.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>BasinFile</code></td><td>1 x 1</td><td>string</td><td>&quot;basins_GIS.json&quot;</td></tr><tr><td><code>NeighbourBoxes</code></td><td>-</td><td>double</td><td>[60 84 232 300; 63 67 335 347; 76 81 10 34]</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>2023.099</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>NoiseLevel</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>OceanMask</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>400</td></tr><tr><td><code>TrendGrid</code></td><td>-</td><td>-</td><td>[]</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>gt</code></td><td>(1,1) double  ice-mass trend over the basin mask [Gt/yr]</td></tr>
@@ -1125,7 +1137,7 @@ code itself.</p>
 <h3><code>shLowLevel.twsChain(folder, gravisFolder, opts)</code></h3>
 <p class="h1line">The validated GravIS terrestrial-water-storage basin chain.</p>
 <p>[OUT, REP] = shLowLevel.twsChain(FOLDER, GRAVISFOLDER, kn=KN) reproduces guide chapter V8: gravisL2B corrections WITH the ICE-6G_D GIA rate (the GravIS TWS product carries this correction even though its Technical Note omits it - subtracting it took the trend RMS from 0.225 to 0.032 cm/yr), a DDK3 filter as the declared stand-in for GravIS&#x27; VDK5/VDK3 blend, and cos-weighted 1-degree basin means in cm EWH computed by per-basin bounding-box synthesis with Legendre recycling (about 1 ms per epoch and basin). With the tested defaults, the COST-G RL02.1 series and the GravIS river basins, eleven major basins reproduce the GravIS portal series at a median amplitude ratio of 1.001 and 0.032 cm/yr trend RMS over the full 252-month span. Every input is exchangeable.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>BasinFile</code></td><td>1 x 1</td><td>string</td><td>&quot;basins_rivbas.json&quot;</td></tr><tr><td><code>Basins</code></td><td>-</td><td>string</td><td>strings(0, 1)</td></tr><tr><td><code>Filter</code></td><td>-</td><td>-</td><td>&quot;DDK3&quot;</td></tr><tr><td><code>DDKFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) struct  name (K,1 string), epochs (T,1), series (K x T double, basin means [cm EWH]), trend (K,1 [cm/yr]), amplitude (K,1 [cm], annual), phase (K,1 [rad])</td></tr>

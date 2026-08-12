@@ -51,3 +51,8 @@ truncated to degree 10 for use as format fixtures. Licensed CC-BY-4.0
 
   Basin definitions follow Sasgen et al. (2012), Earth Planet. Sci.
   Lett., 333-334, 293-303. https://doi.org/10.1016/j.epsl.2012.03.033
+
+data/gravis/ contains frozen copies of GravIS COST-G Level-2B auxiliary
+files and basin polygons (GFZ Data Services, CC BY 4.0; Dahle &
+Murboeck 2025, doi:10.5880/COST-G.GRAVIS_02_L2B; Dahle et al. 2025,
+doi:10.5194/essd-17-611-2025). See data/gravis/README.md.

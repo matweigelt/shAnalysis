@@ -228,6 +228,12 @@
 %   The sigma_trend noise policy requires a USER-SUPPLIED OceanMask
 %   (oceanRMS contract) - the mask must be false over land (a bare
 %   latitude band verifiably shifts Greenland by 5 Gt/yr).
+%   The chains are turnkey: data/gravis ships frozen (2026-08-12) CC-BY
+%   copies of the GravIS aux tables, mean, GIA rate and basin polygons
+%   (shLowLevel.gravisDataFolder); guide chapter V9 documents the flow
+%   with a diagram and runnable example calls, mirrored in the help
+%   Example blocks and the HTML API reference. The executable audit
+%   evidence behind V1-V8 is collected under tools/audit.
 %
 % New in v3.8.7 (validation: Antarctica + terrestrial water storage)
 %   Guide chapters V7/V8 extend the GravIS validation beyond Greenland,

@@ -202,6 +202,9 @@ def check_dot_rules(name, txt):
         if re.match(r"[\w\)\]\}]", prev):
             # call or index -> legal; but shx.fun( is caught by R4 above
             continue
+        if prev == ".":
+            # dynamic field name s.(expr) -> legal MATLAB
+            continue
         inner = txt[j + 1:mm.start()].strip()
         if re.fullmatch(r"[A-Za-z_][\w\.]*", inner):
             continue                     # (x).f is legal-ish; skip noise

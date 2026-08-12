@@ -45,6 +45,9 @@ steps = strings(1, 0);
 say = @(s) fprintf('  %s\n', s);
 if opts.Quiet, say = @(s) []; end
 % ---- basin polygons ([lon lat] GeoJSON -> masks)
+if strlength(gravisFolder) == 0
+    gravisFolder = shLowLevel.gravisDataFolder();
+end
 bf = char(opts.BasinFile);
 if ~isfile(bf), bf = fullfile(char(gravisFolder), bf); end
 if ~isfile(bf)
