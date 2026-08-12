@@ -10,7 +10,8 @@ tests/test_data/ITSG-Grace2018_* (monthly, daily Kalman, GRACE-FO files)
   Institute of Geodesy, Graz University of Technology (TU Graz).
   Included as test fixtures only; data remain the property of TU Graz.
 
-tests/test_data/TN-13_GEOC_{GFZ,CSR,JPL}_RL06.3.txt and
+tests/test_data/TN-13_GEOC_GFZ_RL06_3.txt, TN-13_GEOC_{CSR,JPL}_RL06.3.txt
+  (note the GFZ file spells the release with an underscore) and
 tests/test_data/TN-14_C30_C20_SLR_GSFC.txt
   GRACE/GRACE-FO Technical Notes (geocenter and SLR C20/C30), publicly
   distributed by the providers (GFZ, CSR, JPL, NASA GSFC) via the GFZ

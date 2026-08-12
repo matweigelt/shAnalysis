@@ -458,6 +458,20 @@ def main():
         if "API reference (v%s)" % ver not in api:
             probs.append("apiReference.html: title is not v%s - regenerate it"
                          % ver)
+        # The overview page is where a user lands from `doc shAnalysis`.
+        # It carried "v3.0.0" for eight releases because nothing checked
+        # it: the gate only looked at pages that already had a version.
+        ov = os.path.join(ROOT, "html", "shAnalysis.html")
+        if os.path.isfile(ov):
+            ot = open(ov, encoding="utf-8").read()
+            mo = re.search(r'class="ver">\s*Version\s+(\S+?)\s', ot)
+            if not mo:
+                probs.append("shAnalysis.html: no version stamp - the "
+                             "overview page must state the version so it "
+                             "cannot silently go stale")
+            elif mo.group(1) != ver:
+                probs.append("shAnalysis.html: version %s != Contents.m %s"
+                             % (mo.group(1), ver))
         # the first Contents.m line is what ver() shows as the product NAME
         first = cm.split("\n", 1)[0].lstrip("% ").strip()
         if len(first) >= 60 or re.search(r"\d+\.\d+", first):
