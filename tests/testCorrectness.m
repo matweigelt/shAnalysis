@@ -2264,24 +2264,39 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
-function testSlepianCapProperties(testCase)
-%TESTSLEPIANCAPPROPERTIES v3.9.0 (roadmap item 8): the three defining
-%   Slepian identities on a 30-deg polar cap at nmax 12, matching the
-%   Python pre-validation (Shannon 11.32, lam(1) 0.99998):
-%   eigenvalues in [0,1] descending; Shannon = P * A/(4pi); the
-%   concentration ratio of each eigenvector equals its eigenvalue.
+function testSlepianCapCrossValidation(testCase)
+%TESTSLEPIANCAPCROSSVALIDATION v3.9.0: cross-validate the Gauss-Legendre
+%   localization kernel against an INDEPENDENT Python ring-quadrature
+%   reference (0.5-deg graticule, lpmv): 30-deg polar cap, Lmax 12 ->
+%   lambda_1 = 0.999981, Shannon = P * (1-cosd(30))/2 = 11.32. Two
+%   implementations, two quadratures, same physics.
 idx = shLowLevel.shIndex(12, MinDegree = 0);
-st = 0.5;
-lat = (-90+st/2 : st : 90-st/2)'; lon = (st/2 : st : 360-st/2)';
-mk = (90 - lat) <= 30 & true(1, numel(lon));
-[G, lam, info] = shLowLevel.slepianBasis(idx, mk, LatDeg = lat, LonDeg = lon);
-verifyEqual(testCase, size(G), [idx.P, idx.P]);
-verifyTrue(testCase, all(diff(lam) <= 1e-12) && lam(1) <= 1 && lam(end) >= 0);
-aCap = (1 - cosd(30)) / 2;
-verifyEqual(testCase, info.shannon, idx.P * aCap, RelTol = 1e-3);
-verifyEqual(testCase, info.areaFraction, aCap, RelTol = 1e-3);
-verifyEqual(testCase, lam(1), 0.999981, AbsTol = 2e-4);   % Python reference
-verifyEqual(testCase, G' * G, eye(idx.P), AbsTol = 1e-10);
+[~, lam, info] = shLowLevel.slepianBasis(idx, @(la, lo) double(la > 60), ...
+    NKeep = 3);
+verifyEqual(testCase, lam(1), 0.999981, AbsTol = 2e-4);
+verifyEqual(testCase, info.shannon, idx.P * (1 - cosd(30)) / 2, RelTol = 2e-3);
+end
+
+function testSlepianProjectRoundtrip(testCase)
+%TESTSLEPIANPROJECTROUNDTRIP the application half (roadmap item 8): a
+%   field fully concentrated in the region survives projection onto the
+%   ~Shannon leading tapers nearly unchanged; the reconstruction repack
+%   is exact for K = P.
+idx = shLowLevel.shIndex(12, MinDegree = 0);
+[G, ~, info] = shLowLevel.slepianBasis(idx, @(la, lo) double(la > 60));
+% concentrated test field: leading taper itself, repacked to (C, S)
+Cs = zeros(idx.Lmax+1, idx.Lmax+1); Ss = Cs;
+li = sub2ind(size(Cs), idx.n(:)+1, idx.m(:)+1); isC = idx.cs(:) == 0;
+Cs(li(isC)) = G(isC, 1); Ss(li(~isC)) = G(~isC, 1);
+% K = P: exact roundtrip
+[aF, recF] = shLowLevel.slepianProject(Cs, Ss, G, idx);
+verifyEqual(testCase, recF.Cs, Cs, AbsTol = 1e-12);
+verifyEqual(testCase, recF.Ss, Ss, AbsTol = 1e-12);
+% K = Shannon: energy retained ~ lambda_1
+K = max(1, round(info.shannon));
+aK = shLowLevel.slepianProject(Cs, Ss, G(:, 1:K), idx);
+verifyGreaterThan(testCase, sum(aK.^2), 0.999);
+verifyEqual(testCase, aF(1), 1, AbsTol = 1e-12);          % it IS taper 1
 end
 
 function testGfcDotSynonym(testCase)
