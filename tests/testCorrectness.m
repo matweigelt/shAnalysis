@@ -2325,6 +2325,44 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testEofSeparateNorthRule(testCase)
+%TESTEOFSEPARATENORTHRULE v3.11.0: EOF/North separation against the
+%   frozen Python (numpy) reference: two planted modes ABOVE the
+%   Marchenko-Pastur noise bulk are recovered exactly (nKeep 2), the
+%   de-circulated noise RMS reproduces the planted 0.8 to 5%, and the
+%   reconstruction correlates > 0.95 with the planted truth. The
+%   dimensioning lesson is part of the test: with mode variance below
+%   the bulk edge sigma^2*(1+sqrt(Q/T))^2 no criterion can separate.
+rng(42, 'twister');
+Q = 800; T = 240; t = (0:T-1)' / 12;
+w = 0.5 + rand(Q, 1);
+u1 = cumsum(randn(Q, 1)); u1 = u1 - mean(u1); u1 = u1 / norm(u1);
+u2 = cumsum(randn(Q, 1)); u2 = u2 - (u2' * u1) * u1 - mean(u2);
+u2 = u2 / norm(u2);
+pc1 = 12.0 * sin(2*pi*t/4.5); pc2 = 8.0 * cos(2*pi*t/7.0 + 0.6);
+R = u1 * pc1' + u2 * pc2' + 0.8 * randn(Q, T);
+[circ, ~, info] = shLowLevel.eofSeparate(R, w);
+verifyEqual(testCase, info.nKeep, 2);
+verifyEqual(testCase, info.rmsNoise, 0.8, RelTol = 0.05);
+truth = u1 * (pc1 - mean(pc1))' + u2 * (pc2 - mean(pc2))';
+c = corrcoef(circ(:), truth(:));
+verifyGreaterThan(testCase, c(1, 2), 0.95);
+% NKeep override and the degenerate zero-mode path
+[c0, n0] = shLowLevel.eofSeparate(R, w, NKeep = 0);
+verifyEqual(testCase, c0, zeros(Q, T));
+verifyEqual(testCase, n0, R - mean(R, 2));
+end
+
+function testObpChainContract(testCase)
+%TESTOBPCHAINCONTRACT kn and GADFolder are required - OBP without GAD
+%   is not OBP, and no reference frame is ever assumed.
+verifyError(testCase, @() shLowLevel.obpChain(tempdir), ...
+    'shLowLevel:obpChain:missingKn');
+verifyError(testCase, ...
+    @() shLowLevel.obpChain(tempdir, kn = (0:90)' * 0), ...
+    'shLowLevel:obpChain:missingGAD');
+end
+
 function testFetchGAXContract(testCase)
 %TESTFETCHGAXCONTRACT bad products fail loudly before any network use.
 verifyError(testCase, ...

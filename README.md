@@ -45,7 +45,10 @@ barystatic ocean series (measured GIA lever +0.89 mm/yr), and
 `slepianProject` turns the Slepian basis into well-posed regional
 analysis. `shLowLevel.fetchGAX` completes the ocean story:
 GAD/GAA from 2002 on, one call, full Chambers-&-Willis restoration in
-`oceanChain`.
+`oceanChain`. The ocean lane now forks: `obpChain` keeps the air
+column and delivers GravIS-style bottom-pressure fields, while
+`eofSeparate` splits residual circulation from noise (North rule) so
+`oceanChain`'s noise proxy stops blaming the ocean for being dynamic.
 
 ## Documentation
 

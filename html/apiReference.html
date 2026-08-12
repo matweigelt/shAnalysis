@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.10.1)</h1>
+<h1>shAnalysis API reference (v3.11.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -34,6 +34,7 @@ code itself.</p>
 <a href="#shLowLevel.diffSpectrum">diffSpectrum</a>
 <a href="#shLowLevel.effectiveCorr">effectiveCorr</a>
 <a href="#shLowLevel.eofAnalysis">eofAnalysis</a>
+<a href="#shLowLevel.eofSeparate">eofSeparate</a>
 <a href="#shLowLevel.errorMap">errorMap</a>
 <a href="#shLowLevel.estimateDegree1">estimateDegree1</a>
 <a href="#shLowLevel.evalMask">evalMask</a>
@@ -66,6 +67,7 @@ code itself.</p>
 <a href="#shLowLevel.mcPropagate">mcPropagate</a>
 <a href="#shLowLevel.nashSutcliffe">nashSutcliffe</a>
 <a href="#shLowLevel.normalFieldCS">normalFieldCS</a>
+<a href="#shLowLevel.obpChain">obpChain</a>
 <a href="#shLowLevel.oceanChain">oceanChain</a>
 <a href="#shLowLevel.oceanRMS">oceanRMS</a>
 <a href="#shLowLevel.opApply">opApply</a>
@@ -315,6 +317,22 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: singular values, total variance, T</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.eofSeparate">
+<h3><code>shLowLevel.eofSeparate(R, w, opts)</code></h3>
+<p class="h1line">Separate coherent modes from noise in a residual stack.</p>
+<p>[CIRC, NOISER, INFO] = shLowLevel.eofSeparate(R, W) splits a time-centred residual stack into a coherent low-mode part (for ocean applications: residual circulation - interannual dynamics left after the trend + seasonal fit) and a noise remainder, using an area-weighted EOF decomposition with the North et al. (1982) rule: leading modes are kept while their eigenvalue is separated from the next one by more than its sampling uncertainty lambda * sqrt(2/T).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>R</code></td><td>: x :</td><td>double</td><td>required</td></tr><tr><td><code>w</code></td><td>: x 1</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>NKeep</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>MaxModes</code></td><td>1 x 1</td><td>double</td><td>10</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>circ</code></td><td>(Q x T) double  coherent (circulation) part noiseR (Q x T) double  time-centred residual minus CIRC</td></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  lam (variance per mode), nKeep, northSeparated (logical, per leading mode), varExplained (fraction, kept modes), rmsNoise (area-weighted RMS of NOISER)</td></tr>
+</table>
+<b>Example</b><pre>    % after [out, rep] = oceanChain(...): rebuild the pixel residuals
+    % R (Q x T), weights wA, then
+    [circ, nz, inf1] = shLowLevel.eofSeparate(R, wA);
+    inf1.nKeep              % modes the North rule accepts
+    inf1.rmsNoise           % the de-circulated noise level</pre>
+</div>
 <div class="entry" id="shLowLevel.errorMap">
 <h3><code>shLowLevel.errorMap(M, idx, latDeg, lonDeg, opts)</code></h3>
 <p class="h1line">Analytic formal-error maps from a full coefficient covariance.</p>
@@ -545,7 +563,7 @@ code itself.</p>
 <p class="h1line">Download a URL to a file with Retry-After-aware retries.</p>
 <p>INFO = shLowLevel.httpFetch(URL, DEST) downloads URL to the file DEST. On transient failures (HTTP 429, 500, 502, 503, 504, or a network error) it retries with exponential backoff and jitter; when the server sends a Retry-After header (seconds or an HTTP-date), that value takes precedence over the backoff. Built on matlab.net.http because websave discards the response headers on error - which is exactly why polite retrying was never possible with it. Motivated by the 503 bursts the GravIS portal returns on bulk fetches (guide V7/V8 data); all toolbox fetchers route their downloads through this function.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>url</code></td><td>1 x 1</td><td>string</td><td>required</td></tr><tr><td><code>dest</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>MaxTries</code></td><td>1 x 1</td><td>double</td><td>4</td></tr><tr><td><code>BaseDelay</code></td><td>1 x 1</td><td>double</td><td>2</td></tr><tr><td><code>MaxDelay</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>MaxTries</code></td><td>1 x 1</td><td>double</td><td>4</td></tr><tr><td><code>BaseDelay</code></td><td>1 x 1</td><td>double</td><td>2</td></tr><tr><td><code>MaxDelay</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>WebsaveFallback</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>info</code></td><td>(1 x 1) struct with fields</td></tr>
 <tr><td><code>status</code></td><td>(1 x 1) double  final HTTP status code</td></tr>
@@ -697,18 +715,40 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: GM, a, f, omega, J2, e2, m, q0, system</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.obpChain">
+<h3><code>shLowLevel.obpChain(folder, opts)</code></h3>
+<p class="h1line">Ocean-bottom-pressure fields (GravIS Level-3 OBP recipe).</p>
+<p>[OUT, REP] = shLowLevel.obpChain(FOLDER, kn = KN, OceanMask = OC, GADFolder = GAD) produces gridded ocean-bottom-pressure anomalies in EWH following the GravIS/GFZ Level-3 OBP definition: gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA) -&gt; GAD added back on the coefficient level -&gt; filter (AFTER the GAD addition - the GravIS order) -&gt; EWH synthesis -&gt; anomalies against the mean over RefPeriod, land set to NaN.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>RefPeriod</code></td><td>1 x 2</td><td>double</td><td>[2002.25, 2020.25]</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
+<tr><td><code>grid</code></td><td>(nLat x nLon x T) OBP anomaly [cm EWH], land NaN</td></tr>
+<tr><td><code>lat, lon</code></td><td>(nLat x 1), (nLon x 1) grid vectors [deg]</td></tr>
+<tr><td><code>epochs</code></td><td>(T x 1) decimal years</td></tr>
+<tr><td><code>refMean</code></td><td>(nLat x nLon) subtracted reference-period mean [cm] oceanMeanOBP (T x 1) area-weighted ocean mean of the anomaly [cm] - contains the atmospheric term by definition</td></tr>
+<tr><td><code>rep</code></td><td>(1 x 1) struct  steps, version, nEpochs, nGadRestored, nRefEpochs (epochs inside RefPeriod)</td></tr>
+</table>
+<b>Example</b><pre>    kn = readmatrix(&quot;loadLoveNumbers_Gegout97.txt&quot;, FileType = &quot;text&quot;, ...
+        NumHeaderLines = 2);
+    [out, rep] = shLowLevel.obpChain(serFolder, kn = kn, ...
+        OceanMask = oc, GADFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAD&quot;);
+    imagesc(out.lon, out.lat, out.grid(:, :, end)); axis xy</pre>
+</div>
 <div class="entry" id="shLowLevel.oceanChain">
 <h3><code>shLowLevel.oceanChain(folder, opts)</code></h3>
 <p class="h1line">Global-ocean mass chain: barystatic series from GSM + GravIS.</p>
 <p>[OUT, REP] = shLowLevel.oceanChain(FOLDER, kn = KN, OceanMask = OC) runs the ocean sibling of the validated chains (roadmap item 7): gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA rate ON by default - the ocean-floor GIA correction matters for barystatic trends) -&gt; global EWH synthesis on a GridStep graticule -&gt; area-weighted ocean-mean series [cm] -&gt; trend + annual fit. The residual after the per-pixel trend+seasonal fit is what remains for the noise proxy: this chain SEPARATES the real open-ocean signal (barystatic rise + seasonal circulation) from the residual that oceanRMS should see - the guide-V6 finding (&quot;the trend&#x27;s open-ocean RMS is mostly real barystatic signal, not error&quot;) as an API.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>SeparateCirculation</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
 <tr><td><code>epochs</code></td><td>(T x 1) decimal years oceanMean (T x 1) area-weighted ocean-mean EWH [cm]</td></tr>
 <tr><td><code>trend</code></td><td>(1 x 1) barystatic trend [mm/yr]</td></tr>
 <tr><td><code>trendGt</code></td><td>(1 x 1) the same as mass rate [Gt/yr] over the mask trendSigma (1 x 1) OLS 1-sigma of the trend [mm/yr] (no AR correction - stated, not hidden) ampAnnual (1 x 1) annual amplitude of the ocean mean [mm]</td></tr>
-<tr><td><code>sigMon</code></td><td>(1 x 1) open-ocean residual RMS after the per-pixel trend+seasonal fit [m] (the honest noise proxy) oceanArea (1 x 1) mask area [m^2]</td></tr>
+<tr><td><code>sigMon</code></td><td>(1 x 1) open-ocean residual RMS after the per-pixel trend+seasonal fit [m] (the honest noise proxy) oceanArea (1 x 1) mask area [m^2] circulationRMS (1 x 1) area-weighted RMS of the separated residual circulation [m] (NaN unless SeparateCirculation)</td></tr>
+<tr><td><code>nModes</code></td><td>(1 x 1) EOF modes the North rule kept (0 unless SeparateCirculation)</td></tr>
+<tr><td><code>lamModes</code></td><td>(K x 1) variance per EOF mode ([] unless SeparateCirculation)</td></tr>
 <tr><td><code>rep</code></td><td>(1 x 1) struct  steps, version, dropped/uncovered epochs</td></tr>
 </table>
 <b>Example</b><pre>    kn = readmatrix(&quot;loadLoveNumbers_Gegout97.txt&quot;, FileType = &quot;text&quot;, ...
@@ -2022,4 +2062,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.10.1). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.11.0). Generated by tools - do not edit.</p></body></html>

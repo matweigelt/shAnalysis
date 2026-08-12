@@ -1576,11 +1576,14 @@ story += fig("standardchain_flow.png",
     "its GravIS-flavoured sibling: same shape, GravIS aux tables and "
     "NFIL mean instead of the TN files.", width=200)
 story += fig("chains_flow.png",
-    "The four validated chains at v3.10.0. gravisL2B is the single "
+    "The chain family at v3.11.0. gravisL2B is the single "
     "shared correction core; the ice chains share one engine "
     "(gravisRegionChain), the TWS chain filters and averages in "
-    "per-basin boxes, and oceanChain closes the family with the "
-    "barystatic series - fetchGAX feeds its full GAD/GAA restoration. "
+    "per-basin boxes, and the ocean lane forks after the GAD "
+    "restoration: oceanChain removes the atmospheric ocean mean for "
+    "the barystatic series (with an optional EOF split of residual "
+    "circulation from noise), obpChain keeps the air column and "
+    "delivers GravIS-style bottom-pressure fields. "
     "Defaults ARE the tested configuration; the shipped data/gravis "
     "folder makes the calls below run as written.")
 story += [para("Every number in V1&ndash;V8 is reproducible in one "
@@ -1689,6 +1692,41 @@ story += [para("Full ocean restoration (Chambers &amp; Willis 2010) "
                "AOD1B is trend-free by construction; the residual RMS "
                "grows from 1.21 to 1.49 cm because GAD puts REAL "
                "sub-annual ocean variability back into the field.")]
+story += [para("<b>Bottom pressure versus barystatic - one step apart.</b> "
+               "The GravIS Level-3 OBP product is GSM plus GAD with the "
+               "standard corrections: bottom pressure is the weight of "
+               "the FULL column (water plus air), so nothing is "
+               "subtracted and the ocean mean contains the mean "
+               "atmospheric mass. <font face='Courier'>obpChain</font> "
+               "reproduces that recipe as gridded EWH anomalies against "
+               "the GravIS reference window 2002/04-2020/03, with GAD "
+               "added BEFORE the filter (the GravIS order - the filter "
+               "note in both chain helps) and land set to NaN. "
+               "<font face='Courier'>oceanChain</font> continues one "
+               "step further and removes the ocean mean of GAA "
+               "(Chambers &amp; Willis 2010) to isolate water mass.")]
+story += code("""[obp, rep] = shLowLevel.obpChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD");
+size(obp.grid)                 % nLat x nLon x T, land NaN
+rep.nRefEpochs                 % epochs inside the GravIS window""")
+story += [para("<b>Residual circulation, separated instead of ignored.</b> "
+               "After the trend + seasonal fit the ocean pixels still "
+               "carry coherent interannual dynamics - real circulation, "
+               "not error. <font face='Courier'>eofSeparate</font> "
+               "splits the residual stack with an area-weighted EOF and "
+               "the North et al. (1982) rule, keeping modes while their "
+               "eigenvalue is separated by more than its sampling "
+               "uncertainty. The physical limit is stated, not hidden: "
+               "modes at or below the Marchenko-Pastur noise bulk "
+               "(about sigma^2 (1+sqrt(Q/T))^2) are not separable by "
+               "ANY eigenvalue criterion - the Python pre-validation "
+               "demonstrated exactly that failure before the synthetic "
+               "amplitudes were dimensioned above the bulk. Passing "
+               "SeparateCirculation to oceanChain applies the split and "
+               "turns sigMon into the de-circulated noise RMS.")]
+story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = gadF, GAAFolder = gaaF, SeparateCirculation = true);
+[out.nModes, out.circulationRMS, out.sigMon]   % modes, circ, noise""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
