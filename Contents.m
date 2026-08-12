@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.7 (R2026a-compatible) 12-Aug-2026
+% Version 3.8.8 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,22 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.8 (validated chains as one-call methods)
+%   The executed GravIS validations (guide V1-V8) are now toolbox
+%   methods with exchangeable inputs and full provenance reports:
+%   - shLowLevel.gravisL2B        the shared GravIS Level-2B correction
+%       core: aux-table C20/C30/C21/S21 + degree 1, NFIL mean, optional
+%       GIA rate; uncovered epochs dropped and recorded
+%   - shLowLevel.greenlandChain   -225.6 Gt/yr with the tested defaults
+%       (published -231.1; guide V1-V6), 32 s end to end
+%   - shLowLevel.antarcticaChain  -125.7 Gt/yr + the 25-basin table
+%       (read V7 before interpreting the 14% vs the AWI joint product)
+%   - shLowLevel.twsChain         river-basin TWS means in cm EWH;
+%       amplitude ratio 1.001 and 0.032 cm/yr trend RMS vs GravIS
+%   The sigma_trend noise policy requires a USER-SUPPLIED OceanMask
+%   (oceanRMS contract) - the mask must be false over land (a bare
+%   latitude band verifiably shifts Greenland by 5 Gt/yr).
 %
 % New in v3.8.7 (validation: Antarctica + terrestrial water storage)
 %   Guide chapters V7/V8 extend the GravIS validation beyond Greenland,

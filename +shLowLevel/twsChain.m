@@ -21,12 +21,13 @@ function [out, rep] = twsChain(folder, gravisFolder, opts)
 %                   filter, the DDK binary unless full paths are given
 %
 %   Options
-%     kn         (:,:) double  REQUIRED load Love numbers
+%     kn         ([])  load Love numbers (degree,kn) - REQUIRED,
+%                the empty default errors: no frame is assumed
 %     BasinFile  ("basins_rivbas.json")  GravIS GeoJSON of the target
 %                basins ([lon lat] rings, converted internally;
 %                https://gravis.gfz.de/basins/rivbas)
-%     Basins     ([])  string array of feature names to process; []
-%                processes every feature in BasinFile
+%     Basins     (strings(0,1))  feature names to process; the empty
+%                default processes every feature in BasinFile
 %     Filter     ("DDK3")  "none" | "gaussN" | "DDKn" (n = 1..8) | a W
 %                struct from shLowLevel.readDDK
 %     DDKFolder  ("")  folder holding the Wbd_2-120.a_* binaries for

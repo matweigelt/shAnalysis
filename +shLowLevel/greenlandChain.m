@@ -18,14 +18,16 @@ function [gt, rep] = greenlandChain(folder, gravisFolder, opts)
 %                   also hold BasinFile unless given as a full path
 %
 %   Options
-%     kn            (:,:) double  REQUIRED load Love numbers (degree,kn)
-%                   or column vector - no frame is assumed for you
+%     kn            ([])  load Love numbers (degree,kn) or column
+%                   vector - REQUIRED, the empty default errors: no
+%                   frame is assumed for you
 %     BasinFile     ("basins_GIS.json")  GravIS GeoJSON of the target
 %                   basins ([lon lat] rings; converted internally - see
 %                   https://gravis.gfz.de/basins/GIS)
-%     NeighbourBoxes (default: the guide-V2 Canadian Arctic, Iceland
-%                   and Svalbard boxes, [latMin latMax lonMin lonMax]
-%                   rows, lon in [0, 360))
+%     NeighbourBoxes ([60 84 232 300; 63 67 335 347; 76 81 10 34])
+%                   the guide-V2 Canadian Arctic, Iceland and Svalbard
+%                   boxes, [latMin latMax lonMin lonMax] rows, lon in
+%                   [0, 360)
 %                   every region that can hold mass belongs in the
 %                   leakage mask; [] disables the union
 %     GIAFile       ("GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz")
@@ -39,8 +41,12 @@ function [gt, rep] = greenlandChain(folder, gravisFolder, opts)
 %     OceanMask     ([])          USER-SUPPLIED open-ocean mask for the
 %                   sigma_trend policy (logical grid or @(lat,lon)
 %                   handle; see oceanRMS - no coastline is assumed).
-%                   REQUIRED unless NoiseLevel is numeric; a simple
-%                   @(la,lo) abs(la) < 60 avoids both ice sheets
+%                   REQUIRED unless NoiseLevel is numeric. The mask
+%                   must be FALSE over land: a pure latitude band lets
+%                   continental hydrology inflate sigma and the
+%                   inversion stops early (verified: -220.7 instead of
+%                   -225.6 Gt/yr). Guide V4c ships a crude
+%                   continent-box mask that reproduces the headline
 %     MaxIter       (400)
 %     TrendGrid     ([])          precomputed struct from a previous
 %                   REP (fields trendGrid, lat, lon, sigTrend) - skips

@@ -32,7 +32,10 @@ full 252-month span), and locates the Antarctic one-map-inversion
 limit at 14% against the AWI joint-basin product - with a 0.905
 difference-pattern correlation to the official TU Dresden kernel grid,
 i.e. a method-class distance, not a chain defect (guide chapters
-V7/V8).
+V7/V8). All three validations are available as one-call methods with
+exchangeable inputs: `shLowLevel.greenlandChain`,
+`shLowLevel.antarcticaChain` and `shLowLevel.twsChain`, built on the
+shared `shLowLevel.gravisL2B` correction core.
 
 ## Documentation
 

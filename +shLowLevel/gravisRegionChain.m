@@ -24,6 +24,10 @@ function [gt, rep] = gravisRegionChain(region, folder, gravisFolder, opts)
 %          unionMask, m, iterations, stoppedBy, basins (antarctica),
 %          steps, l2b, version, created
 %
+%   Example
+%     % called for you by the wrappers; direct use mirrors them:
+%     % [gt, rep] = shLowLevel.gravisRegionChain("greenland", ser, gd, opts)
+%
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
 %   2026-08-12 (v3.8.8).
 arguments

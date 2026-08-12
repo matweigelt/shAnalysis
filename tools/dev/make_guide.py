@@ -1568,6 +1568,16 @@ story += [para("The hydrology test inverts the roles: small signals, "
                "harmonic series reproduces an independently produced "
                "hydrology product to three hundredths of a centimetre "
                "per year.")]
+story += [para("Everything in chapters V1&ndash;V8 is available as "
+               "one-call methods with exchangeable inputs: <font "
+               "face='Courier'>shLowLevel.greenlandChain</font>, <font "
+               "face='Courier'>antarcticaChain</font> and <font "
+               "face='Courier'>twsChain</font>, built on the shared "
+               "<font face='Courier'>gravisL2B</font> correction core (the two ice "
+               "chains share one engine, <font face='Courier'>gravisRegionChain</font>). "
+               "Their defaults ARE the tested configuration above; "
+               "every deviation is a declared sensitivity study, and "
+               "the REP output records each step.")]
 story += [PageBreak()]
 
 story += [para("Demo gallery", "h1"),
