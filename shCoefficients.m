@@ -356,6 +356,9 @@ methods
         %   OUT = obj.applyTN14(TN) with TN from shLowLevel.readTN14 (or a
         %   filename). Requires a finite obj.epoch; the nearest TN epoch
         %   within opts.Tolerance (default 0.05 yr) is used.
+        %   Options
+        %     ReplaceC30 ("auto")  "auto" replaces C30 when the table
+        %                 carries it, "always"/"never" force the choice
         %   opts.ReplaceC30: "auto" (default: replace when the table has a
         %   non-NaN C30 for that month), "never", "always".
         %   Outputs
@@ -451,6 +454,12 @@ methods
         %   operator is data-dependent; rigorous error propagation is not
         %   defined for it - use the tvANS filter on an shSeries for a
         %   filter with proper covariance semantics).
+        %   Options
+        %     minOrder (6)       lowest order the decorrelation touches
+        %     polyOrder (3)      order of the fitted/removed polynomial
+        %     windowLength ([])  sliding-window length; [] uses the
+        %                        Swenson-Wahr degree-dependent width
+        %
         %   Outputs
         %     out        (1 x 1) shCoefficients   Swenson-Wahr decorrelated
         %
@@ -1013,6 +1022,9 @@ methods (Static)
         %FROMVEC Unpack a shLowLevel.shIndex-ordered vector into an shCoefficients.
         %   G = shCoefficients.fromVec(X, IDX, LIKE) copies GM/R and other
         %   metadata from the template LIKE (an shCoefficients).
+        %   Inputs
+        %     like  template shCoefficients supplying GM, R and metadata
+        %
         %   Outputs
         %     obj        (1 x 1) shCoefficients   rebuilt from x with sizes/GM/R/epoch of the template
         %
@@ -1055,9 +1067,9 @@ methods (Static)
         %     Kaula (0)     (1 x 1) Kaula regularization for "ls"
         %     Name ("analysis")  (1 x 1) string stored as the object name
         %
-        %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs
         %     obj        (1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)
+        %     info       (1 x 1) struct   diagnostics, see shLowLevel.shAnalysisGrid
         %
         %   Options
         %     kn ([])  load Love numbers, degrees 0..nmax (user-supplied; e.g. shLowLevel.fetchLoveNumbers)

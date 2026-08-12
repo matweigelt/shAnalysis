@@ -10,6 +10,10 @@ function spec = diffSpectrum(C1, S1, C2, S2)
 %   share the same size; truncate beforehand for mixed degrees (the
 %   shLowLevel.compareSolutions wrapper does this automatically).
 %
+%   Inputs
+%     C2              second cosine set, same indexing as C
+%     S2              second sine set, same indexing as S
+%
 %   Outputs
 %     spec       (1,1) struct  fields:
 %                  .n         (nmax+1 x 1) double  degree axis 0..nmax

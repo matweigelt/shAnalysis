@@ -8,6 +8,10 @@ function nse = nashSutcliffe(ref, model)
 %   than correlation because bias and amplitude errors are punished.
 %   NaN pairs are removed per column.
 %
+%   Inputs
+%     ref             reference series
+%     model           model series scored against the reference
+%
 %   Outputs
 %     nse        (1,K) double  efficiency per column (K = 1 for vectors)
 %

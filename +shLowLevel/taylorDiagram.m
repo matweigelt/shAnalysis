@@ -15,6 +15,12 @@ function h = taylorDiagram(refStd, stds, corrs, opts)
 %     Title ("Taylor diagram")
 %     Normalize (false)   divide all stds by REFSTD (radius 1 = reference)
 %
+%   Inputs
+%     refStd          standard deviation of the reference field
+%     stds            standard deviations of the compared fields
+%     corrs           correlations of the compared fields with the
+%                     reference
+%
 %   Outputs
 %     h          (1,1) graphics handle  the axes handle
 %

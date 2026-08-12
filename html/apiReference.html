@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.9.0)</h1>
+<h1>shAnalysis API reference (v3.10.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -38,6 +38,7 @@ code itself.</p>
 <a href="#shLowLevel.estimateDegree1">estimateDegree1</a>
 <a href="#shLowLevel.evalMask">evalMask</a>
 <a href="#shLowLevel.fetchDDK">fetchDDK</a>
+<a href="#shLowLevel.fetchGAX">fetchGAX</a>
 <a href="#shLowLevel.fetchICGEM">fetchICGEM</a>
 <a href="#shLowLevel.fetchITSG">fetchITSG</a>
 <a href="#shLowLevel.fetchLoveNumbers">fetchLoveNumbers</a>
@@ -151,7 +152,7 @@ code itself.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>B</code></td><td>n x m</td><td>double</td><td>required</td></tr><tr><td><code>op</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Ridge</code></td><td>1 x 1</td><td>double</td><td>0</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>avg</code></td><td>(K x T) double   deconvolved basin averages</td></tr>
+<tr><td><code>avgHat</code></td><td>(K x T) double   deconvolved basin averages</td></tr>
 <tr><td><code>out</code></td><td>struct: c (K x T) deconvolved coefficients, sigma (K x T) 1-sigma incl. deterministic term (v2.5), avgNaive, attn, condA</td></tr>
 </table>
 </div>
@@ -365,6 +366,20 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: fetched, updated, skipped, names, url</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.fetchGAX">
+<h3><code>shLowLevel.fetchGAX(dest, opts)</code></h3>
+<p class="h1line">Download AOD1B GAX monthly means (GAA/GAB/GAC/GAD) from ICGEM.</p>
+<p>FILES = shLowLevel.fetchGAX(DEST) downloads the monthly-mean dealiasing products needed for full ocean-mass restoration (Chambers &amp; Willis 2010) as ICGEM-converted .gfc files into DEST/&lt;PRODUCT&gt;/. The AOD1B products are identical across processing centres, so the GFZ series pages (which carry all four products from 2002 on) serve every GSM series including COST-G. Listing and download go through the toolbox&#x27;s Retry-After-aware fetch layer; files already present are skipped unless Update = true.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>dest</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Products</code></td><td>1 x :</td><td>string</td><td>[&quot;GAD&quot;, &quot;GAA&quot;]</td></tr><tr><td><code>Series</code></td><td>1 x :</td><td>string</td><td>[&quot;01_GRACE/GFZ/GFZ Release 06&quot;, &quot;01_GRACE/GFZ/GFZ Release 06.3 (GFO)&quot;]</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed, nRemaining (budget cut) per product, series actually used</td></tr>
+</table>
+<b>Example</b><pre>    f = shLowLevel.fetchGAX(&quot;E:/DATAPOOL/GravityField/GAX&quot;);
+    [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+        GADFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAD&quot;, ...
+        GAAFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAA&quot;);</pre>
+</div>
 <div class="entry" id="shLowLevel.fetchICGEM">
 <h3><code>shLowLevel.fetchICGEM(model, opts)</code></h3>
 <p class="h1line">Download a static gravity field model from ICGEM.</p>
@@ -559,7 +574,7 @@ code itself.</p>
 <p>Y = shLowLevel.icgemDate2Year(D) converts date codes of the form yyyymmdd or yyyymmdd.hhmm (as used in ICGEM gfct files, TN-13/TN-14) to decimal years, using day-of-year / (days in year) with proper leap years. Values that do not look like date codes (&lt; 1.8e7, e.g. already-decimal years in legacy synthetic files) are returned UNCHANGED - this rule keeps pre-v2.1 files evaluating identically.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>d</code></td><td>n x m</td><td>double</td><td>required</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>t</code></td><td>(same size as input) double   decimal years</td></tr>
+<tr><td><code>y</code></td><td>(same size as input) double   decimal years</td></tr>
 </table>
 </div>
 <div class="entry" id="shLowLevel.kernelFactors">
@@ -687,7 +702,7 @@ code itself.</p>
 <p class="h1line">Global-ocean mass chain: barystatic series from GSM + GravIS.</p>
 <p>[OUT, REP] = shLowLevel.oceanChain(FOLDER, kn = KN, OceanMask = OC) runs the ocean sibling of the validated chains (roadmap item 7): gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA rate ON by default - the ocean-floor GIA correction matters for barystatic trends) -&gt; global EWH synthesis on a GridStep graticule -&gt; area-weighted ocean-mean series [cm] -&gt; trend + annual fit. The residual after the per-pixel trend+seasonal fit is what remains for the noise proxy: this chain SEPARATES the real open-ocean signal (barystatic rise + seasonal circulation) from the residual that oceanRMS should see - the guide-V6 finding (&quot;the trend&#x27;s open-ocean RMS is mostly real barystatic signal, not error&quot;) as an API.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
 <tr><td><code>epochs</code></td><td>(T x 1) decimal years oceanMean (T x 1) area-weighted ocean-mean EWH [cm]</td></tr>
@@ -724,7 +739,7 @@ code itself.</p>
 <h3><code>shLowLevel.opApply(op, Z, t, mode)</code></h3>
 <p class="h1line">Apply the month-t filter operator W_t (or W_t&#x27;) to columns of Z.</p>
 <p>Yout = shLowLevel.opApply(op, Z, t)          computes W_t * Z Yout = shLowLevel.opApply(op, Z, t, &#x27;transp&#x27;) computes W_t&#x27; * Z</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>op</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr><tr><td><code>Z</code></td><td>n x m</td><td>double</td><td>required</td></tr><tr><td><code>t</code></td><td>1 x 1</td><td>double</td><td>required</td></tr><tr><td><code>mode</code></td><td>1 x 1</td><td>-</td><td>&#x27;forward&#x27;</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>op</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr><tr><td><code>Z</code></td><td>n x 1</td><td>double</td><td>required</td></tr><tr><td><code>t</code></td><td>1 x 1</td><td>double</td><td>required</td></tr><tr><td><code>mode</code></td><td>1 x 1</td><td>-</td><td>&#x27;forward&#x27;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>Yout</code></td><td>(P x T) double  operator applied to every column of Y</td></tr>
 </table>
@@ -834,7 +849,14 @@ code itself.</p>
 <p class="h1line">Read a GRACE/GRACE-FO mascon netCDF (JPL / CSR / GSFC style).</p>
 <p>MAS = shLowLevel.readMascon(FILENAME) reads gridded mascon solutions for comparison against the SH chain (base MATLAB: ncread/ncinfo, no toolboxes). Variable names are auto-detected among the layouts used by JPL RL06 (&#x27;lwe_thickness&#x27;), CSR RL06 (&#x27;lwe_thickness&#x27;), and generic &#x27;lwe&#x27;/&#x27;water_thickness&#x27;; time units &quot;days since YYYY-MM-DD&quot; are converted to decimal years.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
-<b>Outputs</b><p><code>mas</code></p>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>mas</code></td><td>(1 x 1) struct  with the fields below</td></tr>
+<tr><td><code>lat</code></td><td>(nlat,1) double [deg]   (as stored - typically GEODETIC; convert with shLowLevel.geodetic2geocentric before synthesizing SH fields on this grid!)</td></tr>
+<tr><td><code>lon</code></td><td>(nlon,1) double [deg, 0..360)</td></tr>
+<tr><td><code>epoch</code></td><td>(T,1) double decimal years</td></tr>
+<tr><td><code>ewh</code></td><td>(nlat,nlon,T) double [cm or m AS STORED - check mas.units]</td></tr>
+<tr><td><code>units, name</code></td><td>strings</td></tr>
+</table>
 </div>
 <div class="entry" id="shLowLevel.readSHM">
 <h3><code>shLowLevel.readSHM(filename, opts)</code></h3>
@@ -859,7 +881,7 @@ code itself.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Index</code></td><td>n x m</td><td>struct</td><td>struct([])</td></tr><tr><td><code>Output</code></td><td>1 x 1</td><td>string</td><td>&quot;raw&quot;</td></tr><tr><td><code>Only</code></td><td>1 x 1</td><td>string</td><td>&quot;all&quot;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>snx</code></td><td>(1,1) struct  fields: x (P x 1 double), idx (struct), Cxx (P x P double, [] unless Only=&quot;full&quot;), epoch (1,1 double), N/b (normal equations when present)</td></tr>
+<tr><td><code>snx</code></td><td>(1 x 1) struct  parsed solution with fields n, m, cs (Q x 1 double) parameter list (cs: 0=C, 1=S; file order or IDX order), x and sig (Q x 1 double) estimates and formal sigmas (NaN if absent), M (Q x Q double) covariance or normal-equation matrix per Output= ([] if absent), kind (&#x27;COVA&#x27; | &#x27;NEQ&#x27; | &#x27;&#x27;), epoch (1 x 1 double) and header meta</td></tr>
 </table>
 </div>
 <div class="entry" id="shLowLevel.readTN13">
@@ -1369,6 +1391,7 @@ code itself.</p>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>quantity</code></td><td>1 x 1</td><td>string</td><td>&quot;geoid&quot;</td></tr><tr><td><code>Method</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>Weights</code></td><td>1 x 1</td><td>string</td><td>&quot;none&quot;</td></tr><tr><td><code>Kaula</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>kn</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>hn</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>rho_ave</code></td><td>1 x 1</td><td>double</td><td>5517</td></tr><tr><td><code>rho_water</code></td><td>1 x 1</td><td>double</td><td>1000</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Epoch</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Name</code></td><td>1 x 1</td><td>string</td><td>&quot;analysis&quot;</td></tr><tr><td><code>LatType</code></td><td>1 x 1</td><td>string</td><td>&quot;geocentric&quot;</td></tr><tr><td><code>Flattening</code></td><td>1 x 1</td><td>double</td><td>1/298.257223563</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)</td></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct   diagnostics, see shLowLevel.shAnalysisGrid</td></tr>
 </table>
 </div>
 <div class="entry" id="shCoefficients.applyDDK">
@@ -1383,7 +1406,7 @@ code itself.</p>
 <div class="entry" id="shCoefficients.applyTN14">
 <h3><code>shCoefficients.applyTN14(obj, tn, opts)</code></h3>
 <p class="h1line">Replace C20 (and C30 where provided) from a TN-14 table.</p>
-<p>OUT = obj.applyTN14(TN) with TN from shLowLevel.readTN14 (or a filename). Requires a finite obj.epoch; the nearest TN epoch within opts.Tolerance (default 0.05 yr) is used. opts.ReplaceC30: &quot;auto&quot; (default: replace when the table has a non-NaN C30 for that month), &quot;never&quot;, &quot;always&quot;.</p>
+<p>OUT = obj.applyTN14(TN) with TN from shLowLevel.readTN14 (or a filename). Requires a finite obj.epoch; the nearest TN epoch within opts.Tolerance (default 0.05 yr) is used.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>n x m</td><td>-</td><td>required</td></tr><tr><td><code>tn</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.05</td></tr><tr><td><code>ReplaceC30</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
@@ -1999,4 +2022,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.9.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.10.0). Generated by tools - do not edit.</p></body></html>

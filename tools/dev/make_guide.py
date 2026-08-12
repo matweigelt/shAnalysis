@@ -1576,11 +1576,13 @@ story += fig("standardchain_flow.png",
     "its GravIS-flavoured sibling: same shape, GravIS aux tables and "
     "NFIL mean instead of the TN files.", width=200)
 story += fig("chains_flow.png",
-    "The three validated chains. gravisL2B is the single shared "
-    "correction core; the ice chains share one engine "
+    "The four validated chains at v3.10.0. gravisL2B is the single "
+    "shared correction core; the ice chains share one engine "
     "(gravisRegionChain), the TWS chain filters and averages in "
-    "per-basin boxes. Defaults ARE the tested configuration; the "
-    "shipped data/gravis folder makes the calls below run as written.")
+    "per-basin boxes, and oceanChain closes the family with the "
+    "barystatic series - fetchGAX feeds its full GAD/GAA restoration. "
+    "Defaults ARE the tested configuration; the shipped data/gravis "
+    "folder makes the calls below run as written.")
 story += [para("Every number in V1&ndash;V8 is reproducible in one "
                "call. The shipped <font face='Courier'>data/gravis"
                "</font> copies (frozen 2026-08-12) cover the aux "
@@ -1667,6 +1669,24 @@ story += [para("Slepian analysis gets its application half: project "
                "&lambda;&#8321;&nbsp;=&nbsp;0.999981), and ICGEM "
                "<font face='Courier'>dot</font> secular lines now read "
                "as <font face='Courier'>trnd</font> synonyms.")]
+story += [para("Full ocean restoration (Chambers &amp; Willis 2010) "
+               "is one fetch away: <font face='Courier'>fetchGAX</font> "
+               "downloads the AOD1B monthly means as ICGEM-converted "
+               ".gfc from the GFZ series pages (163 GRACE-era + 88 "
+               "GRACE-FO files per product, verified live; the AOD1B "
+               "products are centre-independent, so they serve COST-G "
+               "too). <font face='Courier'>GADFolder=</font> adds the "
+               "model ocean signal back on the coefficient level, "
+               "<font face='Courier'>GAAFolder=</font> subtracts the "
+               "per-epoch ocean mean of the atmospheric product - the "
+               "land-ocean air-mass term GRACE sees but that is not "
+               "water. Epoch coverage is reported, never silent: REP "
+               "carries nGadRestored and nGaaApplied.")]
+story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
+[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
+    GAAFolder = "E:/DATAPOOL/GravityField/GAX/GAA");
+[rep.nGadRestored, rep.nGaaApplied]        % coverage, reported""")
 story += code("""idx = shLowLevel.shIndex(30, MinDegree = 0);
 [G, lam, info] = shLowLevel.slepianBasis(idx, @(la, lo) double(la > 60));
 K = round(info.shannon);                   % ~N useful modes

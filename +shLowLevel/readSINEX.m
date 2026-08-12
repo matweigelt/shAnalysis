@@ -23,16 +23,16 @@ function snx = readSINEX(filename, opts)
 %
 %   Options
 %     Index   ([]) shLowLevel.shIndex struct for reordering
-%   Outputs
-%     snx  (1,1) struct  fields: x (P x 1 double), idx (struct),
-%          Cxx (P x P double, [] unless Only="full"), epoch (1,1 double),
-%          N/b (normal equations when present)
+%     Output  ("raw") raw returns the parsed blocks; covariance assembles it from a NEQ solution
+%     Only    ("all") estimate streams only the SOLUTION/ESTIMATE block of large files
 %
-%   Outputs (struct)
-%     n, m, cs (Q,1)  parameter list (cs: 0=C, 1=S), file order or IDX order
-%     x, sig   (Q,1)  estimates and formal sigmas (NaN if absent)
-%     M        (Q,Q)  symmetric matrix (covariance or NEQ), [] if absent
-%     kind     'COVA' | 'NEQ' | ''
+%   Outputs
+%     snx  (1 x 1) struct  parsed solution with fields n, m, cs
+%          (Q x 1 double) parameter list (cs: 0=C, 1=S; file order or
+%          IDX order), x and sig (Q x 1 double) estimates and formal
+%          sigmas (NaN if absent), M (Q x Q double) covariance or
+%          normal-equation matrix per Output= ([] if absent), kind
+%          ('COVA' | 'NEQ' | ''), epoch (1 x 1 double) and header meta
 %
 %   Format handling (VERIFIED against a real ITSG-Grace2018 n96 SINEX from
 %   TU Graz): parameter type tokens are CN/SN; the degree is the first
@@ -46,11 +46,8 @@ function snx = readSINEX(filename, opts)
 %   reads the whole file into memory - fine for monthly solution SINEX
 %   up to Lmax ~ 120, not tuned for multi-GB normal-equation archives.
 %
-%   Claude (Fable 5), 2026-08-07.
-%   Outputs
-%     snx        struct: idx (shIndex-compatible), est (P x 1), M (P x P covariance or normal-equation matrix per Output=), sigma (P x 1), header meta
-%
-%   Developed by Matthias Weigelt with the help of Claude (Fable 5).
+%   Developed by Matthias Weigelt with the help of Claude (Fable 5),
+%   2026-08-07.
 
 arguments
     filename {mustBeTextScalar}

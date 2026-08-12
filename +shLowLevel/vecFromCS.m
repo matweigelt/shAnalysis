@@ -2,6 +2,10 @@ function x = vecFromCS(cnm, snm, idx)
 %VECFROMCS Pack lower-triangular Cnm/Snm matrices into a shLowLevel vector.
 %   x = shLowLevel.vecFromCS(cnm, snm, idx) with cnm, snm of size
 %   (Lmax+1)x(Lmax+1), cnm(n+1,m+1) = Cnm, snm(n+1,m+1) = Snm.
+%   Inputs
+%     cnm             cosine coefficient matrix, C(n+1, m+1) indexing
+%     snm             sine coefficient matrix, same indexing
+%
 %   Outputs
 %     x          (P x 1) double   coefficients gathered in idx ordering
 %

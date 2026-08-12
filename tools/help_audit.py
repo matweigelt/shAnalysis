@@ -96,7 +96,7 @@ def audit(entry, label, examples):
                          "default (%s)" % (a["name"], a["default"] or "?"))
     # outputs
     if entry["outs"] and entry["outs"] != ["varargout"]:
-        mo = re.search(r"^\s*Outputs?\b(.*?)(?=^\s*(Example|Developed|See also|$\s*$))",
+        mo = re.search(r"^\s*Outputs?\s*:?\s*$(.*?)(?=^\s*(Example|Developed|See also|$\s*$))",
                        H, re.M | re.S)
         if not mo:
             probs.append(label + ": no Outputs section")

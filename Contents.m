@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.9.0 (R2026a-compatible) 12-Aug-2026
+% Version 3.10.0 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,25 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.10.0 (fetchGAX; full ocean restoration; API completeness)
+%   - shLowLevel.fetchGAX downloads the AOD1B monthly means (GAA/GAB/
+%     GAC/GAD) as ICGEM-converted .gfc from the GFZ series pages - 163
+%     GRACE-era + 88 GRACE-FO files per product, centre-independent, so
+%     one fetch serves every GSM series including COST-G. Listing and
+%     download run through the Retry-After-aware fetch layer.
+%   - oceanChain full restoration (Chambers & Willis 2010): GADFolder=
+%     adds the model ocean signal on the coefficient level, the new
+%     GAAFolder= subtracts the per-epoch ocean mean of the atmospheric
+%     product; coverage is reported (nGadRestored/nGaaApplied), never
+%     silent.
+%   - API-table completeness: blank argument descriptions reduced from
+%     616 to 0 - a toolbox-convention lexicon fills shared names as a
+%     FINAL extraction pass (help text always wins), and 26 functions
+%     received real new Inputs/Options help lines.
+%   - chains_flow diagram regenerated with the ocean lane and the
+%     fetchGAX feed (elbow routing, geometrically verified collision-
+%     free including pads).
 %
 % New in v3.9.0 (ocean chain; Slepian application; gfc dot terms)
 %   - shLowLevel.oceanChain (roadmap item 7): the ocean sibling of the

@@ -26,13 +26,15 @@ function [gt, rep] = antarcticaChain(folder, gravisFolder, opts)
 %     NeighbourBoxes ([])         Antarctica has no land neighbours
 %     GIAFile       ("GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz")
 %     Filter        ("gauss445")  as in greenlandChain
-%     SpanEnd       (2023.099), GridStep (1)
+%     SpanEnd       (2023.099)  keep epochs <= SpanEnd [decimal yr]
+%     GridStep      (1)  synthesis graticule step [deg]
 %     NoiseLevel    (NaN)  sigma_trend policy, see greenlandChain
 %     OceanMask     ([])   REQUIRED unless NoiseLevel is numeric; must
 %                   be false over land (see greenlandChain)
 %     MaxIter       (400), TrendGrid ([])
 %     GM            (3.986004415e14), R (6378136.3)
 %     Quiet         (false)
+%
 %
 %   Outputs
 %     gt   (1,1) double  total AIS trend over the basin union [Gt/yr]

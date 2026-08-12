@@ -16,6 +16,10 @@ function s = vceRescale(N, Xres, idx, opts)
 %         variance-component estimation to a subset of the
 %         coefficient vector; this is how VCEBands estimates one
 %         factor per order band. Empty: no restriction
+%   Options
+%     Rows (true(0,1)) extra logical row mask restricting which
+%                     coefficients enter the variance estimate
+%
 %   Outputs
 %     s          (T x 1) or (nBands x T) double   monthly (band-wise) VCE noise variance factors
 %

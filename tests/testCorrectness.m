@@ -2325,6 +2325,13 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testFetchGAXContract(testCase)
+%TESTFETCHGAXCONTRACT bad products fail loudly before any network use.
+verifyError(testCase, ...
+    @() shLowLevel.fetchGAX(tempdir, Products = "GAX"), ...
+    'shLowLevel:fetchGAX:badProduct');
+end
+
 function testOceanChainContract(testCase)
 %TESTOCEANCHAINCONTRACT kn is required (no silent frame assumption),
 %   mirroring the other chains' contract.
@@ -2385,12 +2392,12 @@ function testHttpFetchRejectsHardClientError(testCase)
 %   spin through the retry budget. Network opt-in: skipped offline.
 try
     ok = true; %#ok<NASGU>
-    java.net.InetAddress.getByName('isdc-data.gfz.de');
+    java.net.InetAddress.getByName('icgem.gfz.de');
 catch
-    assumeTrue(testCase, false, 'offline - DNS for isdc failed');
+    assumeTrue(testCase, false, 'offline - DNS for icgem failed');
 end
 verifyError(testCase, @() shLowLevel.httpFetch( ...
-    "https://isdc-data.gfz.de/definitely-not-a-real-path-404", ...
+    "https://icgem.gfz.de/definitely-not-a-real-path-404", ...
     fullfile(tempdir, 'x404.bin'), MaxTries = 2), ...
     'shLowLevel:httpFetch:badStatus');
 end

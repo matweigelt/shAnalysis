@@ -13,7 +13,11 @@ function [avgHat, out] = basinDeconvolve(B, op, opts)
 %   prototype). The deterministic part is added back via B'*model (it was
 %   never filtered).
 %
-%   Outputs (K x T):
+%   Options
+%     Ridge (0)       ridge regularization scale added to the normal
+%                     matrix (times norm(A); 0 disables)
+%
+%   Result layout (K x T):
 %     avgHat        deconvolved basin averages  ((B'B)*c + B'model)/diag(B'B)
 %     out.avgNaive  naive averages of the filtered field (attenuated+leaky)
 %     out.c         span coefficients
@@ -27,7 +31,7 @@ function [avgHat, out] = basinDeconvolve(B, op, opts)
 %   restored deterministic part (leverage x residual variance; MC-
 %   validated), and the constrained-operator noise covariance is exact.
 %   Outputs
-%     avg        (K x T) double   deconvolved basin averages
+%     avgHat     (K x T) double   deconvolved basin averages
 %     out        struct: c (K x T) deconvolved coefficients, sigma (K x T) 1-sigma incl. deterministic term (v2.5), avgNaive, attn, condA
 %
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
