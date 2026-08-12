@@ -31,7 +31,8 @@ function mas = readMascon(filename)
 %
 %   Inputs
 %     filename  char/string  .nc path
-%   Outputs (struct)
+%   Outputs
+%     mas  (1 x 1) struct  with the fields below
 %     lat    (nlat,1) double [deg]   (as stored - typically GEODETIC;
 %            convert with shLowLevel.geodetic2geocentric before synthesizing
 %            SH fields on this grid!)

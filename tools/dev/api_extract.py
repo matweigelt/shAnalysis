@@ -79,8 +79,8 @@ def parse_help(block):
         s = lines[i].strip()
         if s == "" and desc:
             break
-        if re.match(r"(Inputs?|Options?|Outputs?|Example|Recognized|Notes?"
-                    r"|Syntax|Usage)\b", s):
+        if re.match(r"(Inputs?|Options?|Outputs?)\s*:?\s*$", s) or \
+           re.match(r"(Example|Recognized|Notes?|Syntax|Usage)\b", s):
             break
         if s:
             desc.append(s)
@@ -94,7 +94,8 @@ def parse_help(block):
         while idx < len(lines):
             s = lines[idx]
             if s.strip() == "" or re.match(
-                    r"^\s*(Inputs?|Options?|Example|Notes?|Developed)", s):
+                    r"^\s*(Inputs?|Options?)\s*:?\s*$", s) or re.match(
+                    r"^\s*(Example|Notes?|Developed)\b", s):
                 break
             mo = re.match(r"^\s{1,8}([\w.]+(?:,\s*[\w.]+)*)\s{2,}(.+)$", s)
             if mo:
@@ -113,8 +114,8 @@ def parse_help(block):
         ex = []
         while idx < len(lines):
             s = lines[idx]
-            if re.match(r"^\s*(Developed|Outputs?|Inputs?|Options?"
-                        r"|Error identifiers)", s) or (
+            if re.match(r"^\s*(Inputs?|Options?|Outputs?)\s*:?\s*$", s) or \
+               re.match(r"^\s*(Developed|Error identifiers)\b", s) or (
                     s.strip() == "" and ex and lines[idx - 1].strip() == ""):
                 break
             ex.append(s.rstrip())
@@ -130,8 +131,9 @@ def parse_help(block):
                 while idx < len(lines):
                     t = lines[idx]
                     if t.strip() == "" or re.match(
-                            r"^\s*(Inputs?|Options?|Outputs?|Example|Notes?"
-                            r"|Developed|Error identifiers)", t):
+                            r"^\s*(Inputs?|Options?|Outputs?)\s*:?\s*$", t) \
+                       or re.match(r"^\s*(Example|Notes?"
+                            r"|Developed|Error identifiers)\b", t):
                         break
                     mo = re.match(r"^\s{1,8}([\w.]+)\s+(.*)$", t)
                     if mo and not t.startswith("        "):

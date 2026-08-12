@@ -1067,9 +1067,9 @@ methods (Static)
         %     Kaula (0)     (1 x 1) Kaula regularization for "ls"
         %     Name ("analysis")  (1 x 1) string stored as the object name
         %
-        %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs
         %     obj        (1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)
+        %     info       (1 x 1) struct   diagnostics, see shLowLevel.shAnalysisGrid
         %
         %   Options
         %     kn ([])  load Love numbers, degrees 0..nmax (user-supplied; e.g. shLowLevel.fetchLoveNumbers)

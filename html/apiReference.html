@@ -152,7 +152,7 @@ code itself.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>B</code></td><td>n x m</td><td>double</td><td>required</td></tr><tr><td><code>op</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Ridge</code></td><td>1 x 1</td><td>double</td><td>0</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>avg</code></td><td>(K x T) double   deconvolved basin averages</td></tr>
+<tr><td><code>avgHat</code></td><td>(K x T) double   deconvolved basin averages</td></tr>
 <tr><td><code>out</code></td><td>struct: c (K x T) deconvolved coefficients, sigma (K x T) 1-sigma incl. deterministic term (v2.5), avgNaive, attn, condA</td></tr>
 </table>
 </div>
@@ -574,7 +574,7 @@ code itself.</p>
 <p>Y = shLowLevel.icgemDate2Year(D) converts date codes of the form yyyymmdd or yyyymmdd.hhmm (as used in ICGEM gfct files, TN-13/TN-14) to decimal years, using day-of-year / (days in year) with proper leap years. Values that do not look like date codes (&lt; 1.8e7, e.g. already-decimal years in legacy synthetic files) are returned UNCHANGED - this rule keeps pre-v2.1 files evaluating identically.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>d</code></td><td>n x m</td><td>double</td><td>required</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>t</code></td><td>(same size as input) double   decimal years</td></tr>
+<tr><td><code>y</code></td><td>(same size as input) double   decimal years</td></tr>
 </table>
 </div>
 <div class="entry" id="shLowLevel.kernelFactors">
@@ -849,7 +849,14 @@ code itself.</p>
 <p class="h1line">Read a GRACE/GRACE-FO mascon netCDF (JPL / CSR / GSFC style).</p>
 <p>MAS = shLowLevel.readMascon(FILENAME) reads gridded mascon solutions for comparison against the SH chain (base MATLAB: ncread/ncinfo, no toolboxes). Variable names are auto-detected among the layouts used by JPL RL06 (&#x27;lwe_thickness&#x27;), CSR RL06 (&#x27;lwe_thickness&#x27;), and generic &#x27;lwe&#x27;/&#x27;water_thickness&#x27;; time units &quot;days since YYYY-MM-DD&quot; are converted to decimal years.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
-<b>Outputs</b><p><code>mas</code></p>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>mas</code></td><td>(1 x 1) struct  with the fields below</td></tr>
+<tr><td><code>lat</code></td><td>(nlat,1) double [deg]   (as stored - typically GEODETIC; convert with shLowLevel.geodetic2geocentric before synthesizing SH fields on this grid!)</td></tr>
+<tr><td><code>lon</code></td><td>(nlon,1) double [deg, 0..360)</td></tr>
+<tr><td><code>epoch</code></td><td>(T,1) double decimal years</td></tr>
+<tr><td><code>ewh</code></td><td>(nlat,nlon,T) double [cm or m AS STORED - check mas.units]</td></tr>
+<tr><td><code>units, name</code></td><td>strings</td></tr>
+</table>
 </div>
 <div class="entry" id="shLowLevel.readSHM">
 <h3><code>shLowLevel.readSHM(filename, opts)</code></h3>
@@ -874,7 +881,7 @@ code itself.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Index</code></td><td>n x m</td><td>struct</td><td>struct([])</td></tr><tr><td><code>Output</code></td><td>1 x 1</td><td>string</td><td>&quot;raw&quot;</td></tr><tr><td><code>Only</code></td><td>1 x 1</td><td>string</td><td>&quot;all&quot;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>snx</code></td><td>(1 x 1) struct  fields: x (P x 1 double), idx (struct), Cxx (P x P double, [] unless Only=&quot;full&quot;), epoch (1,1 double), N/b (normal equations when present)</td></tr>
+<tr><td><code>snx</code></td><td>(1 x 1) struct  parsed solution with fields n, m, cs (Q x 1 double) parameter list (cs: 0=C, 1=S; file order or IDX order), x and sig (Q x 1 double) estimates and formal sigmas (NaN if absent), M (Q x Q double) covariance or normal-equation matrix per Output= ([] if absent), kind (&#x27;COVA&#x27; | &#x27;NEQ&#x27; | &#x27;&#x27;), epoch (1 x 1 double) and header meta</td></tr>
 </table>
 </div>
 <div class="entry" id="shLowLevel.readTN13">
@@ -1384,6 +1391,7 @@ code itself.</p>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>quantity</code></td><td>1 x 1</td><td>string</td><td>&quot;geoid&quot;</td></tr><tr><td><code>Method</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>Weights</code></td><td>1 x 1</td><td>string</td><td>&quot;none&quot;</td></tr><tr><td><code>Kaula</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>kn</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>hn</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>rho_ave</code></td><td>1 x 1</td><td>double</td><td>5517</td></tr><tr><td><code>rho_water</code></td><td>1 x 1</td><td>double</td><td>1000</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>Epoch</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Name</code></td><td>1 x 1</td><td>string</td><td>&quot;analysis&quot;</td></tr><tr><td><code>LatType</code></td><td>1 x 1</td><td>string</td><td>&quot;geocentric&quot;</td></tr><tr><td><code>Flattening</code></td><td>1 x 1</td><td>double</td><td>1/298.257223563</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)</td></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct   diagnostics, see shLowLevel.shAnalysisGrid</td></tr>
 </table>
 </div>
 <div class="entry" id="shCoefficients.applyDDK">
