@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.8.6] - 2026-08-12 - audit fixes
+
+Twenty findings from an independent adversarial audit, fixed with
+regression tests. Highlights: readMascon no longer returns raw days as
+decimal years on CSR files (case-insensitive attributes, loud time-unit
+errors, name-based grid orientation); 22 shipped-fixture assumes are
+verifies; the real-series science test now fails a sign-flipped trend;
+shReadGFC warns on truncation/corruption; kernelFactors validates Love
+numbers; leakageCorrect names NaN input instead of 'diverged';
+fetchLoveNumbers reads headerless GROOPS columns; series names populate
+for headers without modelname; sensitivityKernel's 2-16% claim is scoped
+to its 1-D validation (2-D: 1-42%, ordering reversed; full-covariance
+path confirmed and pinned); doc gate checks HTML structure; the GravIS
+span (2002-04..2023-02, n=217) is pinned beside every 2.8%.
+
 All notable changes to shAnalysis. The version line in `Contents.m`
 (read by `shLowLevel.version` and MATLAB's `ver`) is the single source of truth.
 

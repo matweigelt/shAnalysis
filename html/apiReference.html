@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.8.5)</h1>
+<h1>shAnalysis API reference (v3.8.6)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -119,8 +119,6 @@ code itself.</p>
 <tr><td><code>Cf</code></td><td>(nmax+1 x nmax+1) double   DDK-filtered cosine coefficients</td></tr>
 <tr><td><code>Sf</code></td><td>(nmax+1 x nmax+1) double   DDK-filtered sine coefficients</td></tr>
 </table>
-<b>Example</b><pre>W = shLowLevel.readDDK(&quot;DDK3&quot;, Nmax = 60);
-[Cf, Sf] = shLowLevel.applyDDK(g.C, g.S, W);</pre>
 </div>
 <div class="entry" id="shLowLevel.basinDeconvolve">
 <h3><code>shLowLevel.basinDeconvolve(B, op, opts)</code></h3>
@@ -132,8 +130,6 @@ code itself.</p>
 <tr><td><code>avg</code></td><td>(K x T) double   deconvolved basin averages</td></tr>
 <tr><td><code>out</code></td><td>struct: c (K x T) deconvolved coefficients, sigma (K x T) 1-sigma incl. deterministic term (v2.5), avgNaive, attn, condA</td></tr>
 </table>
-<b>Example</b><pre>[avg, out] = shLowLevel.basinDeconvolve(B, op);   % op from ts.filter(&quot;tvANS&quot;)
-errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 </div>
 <div class="entry" id="shLowLevel.basinKernel">
 <h3><code>shLowLevel.basinKernel(idx, region, opts)</code></h3>
@@ -145,7 +141,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>b</code></td><td>(P,1) double     kernel in IDX ordering</td></tr>
 <tr><td><code>info</code></td><td>struct: areaFraction (quadrature area of the mask / 4pi), nGridPoints, buffered/tapered flags</td></tr>
 </table>
-<b>Example</b><pre>b = shLowLevel.basinKernel(idx, maskAmazon, TaperKm = 200);</pre>
 </div>
 <div class="entry" id="shLowLevel.basinScaling">
 <h3><code>shLowLevel.basinScaling(op, b, tsModel, opts)</code></h3>
@@ -157,7 +152,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>k</code></td><td>(1,1) double  regression scaling factor</td></tr>
 <tr><td><code>info</code></td><td>struct: sigmaK (regression 1-sigma), kMonthly (T x 1, if PerMonth), matched (T x 1 logical), aTrue, aFilt</td></tr>
 </table>
-<b>Example</b><pre>k = shLowLevel.basinScaling(op, b, tsHydModel);   % scale factor vs a model series</pre>
 </div>
 <div class="entry" id="shLowLevel.buildNoiseCov">
 <h3><code>shLowLevel.buildNoiseCov(Xres, idx, opts)</code></h3>
@@ -169,7 +163,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>N</code></td><td>(P x P) double or block struct   noise covariance (order/parity block-diagonal for Assemble (&#x27;full&#x27;)=&#x27;blocks&#x27;)</td></tr>
 <tr><td><code>info</code></td><td>struct: mode, shrinkage, blocks metadata</td></tr>
 </table>
-<b>Example</b><pre>N = shLowLevel.buildNoiseCov(Xres, idx);          % empirical order/parity blocks</pre>
 </div>
 <div class="entry" id="shLowLevel.buildSignalCov">
 <h3><code>shLowLevel.buildSignalCov(Xres, N, idx, opts)</code></h3>
@@ -181,7 +174,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>S</code></td><td>(P x P) double   signal covariance in idx ordering</td></tr>
 <tr><td><code>info</code></td><td>struct: mode, iterations, degree-variance model</td></tr>
 </table>
-<b>Example</b><pre>S = shLowLevel.buildSignalCov(Xres, N, idx, Mode = &quot;isotropic&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.combineCenters">
 <h3><code>shLowLevel.combineCenters(tsCell, opts)</code></h3>
@@ -193,7 +185,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>tsComb</code></td><td>shSeries  combined stacks on the reference epochs (first center), sigmaCs/Ss = posterior sqrt(diag(H)) per month, provenance in history</td></tr>
 <tr><td><code>info</code></td><td>struct: s2 (C x T variance factors, NaN where missing), weights (C x T, normalized 1/s2), redundancy (C x T), interCenterCorr (C x C, empirical residual correlation - the honesty diagnostic: VCE assumes independence, GRACE centers share data and background models), nIter, epochs, centers, note</td></tr>
 </table>
-<b>Example</b><pre>tsC = shLowLevel.combineCenters({tsCSR, tsGFZ, tsJPL});   % VCE-weighted</pre>
 </div>
 <div class="entry" id="shLowLevel.compareSeries">
 <h3><code>shLowLevel.compareSeries(tsList, opts)</code></h3>
@@ -232,7 +223,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>cnm</code></td><td>(nmax+1 x nmax+1) double  cosine coefficients, C(n+1, m+1)</td></tr>
 <tr><td><code>snm</code></td><td>(nmax+1 x nmax+1) double  sine coefficients, S(:, 1) = 0</td></tr>
 </table>
-<b>Example</b><pre>[C, S] = shLowLevel.csFromVec(x, idx);           % vector -&gt; triangle matrices</pre>
 </div>
 <div class="entry" id="shLowLevel.dataFolder">
 <h3><code>shLowLevel.dataFolder(newFolder)</code></h3>
@@ -242,7 +232,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>folder</code></td><td>(1 x 1) string   current data folder (created on demand)</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.dataFolder(&quot;D:/grace_data&quot;)      % shared download location</pre>
 </div>
 <div class="entry" id="shLowLevel.ddkNames">
 <h3><code>shLowLevel.ddkNames()</code></h3>
@@ -251,7 +240,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>names</code></td><td>(1 x 8) string   Wbd file names for DDK1..DDK8</td></tr>
 </table>
-<b>Example</b><pre>names = shLowLevel.ddkNames();               % Wbd file names DDK1..8</pre>
 </div>
 <div class="entry" id="shLowLevel.designFilter">
 <h3><code>shLowLevel.designFilter(SigmaC, SigmaS, opts)</code></h3>
@@ -301,8 +289,6 @@ errorbar(op.tYears, avg(1,:), out.sigma(1,:))</pre>
 <tr><td><code>varExplained</code></td><td>(K,1) double, fraction in [0,1]</td></tr>
 <tr><td><code>info</code></td><td>struct: singular values, total variance, T</td></tr>
 </table>
-<b>Example</b><pre>[modes, pcs, ve] = shLowLevel.eofAnalysis(resid);
-plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 </div>
 <div class="entry" id="shLowLevel.errorMap">
 <h3><code>shLowLevel.errorMap(M, idx, latDeg, lonDeg, opts)</code></h3>
@@ -315,7 +301,6 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 <tr><td><code>latDeg</code></td><td>(1, nlat) double  latitude grid used [deg]</td></tr>
 <tr><td><code>lonDeg</code></td><td>(1, nlon) double  longitude grid used [deg]</td></tr>
 </table>
-<b>Example</b><pre>sig = shLowLevel.errorMap(M, idx, -89:4:89, 0:4:356, quantity = &quot;ewh&quot;, kn = kn);</pre>
 </div>
 <div class="entry" id="shLowLevel.estimateDegree1">
 <h3><code>shLowLevel.estimateDegree1(ts, ocean, opts)</code></h3>
@@ -327,9 +312,12 @@ plot(resid.epochs, pcs(:, 1))         % leading principal component</pre>
 <tr><td><code>d1</code></td><td>(1,1) struct  fields: epoch, t0, t1 (T,1 double), C10, C11, S11 (T,1 double) and sigC10, sigC11, sigS11 (T,1 double, from the ocean-fit residual propagated through the least-squares solution). This is exactly the layout shLowLevel.readTN13 returns - including the sigmas, which shCoefficients.addDegree1 requires - so it drops straight into shSeries.addDegree1</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: cond (T,1 double, condition number of the column-equilibrated design matrix per epoch (equilibrated so the number reflects the GEOMETRY of the ocean domain, not the units of the columns) - a rising value warns that the ocean domain is too small or too lopsided BEFORE the noise shows it), oceanFraction (1,1 double, area fraction used), nPixels, hasModel (1,1 logical), residualRMS (T,1 double, of the ocean fit in EWH [m])</td></tr>
 </table>
-<b>Example</b><pre>d1 = shLowLevel.estimateDegree1(ts, isOcean, kn = LN.kn, ...
-    OceanModel = obpModel);
-ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
+<b>Example</b><pre>    LN = shLowLevel.readLoveNumbers(&quot;loadLoveNumbers.txt&quot;);
+    d1 = shLowLevel.estimateDegree1(ts, isOcean, kn = LN.kn);
+    ts = ts.addDegree1(d1);            % same interface as TN-13
+
+  See also shLowLevel.readTN13, shSeries.addDegree1,
+  shLowLevel.oceanRMS.</pre>
 </div>
 <div class="entry" id="shLowLevel.evalMask">
 <h3><code>shLowLevel.evalMask(idx, region, opts)</code></h3>
@@ -341,7 +329,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>mask</code></td><td>(Ngrid,1) double in [0,1]</td></tr>
 <tr><td><code>grid</code></td><td>struct from shLowLevel.synthesisMatrix (latDeg, lonDeg per ring)</td></tr>
 </table>
-<b>Example</b><pre>[mask, area] = shLowLevel.evalMask(idx, capSpec);   % quadrature-grid mask</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchDDK">
 <h3><code>shLowLevel.fetchDDK(which, opts)</code></h3>
@@ -353,7 +340,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>files</code></td><td>(1,:) string  present file paths (new + existing)</td></tr>
 <tr><td><code>info</code></td><td>struct: fetched, updated, skipped, names, url</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.fetchDDK(1:8);                    % ~80 MB, skips existing</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchICGEM">
 <h3><code>shLowLevel.fetchICGEM(model, opts)</code></h3>
@@ -365,7 +351,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>file</code></td><td>string   local path(s): one per model, or every file of the series in temporal mode (bulk selections are concatenated)</td></tr>
 <tr><td><code>info</code></td><td>struct: url, skipped (true if already present) and mode (1,1) string reporting the path that actually ran - &quot;model&quot; (single static model) | &quot;archive&quot; (whole-series ZIP in one request) | &quot;files&quot; (per-file fallback) | &quot;present&quot; (nothing to do); a script can tell a fresh download from a no-op by this field</td></tr>
 </table>
-<b>Example</b><pre>f = shLowLevel.fetchICGEM(&quot;GOCO06s&quot;);        % static model by name</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchITSG">
 <h3><code>shLowLevel.fetchITSG(months, opts)</code></h3>
@@ -377,7 +362,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>files</code></td><td>(1,:) string   paths of all present files (new + existing)</td></tr>
 <tr><td><code>info</code></td><td>struct: fetched, updated, skipped, missing (string arrays), url</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.fetchITSG([&quot;2008-04&quot;, &quot;2025-12&quot;], Nmax = 96);</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchLoveNumbers">
 <h3><code>shLowLevel.fetchLoveNumbers(names, opts)</code></h3>
@@ -421,7 +405,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>resVar</code></td><td>1 x P          residual variance rss/(T - ncol)</td></tr>
 <tr><td><code>ar1</code></td><td>1 x P          bias-corrected lag-1 residual auto- correlation actually applied (clamped to [0, 0.99]; 0 when ARCorrect=false)</td></tr>
 </table>
-<b>Example</b><pre>[model, Xres, coef, A, sig] = shLowLevel.fitDeterministicModel(X, tYears, ARCorrect = true);</pre>
 </div>
 <div class="entry" id="shLowLevel.gaussLegendre">
 <h3><code>shLowLevel.gaussLegendre(n)</code></h3>
@@ -432,7 +415,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>x</code></td><td>(n,1) double   nodes, ascending</td></tr>
 <tr><td><code>w</code></td><td>(n,1) double   weights, sum(w) = 2</td></tr>
 </table>
-<b>Example</b><pre>[xNodes, w] = shLowLevel.gaussLegendre(61);   % quadrature nodes/weights</pre>
 </div>
 <div class="entry" id="shLowLevel.geocentric2geodetic">
 <h3><code>shLowLevel.geocentric2geodetic(latGC, opts)</code></h3>
@@ -443,7 +425,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>latGD</code></td><td>double array   geodetic latitudes [deg]</td></tr>
 </table>
-<b>Example</b><pre>latGd = shLowLevel.geocentric2geodetic(latGc);   % WGS84</pre>
 </div>
 <div class="entry" id="shLowLevel.geodetic2geocentric">
 <h3><code>shLowLevel.geodetic2geocentric(latGD, opts)</code></h3>
@@ -454,7 +435,6 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>latGC</code></td><td>double array   geocentric latitudes [deg], poles/equator exact</td></tr>
 </table>
-<b>Example</b><pre>latGc = shLowLevel.geodetic2geocentric(latGd);   % before synthesis</pre>
 </div>
 <div class="entry" id="shLowLevel.gridScaling">
 <h3><code>shLowLevel.gridScaling(model, latDeg, lonDeg, opts)</code></h3>
@@ -466,8 +446,11 @@ ts = ts.addDegree1(d1);            % same interface as a TN-13 table</pre>
 <tr><td><code>k</code></td><td>(nLat x nLon) double  scaling factors; NaN where the model carries too little signal to define one</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: covered (1,1 double, fraction of the grid with a finite k), kMedian / kMin / kMax (1,1 double, over the pixels the MODEL gives mass to - not over all finite pixels, where pure-leakage k = 0 would dominate), onSignal (1,1 double, how many those are), clipped (1,1 double, number of clamped pixels), nmax (1,1 double), filter (1,1 string), epochs (1,1 double)</td></tr>
 </table>
-<b>Example</b><pre>k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, Filter = &quot;gauss300&quot;);
-corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
+<b>Example</b><pre>    k = shLowLevel.gridScaling(modelEWH, -89:89, 0:359, ...
+            Filter = &quot;gauss300&quot;);
+    corrected = k .* filteredEWH;      % NaN outside the model&#x27;s reach
+
+  See also shLowLevel.leakageCorrect, shLowLevel.basinScaling.</pre>
 </div>
 <div class="entry" id="shLowLevel.icgemDate2Year">
 <h3><code>shLowLevel.icgemDate2Year(d)</code></h3>
@@ -477,7 +460,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>t</code></td><td>(same size as input) double   decimal years</td></tr>
 </table>
-<b>Example</b><pre>t = shLowLevel.icgemDate2Year(20080415.0000);   % -&gt; 2008.29</pre>
 </div>
 <div class="entry" id="shLowLevel.kernelFactors">
 <h3><code>shLowLevel.kernelFactors(quantity, nmax, GM, R, opts)</code></h3>
@@ -488,7 +470,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>kernel</code></td><td>(nmax+1,1) double  (zeros where the quantity carries no information, e.g. n=1 for gravity_anomaly)</td></tr>
 </table>
-<b>Example</b><pre>kf = shLowLevel.kernelFactors(&quot;ewh&quot;, 60, GM, R, kn = kn);</pre>
 </div>
 <div class="entry" id="shLowLevel.leakageCorrect">
 <h3><code>shLowLevel.leakageCorrect(grid, latDeg, lonDeg, opts)</code></h3>
@@ -500,9 +481,13 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <tr><td><code>mCorr</code></td><td>(nLat x nLon) double   leakage-corrected field, same units and grid as GRID</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: iterations (1,1 double), residual (1,1 double, final relative residual - with a mask this floors above Tol and that is correct), history (1,K double, the residual per iteration - plot it, a rising curve means Gain is too large), step (1,K double, the relative change of the solution per iteration; this is what Tol tests), stoppedBy (1,1 string: &quot;discrepancy&quot; | &quot;step&quot; | &quot;maxIter&quot; | &quot;zeroField&quot; - always check this, it says whether the result was regularised), residualRMS (1,1 double, over ResidualRegion), residualRMSGlobal (1,1 double, over the whole grid - a large gap between the two means unmodelled signal elsewhere) and noiseLevel (1,1 double, as given), converged (1,1 logical), nmax (1,1 double), filter (1,1 string), masked (1,1 logical)</td></tr>
 </table>
-<b>Example</b><pre>ewh = g.synthesis(-89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);
-[m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
-    Filter = &quot;gauss300&quot;, Mask = basinMask, NoiseLevel = oceanRMS);</pre>
+<b>Example</b><pre>    ewh = g.synthesis(-89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);
+    [m, info] = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
+        Filter = &quot;gauss300&quot;, Mask = basinMask);
+    fprintf(&quot;%d iterations, residual %.2e\n&quot;, info.iterations, info.residual);
+
+  See also shLowLevel.gridScaling, shLowLevel.basinDeconvolve,
+  shLowLevel.basinScaling.</pre>
 </div>
 <div class="entry" id="shLowLevel.legendreALF">
 <h3><code>shLowLevel.legendreALF(nmax, lat)</code></h3>
@@ -511,7 +496,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>P</code></td><td>(NMAX+1)x(NMAX+1)xnumel(LAT) double P(n+1,m+1,k) = Pbar_{n,m}(sin(lat(k))), upper triangle 0</td></tr>
 </table>
-<b>Example</b><pre>P = shLowLevel.legendreALF(96, deg2rad(-89:89));   % stable to n=2190</pre>
 </div>
 <div class="entry" id="shLowLevel.legendreALFDeriv">
 <h3><code>shLowLevel.legendreALFDeriv(nmax, latRad)</code></h3>
@@ -522,7 +506,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <tr><td><code>P</code></td><td>(nmax+1, nmax+1, nlat) double   Pbar_nm(sin lat)</td></tr>
 <tr><td><code>D</code></td><td>(nmax+1, nmax+1, nlat) double   dPbar_nm/dphi [1/rad] D2 (nmax+1, nmax+1, nlat) double   d2Pbar_nm/dphi2 [1/rad^2]: the SAME column stencil applied to D - exact, because the first-derivative identity holds degree-wise as a function of phi and differentiates term by term (Python-validated vs numerical second differences, rel ~2e-7 = FD floor; v2.4)</td></tr>
 </table>
-<b>Example</b><pre>[P, dP] = shLowLevel.legendreALFDeriv(60, theta);   % for deformation/tensor</pre>
 </div>
 <div class="entry" id="shLowLevel.legendreCached">
 <h3><code>shLowLevel.legendreCached(nmax, latRad)</code></h3>
@@ -531,7 +514,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>P</code></td><td>(nmax+1)x(nmax+1)xnumel(latRad) double</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.legendreCached(&quot;clear&quot;)           % drop the synthesis cache</pre>
 </div>
 <div class="entry" id="shLowLevel.listICGEM">
 <h3><code>shLowLevel.listICGEM(opts)</code></h3>
@@ -542,7 +524,6 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <tr><td><code>T</code></td><td>table:  static:          name, year, degree, data, url temporal:        group, center, series, path, url, zip temporal+Series: name, url</td></tr>
 <tr><td><code>info</code></td><td>struct: source, retrieved, note</td></tr>
 </table>
-<b>Example</b><pre>T = shLowLevel.listICGEM(Type = &quot;temporal&quot;, Series = &quot;ITSG-Grace2018&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.listITSG">
 <h3><code>shLowLevel.listITSG(opts)</code></h3>
@@ -564,8 +545,10 @@ corrected = k .* filteredEWH;      % NaN where the model is blind</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) struct  fields: files (1,N string, the .m files written), mlx (1,M string, the .mlx files written - empty when Convert is false or unavailable), dest (1,1 string), converted (1,1 logical)</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.makeTutorials(Cases = [&quot;D01&quot; &quot;D05&quot;]);
-edit(fullfile(&quot;tutorials&quot;, &quot;T_D01_read_spectral_diagnostics.m&quot;))</pre>
+<b>Example</b><pre>    shLowLevel.makeTutorials(Cases = [&quot;D01&quot; &quot;D05&quot;]);
+    edit(fullfile(&quot;tutorials&quot;, &quot;T_D01_read_and_spectra.m&quot;))
+
+  See also demo_shAnalysis, shLowLevel.version.</pre>
 </div>
 <div class="entry" id="shLowLevel.mcPropagate">
 <h3><code>shLowLevel.mcPropagate(fun, g, opts)</code></h3>
@@ -576,7 +559,6 @@ edit(fullfile(&quot;tutorials&quot;, &quot;T_D01_read_spectral_diagnostics.m&quo
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) struct  fields: samples (K x nSamples double), mean, sigma (K x 1 double)  Monte-Carlo moments of the functional</td></tr>
 </table>
-<b>Example</b><pre>out = shLowLevel.mcPropagate(@(gs) gs.C(3, 1), g, N = 200);   % any functional of g</pre>
 </div>
 <div class="entry" id="shLowLevel.nashSutcliffe">
 <h3><code>shLowLevel.nashSutcliffe(ref, model)</code></h3>
@@ -598,7 +580,6 @@ edit(fullfile(&quot;tutorials&quot;, &quot;T_D01_read_spectral_diagnostics.m&quo
 <tr><td><code>Cn</code></td><td>(nmax+1,1) double  Cbar_{n,0} (zero at odd/omitted degrees; Cn(1) = 1 represents the central GM/r term - subtract it ONLY together with a matching degree-0 of the model, see subtractNormalField)</td></tr>
 <tr><td><code>info</code></td><td>struct: GM, a, f, omega, J2, e2, m, q0, system</td></tr>
 </table>
-<b>Example</b><pre>[Cn, info] = shLowLevel.normalFieldCS(96, System = &quot;WGS84&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.oceanRMS">
 <h3><code>shLowLevel.oceanRMS(grid, latDeg, lonDeg, ocean, opts)</code></h3>
@@ -610,8 +591,12 @@ edit(fullfile(&quot;tutorials&quot;, &quot;T_D01_read_spectral_diagnostics.m&quo
 <tr><td><code>rmsVal</code></td><td>(1,1) double  open-ocean RMS, in GRID&#x27;s units. NaN when the erosion leaves no points</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: nPixels (1,1 double, points used), fractionUsed (1,1 double, of the whole grid), mask (nLat x nLon logical, the eroded region - plot it once before trusting the number), minDistanceKm, weighted (1,1 logical)</td></tr>
 </table>
-<b>Example</b><pre>noise = shLowLevel.oceanRMS(ewh, -89:89, 0:359, isOcean);   % &gt; 1000 km offshore
-m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noise);</pre>
+<b>Example</b><pre>    isOcean = @(la, lo) ~inpolygon(lo, la, landLon, landLat);
+    noise = shLowLevel.oceanRMS(ewh, -89:89, 0:359, isOcean);
+    m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, ...
+            Filter = &quot;gauss300&quot;, Mask = basin, NoiseLevel = noise);
+
+  See also shLowLevel.leakageCorrect, shLowLevel.spatialStats.</pre>
 </div>
 <div class="entry" id="shLowLevel.opApply">
 <h3><code>shLowLevel.opApply(op, Z, t, mode)</code></h3>
@@ -621,7 +606,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>Yout</code></td><td>(P x T) double  operator applied to every column of Y</td></tr>
 </table>
-<b>Example</b><pre>xf = shLowLevel.opApply(op, op.Xres(:, 1), 1);   % W_1 * x without the P x P matrix</pre>
 </div>
 <div class="entry" id="shLowLevel.parseGraceFilename">
 <h3><code>shLowLevel.parseGraceFilename(filename)</code></h3>
@@ -631,7 +615,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>meta</code></td><td>(1,1) struct  fields: center/product/release (string), epoch/year/month (double), nmax (double, NaN if absent)</td></tr>
 </table>
-<b>Example</b><pre>meta = shLowLevel.parseGraceFilename(&quot;GSM-2_2008095-2008120_...gz&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.pctile">
 <h3><code>shLowLevel.pctile(x, p)</code></h3>
@@ -641,7 +624,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>v</code></td><td>(size(p)) double  percentile value per requested p</td></tr>
 </table>
-<b>Example</b><pre>q = shLowLevel.pctile(res, [16 50 84]);      % base-MATLAB percentiles</pre>
 </div>
 <div class="entry" id="shLowLevel.plotBasinSeries">
 <h3><code>shLowLevel.plotBasinSeries(tYears, c, sigma, opts)</code></h3>
@@ -652,7 +634,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1,1) graphics handle  axes of the basin series plot</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.plotBasinSeries(op.tYears, avg(1,:).&#x27;, out.sigma(1,:).&#x27;, Units = &quot;m EWH&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.plotCovariance">
 <h3><code>shLowLevel.plotCovariance(M, idx, opts)</code></h3>
@@ -663,7 +644,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   image of the covariance/correlation structure</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.plotCovariance(snx.M, idx);       % SINEX covariance structure</pre>
 </div>
 <div class="entry" id="shLowLevel.plotSHCoeffTriangle">
 <h3><code>shLowLevel.plotSHCoeffTriangle(C, S, varargin)</code></h3>
@@ -672,8 +652,6 @@ m = shLowLevel.leakageCorrect(ewh, -89:89, 0:359, Mask = basin, NoiseLevel = noi
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   butterfly triangle image (abs log10 or signed diff with RefC/RefS)</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.plotSHCoeffTriangle(g.C, g.S);
-shLowLevel.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed diff</pre>
 </div>
 <div class="entry" id="shLowLevel.plotSHMap">
 <h3><code>shLowLevel.plotSHMap(grid, latDeg, lonDeg, opts)</code></h3>
@@ -684,7 +662,6 @@ shLowLevel.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed d
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1,1) graphics handle  axes of the map plot</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.plotSHMap(grid, lat, lon, Title = &quot;EWH 2008-04 [m]&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.plotSHSpectrum">
 <h3><code>shLowLevel.plotSHSpectrum(specs, varargin)</code></h3>
@@ -693,8 +670,6 @@ shLowLevel.plotSHCoeffTriangle(gF.C, gF.S, RefC = g.C, RefS = g.S);   % signed d
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   log-log spectrum axes</td></tr>
 </table>
-<b>Example</b><pre>spec = shLowLevel.shDegreeRMS(g.C, g.S);
-shLowLevel.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);</pre>
 </div>
 <div class="entry" id="shLowLevel.poleTideConvert">
 <h3><code>shLowLevel.poleTideConvert(varargin)</code></h3>
@@ -716,7 +691,6 @@ shLowLevel.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>W</code></td><td>struct: nmax (1 x 1), name, blocks (1 x 241) struct array with m, cs, n (degrees), M (square block matrix)</td></tr>
 </table>
-<b>Example</b><pre>W = shLowLevel.readDDK(&quot;DDK3&quot;);   % DDK3 ships with the toolbox; others via shLowLevel.fetchDDK</pre>
 </div>
 <div class="entry" id="shLowLevel.readLoveNumbers">
 <h3><code>shLowLevel.readLoveNumbers(filename, opts)</code></h3>
@@ -738,10 +712,7 @@ shLowLevel.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);</pre>
 <p class="h1line">Read a GRACE/GRACE-FO mascon netCDF (JPL / CSR / GSFC style).</p>
 <p>MAS = shLowLevel.readMascon(FILENAME) reads gridded mascon solutions for comparison against the SH chain (base MATLAB: ncread/ncinfo, no toolboxes). Variable names are auto-detected among the layouts used by JPL RL06 (&#x27;lwe_thickness&#x27;), CSR RL06 (&#x27;lwe_thickness&#x27;), and generic &#x27;lwe&#x27;/&#x27;water_thickness&#x27;; time units &quot;days since YYYY-MM-DD&quot; are converted to decimal years.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr></table>
-<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>mas</code></td><td>struct: lat (I x 1), lon (J x 1), t (T x 1 decimal years), ewh (I x J x T) [m], units/meta from the netCDF</td></tr>
-</table>
-<b>Example</b><pre>M = shLowLevel.readMascon(&quot;CSR_..._Mascons.nc&quot;);   % lat/lon/time EWH stack</pre>
+<b>Outputs</b><p><code>mas</code></p>
 </div>
 <div class="entry" id="shLowLevel.readSHM">
 <h3><code>shLowLevel.readSHM(filename, opts)</code></h3>
@@ -752,8 +723,12 @@ shLowLevel.plotSHSpectrum(spec, Kaula = true, MarkCrossover = true);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) struct  fields: kind    (1,1) string  &quot;GRCOF2&quot; (field) | &quot;GRDOTA&quot; (rate) C, S    (nmax+1 x nmax+1) double  coefficients in the C(n+1, m+1) house layout; for GRDOTA these are rates per year sigmaC, sigmaS  (nmax+1 x nmax+1) double, or [] when the file carries none (GRDOTA never does) GM      (1,1) double  [m^3/s^2] from the header R       (1,1) double  [m] from the header nmax    (1,1) double  maximum degree actually read header  (1,1) string  the raw YAML header, kept so provenance is not lost on the way in</td></tr>
 </table>
-<b>Example</b><pre>gia = shLowLevel.readSHM(&quot;GRAVIS-2B_..._GIA_ICE-6G_D_VM5a.gz&quot;, Nmax = 96);
-g   = shCoefficients(gia.C, gia.S, GM = gia.GM, R = gia.R);   % rates [1/yr]</pre>
+<b>Example</b><pre>    gia = shLowLevel.readSHM(&quot;GRAVIS-2B_..._GIA_ICE-6G_D_VM5a_0001.gz&quot;, ...
+        Nmax = 96);
+    g = shCoefficients(gia.C, gia.S, GM = gia.GM, R = gia.R);
+    ts = shLowLevel.standardChain(folder, GIA = g);   % rates in 1/yr
+
+  See also shLowLevel.shReadGFC, shLowLevel.standardChain.</pre>
 </div>
 <div class="entry" id="shLowLevel.readSINEX">
 <h3><code>shLowLevel.readSINEX(filename, opts)</code></h3>
@@ -764,8 +739,6 @@ g   = shCoefficients(gia.C, gia.S, GM = gia.GM, R = gia.R);   % rates [1/yr]</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>snx</code></td><td>(1,1) struct  fields: x (P x 1 double), idx (struct), Cxx (P x P double, [] unless Only=&quot;full&quot;), epoch (1,1 double), N/b (normal equations when present)</td></tr>
 </table>
-<b>Example</b><pre>snx = shLowLevel.readSINEX(&quot;ITSG-Grace2018_n96_2008-04_head12.snx&quot;);
-fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 </div>
 <div class="entry" id="shLowLevel.readTN13">
 <h3><code>shLowLevel.readTN13(filename)</code></h3>
@@ -777,7 +750,6 @@ fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 <tr><td><code>epoch</code></td><td>(K,1) double  interval mid-points [decimal years]</td></tr>
 <tr><td><code>C10, C11, S11</code></td><td>(K,1) double  degree-1 Stokes coefficients sigC10, sigC11, sigS11 (K,1) double 1-sigma t0, t1 (K,1) double  interval bounds [decimal years]</td></tr>
 </table>
-<b>Example</b><pre>tn13 = shLowLevel.readTN13(&quot;TN-13_GEOC_CSR_RL06.3.txt&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.readTN14">
 <h3><code>shLowLevel.readTN14(filename)</code></h3>
@@ -787,7 +759,6 @@ fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>tn</code></td><td>(1,1) struct  fields: t (T x 1 double, decimal years), C20/C30 (T x 1 double), sigmaC20/sigmaC30 (T x 1 double)</td></tr>
 </table>
-<b>Example</b><pre>tn14 = shLowLevel.readTN14(&quot;TN-14_C30_C20_SLR_GSFC.txt&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.rescaleGMR">
 <h3><code>shLowLevel.rescaleGMR(C, S, GM1, R1, GM2, R2, sigmaC, sigmaS)</code></h3>
@@ -798,7 +769,6 @@ fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 <tr><td><code>C2, S2</code></td><td>(n1,n1) double</td></tr>
 <tr><td><code>sig</code></td><td>struct with fields C, S (empty if no sigmas given)</td></tr>
 </table>
-<b>Example</b><pre>[C2, S2] = shLowLevel.rescaleGMR(g.C, g.S, g.GM, g.R, GMref, Rref);</pre>
 </div>
 <div class="entry" id="shLowLevel.resolutionMap">
 <h3><code>shLowLevel.resolutionMap(op, t, latDeg, lonDeg, opts)</code></h3>
@@ -809,7 +779,6 @@ fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>res</code></td><td>(nlat x nlon) double  local resolution [km] of the filter</td></tr>
 </table>
-<b>Example</b><pre>res = shLowLevel.resolutionMap(op, 1, -60:30:60, 0:60:300);   % epoch 1</pre>
 </div>
 <div class="entry" id="shLowLevel.safeMove">
 <h3><code>shLowLevel.safeMove(src, dst, opts)</code></h3>
@@ -820,8 +789,12 @@ fprintf(&quot;%s with %d params\n&quot;, snx.kind, numel(snx.x))</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>n</code></td><td>(1,1) double   number of attempts used (1 = the move succeeded immediately, which is the normal case)</td></tr>
 </table>
-<b>Example</b><pre>shLowLevel.shReadGFC(tmpf);                 % verify BEFORE the swap
-shLowLevel.safeMove(tmpf, &quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);</pre>
+<b>Example</b><pre>    % download, verify, then swap - the fetcher pattern
+    tmpf = &quot;ITSG-Grace2018_n60_2008-04.gfc.part&quot;;
+    shLowLevel.shReadGFC(tmpf);              % verify BEFORE the swap
+    shLowLevel.safeMove(tmpf, &quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);
+
+  See also movefile, shLowLevel.fetchICGEM, shLowLevel.fetchITSG.</pre>
 </div>
 <div class="entry" id="shLowLevel.seaLevelFingerprint">
 <h3><code>shLowLevel.seaLevelFingerprint(loadRegion, ocean, idx, opts)</code></h3>
@@ -834,7 +807,6 @@ shLowLevel.safeMove(tmpf, &quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);</pre>
 <tr><td><code>grid</code></td><td>struct            latDeg/lonDeg rings of the solver grid</td></tr>
 <tr><td><code>info</code></td><td>struct: iterations, dS, massResidual [kg/m^2 sphere mean], eustatic [m], kappa, areaFractionOcean, S2D (nlat x nlon)</td></tr>
 </table>
-<b>Example</b><pre>S = shLowLevel.seaLevelFingerprint(gLoad, oceanMask, idx, kn = LN.kn, hn = LN.hn);</pre>
 </div>
 <div class="entry" id="shLowLevel.sensitivityKernel">
 <h3><code>shLowLevel.sensitivityKernel(idx, region, opts)</code></h3>
@@ -846,8 +818,15 @@ shLowLevel.safeMove(tmpf, &quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);</pre>
 <tr><td><code>k</code></td><td>(P,1) double  the kernel, IDX ordering, ready for shSeries.basinAverage or b&#x27; * x like any other kernel</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: leakage (1,1 double, ||k - kExact||_M), noise (1,1 double, sqrt(k&#x27; N k)), alpha (1,1 double), kExact (P,1 double, the indicator it started from), areaFraction (1,1 double), gain (1,1 double, k&#x27; kExact / (kExact&#x27; kExact) - how much of the region&#x27;s own signal survives. The constraint holds it at 1; a value that drifts off 1 means the constraint could not be applied, e.g. a degenerate region)</td></tr>
 </table>
-<b>Example</b><pre>k = shLowLevel.sensitivityKernel(idx, basin, Alpha = 10, Noise = sigmaVec);
-avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pre>
+<b>Example</b><pre>    idx = shLowLevel.shIndex(60);
+    for a = logspace(-2, 4, 20)                 % sweep, then choose
+        [~, s(end+1)] = shLowLevel.sensitivityKernel(idx, basin, ...
+            Alpha = a, Noise = sigmaVec);
+    end
+    loglog([s.leakage], [s.noise])              % the L-curve
+
+  See also shLowLevel.basinKernel, shLowLevel.basinDeconvolve,
+  shLowLevel.leakageCorrect.</pre>
 </div>
 <div class="entry" id="shLowLevel.shAnalysisGrid">
 <h3><code>shLowLevel.shAnalysisGrid(grid, latVec, lonVec, nmax, opts)</code></h3>
@@ -860,7 +839,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <tr><td><code>S</code></td><td>(nmax+1 x nmax+1) double  estimated sine coefficients</td></tr>
 <tr><td><code>info</code></td><td>(1,1) struct  fields: condest (1,1 double), nObs (1,1 double), kaula (1,1 double, NaN when unregularized)</td></tr>
 </table>
-<b>Example</b><pre>g2 = shLowLevel.shAnalysisGrid(grid, lat, lon, 10);   % exact on ring grids</pre>
 </div>
 <div class="entry" id="shLowLevel.shDegreeRMS">
 <h3><code>shLowLevel.shDegreeRMS(C, S, varargin)</code></h3>
@@ -869,7 +847,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>spec</code></td><td>struct: degree (nmax+1 x 1), degVariance/degRMS/ degAmplitude, cumVariance/cumRMS/cumAmplitude, R, domain; errVariance/errRMS/errAmplitude when sigmas are supplied</td></tr>
 </table>
-<b>Example</b><pre>spec = shLowLevel.shDegreeRMS(g.C, g.S);          % degree-amplitude spectrum struct</pre>
 </div>
 <div class="entry" id="shLowLevel.shDestripe">
 <h3><code>shLowLevel.shDestripe(C, S, varargin)</code></h3>
@@ -879,7 +856,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <tr><td><code>Cf</code></td><td>(nmax+1 x nmax+1) double   destriped cosine coefficients</td></tr>
 <tr><td><code>Sf</code></td><td>(nmax+1 x nmax+1) double   destriped sine coefficients</td></tr>
 </table>
-<b>Example</b><pre>[Cf, Sf] = shLowLevel.shDestripe(g.C, g.S, minOrder = 6);</pre>
 </div>
 <div class="entry" id="shLowLevel.shEvalGFCT">
 <h3><code>shLowLevel.shEvalGFCT(model, epoch)</code></h3>
@@ -889,7 +865,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <tr><td><code>Ct</code></td><td>(nmax+1 x nmax+1) double  cosine coefficients at the epoch</td></tr>
 <tr><td><code>St</code></td><td>(nmax+1 x nmax+1) double  sine coefficients at the epoch</td></tr>
 </table>
-<b>Example</b><pre>[C, S] = shLowLevel.shEvalGFCT(model, 2015.5);   % piecewise gfct at an epoch</pre>
 </div>
 <div class="entry" id="shLowLevel.shFanFilter">
 <h3><code>shLowLevel.shFanFilter(C, S, rDegKm, rOrdKm, opts)</code></h3>
@@ -900,7 +875,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>Cf, Sf</code></td><td>(n1,n1) double  filtered coefficients</td></tr>
 </table>
-<b>Example</b><pre>[C2, S2] = shLowLevel.shFanFilter(g.C, g.S, 350, 200);</pre>
 </div>
 <div class="entry" id="shLowLevel.shGaussianFilter">
 <h3><code>shLowLevel.shGaussianFilter(C, S, radius_km, varargin)</code></h3>
@@ -911,7 +885,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <tr><td><code>Sf</code></td><td>(nmax+1 x nmax+1) double   smoothed sine coefficients</td></tr>
 <tr><td><code>Wn</code></td><td>(nmax+1 x 1) double   Jekeli degree weights applied</td></tr>
 </table>
-<b>Example</b><pre>[Cf, Sf] = shLowLevel.shGaussianFilter(g.C, g.S, 350);</pre>
 </div>
 <div class="entry" id="shLowLevel.shGaussianWeights">
 <h3><code>shLowLevel.shGaussianWeights(nmax, radius_km, varargin)</code></h3>
@@ -920,7 +893,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>Wn</code></td><td>(nmax+1 x 1) double   Jekeli (1981) weights, W(1) = 1, monotone non-increasing</td></tr>
 </table>
-<b>Example</b><pre>w = shLowLevel.shGaussianWeights(60, 350);   % Jekeli recursion</pre>
 </div>
 <div class="entry" id="shLowLevel.shIndex">
 <h3><code>shLowLevel.shIndex(Lmax, opts)</code></h3>
@@ -931,7 +903,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>idx</code></td><td>struct: n/m/cs (P x 1), P (1 x 1), nmax, MinDegree - the canonical vector ordering of the toolbox</td></tr>
 </table>
-<b>Example</b><pre>idx = shLowLevel.shIndex(60);                % MinDegree = 2 default</pre>
 </div>
 <div class="entry" id="shLowLevel.shOrderRMS">
 <h3><code>shLowLevel.shOrderRMS(C, S, opts)</code></h3>
@@ -942,7 +913,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>spec</code></td><td>struct: order, ordVariance, ordRMS, ordAmplitude, cumVariance, cumRMS, cumAmplitude, (err*), R, domain = &#x27;order&#x27;  (consumed by plotSHSpectrum)</td></tr>
 </table>
-<b>Example</b><pre>spec = shLowLevel.shOrderRMS(g.C, g.S);           % stripes live at high orders</pre>
 </div>
 <div class="entry" id="shLowLevel.shReadGFC">
 <h3><code>shLowLevel.shReadGFC(filename)</code></h3>
@@ -951,7 +921,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>model</code></td><td>(1,1) struct  fields: C/S/sigmaC/sigmaS (nmax+1 x nmax+1 double), GM/R (1,1 double), nmax (1,1 double), tide (string), variable terms (trend/annual/semiannual) when present</td></tr>
 </table>
-<b>Example</b><pre>g = shLowLevel.shReadGFC(&quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.shSpectralCrossover">
 <h3><code>shLowLevel.shSpectralCrossover(spec)</code></h3>
@@ -961,8 +930,6 @@ avg = (k&#x27; * X) / (k&#x27; * k);       % use like any other basin kernel</pr
 <tr><td><code>nCrossover</code></td><td>(1,1) double  first degree with err &gt;= signal (NaN if none)</td></tr>
 <tr><td><code>degreeInterp</code></td><td>(1,1) double  linearly interpolated crossing degree</td></tr>
 </table>
-<b>Example</b><pre>spec = shLowLevel.shDegreeRMS(g.C, g.S, &#x27;sigmaC&#x27;, g.sigmaC, &#x27;sigmaS&#x27;, g.sigmaS);
-nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pre>
 </div>
 <div class="entry" id="shLowLevel.shSynthesis">
 <h3><code>shLowLevel.shSynthesis(C, S, GM, R, latVec, lonVec, varargin)</code></h3>
@@ -974,7 +941,6 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <tr><td><code>lon</code></td><td>(1, nlon) double  longitude grid [deg]</td></tr>
 <tr><td><code>P</code></td><td>(1,1) struct  cached Legendre functions (pass back in for reuse)</td></tr>
 </table>
-<b>Example</b><pre>grid = shLowLevel.shSynthesis(g.C, g.S, g.GM, g.R, -89:89, 0:359);</pre>
 </div>
 <div class="entry" id="shLowLevel.shSynthesisDeformation">
 <h3><code>shLowLevel.shSynthesisDeformation(C, S, R, latDeg, lonDeg, opts)</code></h3>
@@ -987,7 +953,6 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <tr><td><code>north</code></td><td>same size   horizontal north component [m]</td></tr>
 <tr><td><code>east</code></td><td>same size   horizontal east component [m]</td></tr>
 </table>
-<b>Example</b><pre>[up, no, ea] = shLowLevel.shSynthesisDeformation(g.C, g.S, g.R, latPts, lonPts, kn = LN.kn, hn = LN.hn, ln = LN.ln, Mode = &quot;points&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.shSynthesisGradientTensor">
 <h3><code>shLowLevel.shSynthesisGradientTensor(C, S, GM, R, latDeg, lonDeg, opts)</code></h3>
@@ -999,7 +964,6 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <tr><td><code>comps</code></td><td>struct of (nlat,nlon) double [1/s^2]: uu, nn, ee, un, ue, ne  (symmetric tensor; 1 Eotvos = 1e-9 1/s^2). Components involving east are NaN at |lat| = 90.</td></tr>
 <tr><td><code>info</code></td><td>struct: maxTraceResidual (max |trace|/max|G| over the grid, excluding poles) - the built-in Laplace self-check</td></tr>
 </table>
-<b>Example</b><pre>T = shLowLevel.shSynthesisGradientTensor(g.C, g.S, g.GM, g.R, lat, lon, Height = 450e3);</pre>
 </div>
 <div class="entry" id="shLowLevel.slepianBasis">
 <h3><code>shLowLevel.slepianBasis(idx, region, opts)</code></h3>
@@ -1012,7 +976,6 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <tr><td><code>lam</code></td><td>(NKeep,1) double  concentrations, descending in [0,1]</td></tr>
 <tr><td><code>info</code></td><td>struct: shannon (= areaFraction*P, exact by the addition theorem), areaFraction, lamAll (P x 1)</td></tr>
 </table>
-<b>Example</b><pre>[G, lam] = shLowLevel.slepianBasis(idx, capSpec);   % concentration basis</pre>
 </div>
 <div class="entry" id="shLowLevel.spatialStats">
 <h3><code>shLowLevel.spatialStats(A, B, latDeg, lonDeg, opts)</code></h3>
@@ -1037,9 +1000,9 @@ nc = shLowLevel.shSpectralCrossover(spec);   % signal/error crossover degree</pr
 <tr><td><code>ts</code></td><td>(1,1) shSeries  the processed series (full history)</td></tr>
 <tr><td><code>rep</code></td><td>(1,1) struct  fields: files (1,T string), steps (1,K string, applied stages with parameters), nmax (1,1 double), epochs (T,1 double), version (1,1 string, shLowLevel.version at run time), created (1,1 string)</td></tr>
 </table>
-<b>Example</b><pre>[ts, rep] = shLowLevel.standardChain(&quot;D:/grace/monthly&quot;, ...
-    Filter = &quot;DDK3&quot;, Degree1 = &quot;GFZ&quot;);
-disp(rep.steps&#x27;)</pre>
+<b>Example</b><pre>    [ts, rep] = shLowLevel.standardChain(&quot;D:/grace/monthly&quot;, ...
+        Filter = &quot;DDK3&quot;, Degree1 = &quot;GFZ&quot;);
+    disp(rep.steps&#x27;)</pre>
 </div>
 <div class="entry" id="shLowLevel.synthesisMatrix">
 <h3><code>shLowLevel.synthesisMatrix(idx, opts)</code></h3>
@@ -1052,7 +1015,6 @@ disp(rep.steps&#x27;)</pre>
 <tr><td><code>w</code></td><td>(NLat*NLon x 1)     double   quadrature weights, sum(w) = 1</td></tr>
 <tr><td><code>grid</code></td><td>struct: theta, lambda [rad], latDeg (NLat x 1), lonDeg (NLon x 1)</td></tr>
 </table>
-<b>Example</b><pre>[Y, w] = shLowLevel.synthesisMatrix(idx);    % quadrature-consistent pair</pre>
 </div>
 <div class="entry" id="shLowLevel.synthesisPoints">
 <h3><code>shLowLevel.synthesisPoints(C, S, GM, R, latDeg, lonDeg, r, opts)</code></h3>
@@ -1101,8 +1063,6 @@ disp(rep.steps&#x27;)</pre>
 <tr><td><code>op</code></td><td>struct         filter operator: Ut, V, lam, s, Ac, SA, M, idx, tYears, model, Xres, Xfres (use with shLowLevel.opApply / shLowLevel.basinDeconvolve / shLowLevel.resolutionMap)</td></tr>
 <tr><td><code>info</code></td><td>struct         noise/signal/VCE diagnostics; additionally info.sigmaXfres (P x T): 1-sigma posterior uncertainty of the filtered residual per coefficient/month, diag((I-W_t)S) = (V.^2)*(s_t*lam./(lam+s_t)) (validated to 3.5e-16 against the direct matrix product). With constraints (v2.5) this is the EXACT diagonal of (W-I)S(W-I)&#x27; + s*W*N*W&#x27; - the earlier unconstrained formula underestimated along constrained directions.</td></tr>
 </table>
-<b>Example</b><pre>[Xf, op, info] = shLowLevel.tvANSFilter(X, tYears, idx);
-sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)</pre>
 </div>
 <div class="entry" id="shLowLevel.vceRescale">
 <h3><code>shLowLevel.vceRescale(N, Xres, idx, opts)</code></h3>
@@ -1113,7 +1073,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>s</code></td><td>(T x 1) or (nBands x T) double   monthly (band-wise) VCE noise variance factors</td></tr>
 </table>
-<b>Example</b><pre>s = shLowLevel.vceRescale(N, Xres, idx);          % monthly noise factors</pre>
 </div>
 <div class="entry" id="shLowLevel.vecFromCS">
 <h3><code>shLowLevel.vecFromCS(cnm, snm, idx)</code></h3>
@@ -1123,7 +1082,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>x</code></td><td>(P x 1) double   coefficients gathered in idx ordering</td></tr>
 </table>
-<b>Example</b><pre>x = shLowLevel.vecFromCS(g10.C, g10.S, idx);     % triangle -&gt; idx-ordered vector</pre>
 </div>
 <div class="entry" id="shLowLevel.version">
 <h3><code>shLowLevel.version()</code></h3>
@@ -1141,7 +1099,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <p>shLowLevel.writeAnimation(TS, &#x27;ewh.mp4&#x27;, quantity=&quot;ewh&quot;, kn ([])=kn) renders one shLowLevel.plotSHMap frame per epoch into an MPEG-4 via VideoWriter (base MATLAB), with a FIXED color scale over all epochs (robust 98th percentile across the whole stack - the single most common animation mistake is a per-frame scale).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>ts</code></td><td>1 x 1</td><td>shSeries</td><td>required</td></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>quantity</code></td><td>1 x 1</td><td>string</td><td>&quot;ewh&quot;</td></tr><tr><td><code>kn</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>hn</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>lat</code></td><td>1 x :</td><td>double</td><td>-89:2:89</td></tr><tr><td><code>lon</code></td><td>1 x :</td><td>double</td><td>0:2:358</td></tr><tr><td><code>FrameRate</code></td><td>1 x 1</td><td>double</td><td>4</td></tr><tr><td><code>Sidecar</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>CLim</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>Coast</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Units</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Projection</code></td><td>1 x 1</td><td>string</td><td>&quot;plate&quot;</td></tr></table>
-<b>Example</b><pre>shLowLevel.writeAnimation(ts, &quot;ewh_2019_2022.avi&quot;, quantity = &quot;ewh&quot;, kn = kn);   % .avi portable, .mp4 on Windows/macOS</pre>
 </div>
 <div class="entry" id="shLowLevel.writeGFC">
 <h3><code>shLowLevel.writeGFC(filename, C, S, GM, R, opts)</code></h3>
@@ -1149,7 +1106,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <p>shLowLevel.writeGFC(FILENAME, C, S, GM, R) writes a static ICGEM-format gravity field file readable by shLowLevel.shReadGFC (round-trip tested to full double precision: coefficients are written with %22.14e).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>C</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>S</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>required</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>SigmaC</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>SigmaS</code></td><td>-</td><td>double</td><td>[]</td></tr><tr><td><code>ModelName</code></td><td>-</td><td>-</td><td>&quot;shAnalysis_export&quot;</td></tr><tr><td><code>TideSystem</code></td><td>-</td><td>-</td><td>&quot;unknown&quot;</td></tr><tr><td><code>Comment</code></td><td>-</td><td>-</td><td>&quot;&quot;</td></tr><tr><td><code>Sidecar</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
-<b>Example</b><pre>shLowLevel.writeGFC(&quot;out.gfc&quot;, g.C, g.S, g.GM, g.R, Comment = &quot;DDK3 filtered&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.writeGrid">
 <h3><code>shLowLevel.writeGrid(filename, grid, latDeg, lonDeg, opts)</code></h3>
@@ -1157,7 +1113,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <p>shLowLevel.writeGrid(&#x27;ewh.nc&#x27;, GRID, LAT, LON, Name (&quot;field&quot;)=&quot;lwe_thickness&quot;, Units (&quot;&quot;)=&quot;m&quot;, Epoch=2010.29) writes a 2-D field or a 3-D stack (nlat x nlon x T with Epochs ([])=) using nccreate/ncwrite - directly readable back by shLowLevel.readMascon (roundtrip-tested), by GMT, panoply, xarray, etc. Time is stored as &quot;days since 2002-01-01&quot; like the mascon products.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>grid</code></td><td>-</td><td>double</td><td>required</td></tr><tr><td><code>latDeg</code></td><td>: x 1</td><td>double</td><td>required</td></tr><tr><td><code>lonDeg</code></td><td>: x 1</td><td>double</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Name</code></td><td>1 x 1</td><td>string</td><td>&quot;field&quot;</td></tr><tr><td><code>Units</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Epochs</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>LatType</code></td><td>1 x 1</td><td>string</td><td>&quot;geocentric&quot;</td></tr><tr><td><code>Description</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Sidecar</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
-<b>Example</b><pre>shLowLevel.writeGrid(&quot;ewh.nc&quot;, grid, lat, lon);   % netCDF/geotiff/ascii</pre>
 </div>
 <div class="entry" id="shLowLevel.ylm">
 <h3><code>shLowLevel.ylm(latRad, lonRad, idx)</code></h3>
@@ -1167,7 +1122,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>Y</code></td><td>(nPts x idx.P) double</td></tr>
 </table>
-<b>Example</b><pre>Y = shLowLevel.ylm(deg2rad(latPts), deg2rad(lonPts), idx);   % design rows, idx order</pre>
 </div>
 <h2>Root functions</h2>
 <div class="entry" id="demo_shAnalysis">
@@ -1179,7 +1133,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>reg</code></td><td>(D x 3) table   demo registry: id, title, exercised API</td></tr>
 </table>
-<b>Example</b><pre>demo_shAnalysis([&quot;D01&quot;, &quot;D06&quot;])   % run selected demos, fail-and-continue</pre>
 </div>
 <div class="entry" id="runAllTests">
 <h3><code>runAllTests(opts)</code></h3>
@@ -1189,7 +1142,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>results</code></td><td>(1,N) matlab.unittest.TestResult  full result array (pass/fail/duration per test; log written to LogFile)</td></tr>
 </table>
-<b>Example</b><pre>runAllTests            % 169 tests; acceptance gate on R2026a</pre>
 </div>
 <div class="entry" id="setup_shAnalysis">
 <h3><code>setup_shAnalysis(opts)</code></h3>
@@ -1209,7 +1161,9 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 </table>
 <b>Example</b><pre>    setup_shAnalysis(Permanent = true, Download = &quot;core&quot;)
     setup_shAnalysis(Download = &quot;filters&quot;, DDK = [2 3 5])
-    s = setup_shAnalysis(DryRun = true, Download = &quot;starter&quot;)</pre>
+    s = setup_shAnalysis(DryRun = true, Download = &quot;starter&quot;)
+    setup_shAnalysis(SeriesFolder = &quot;D:/grace/itsg&quot;, ...
+        MasconFile = &quot;D:/grace/GRCTellus_JPL.nc&quot;)   % opt-in test data</pre>
 </div>
 <h2>shCoefficients methods</h2><p class="toc">
 <a href="#shCoefficients.addDegree1">addDegree1</a>
@@ -1253,7 +1207,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   degree-1 row set from the TN-13 record nearest to obj.epoch</td></tr>
 </table>
-<b>Example</b><pre>g = g.addDegree1(tn13);               % nearest epoch within 0.05 yr</pre>
 </div>
 <div class="entry" id="shCoefficients.analysis">
 <h3><code>shCoefficients.analysis(grid, latVec, lonVec, nmax, opts)</code></h3>
@@ -1264,7 +1217,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   Stokes coefficients estimated from the grid (exact on ring grids; Kaula for scattered points)</td></tr>
 </table>
-<b>Example</b><pre>g2 = shCoefficients.analysis(grid, lat, lon, 10, Kaula = 1e-10);</pre>
 </div>
 <div class="entry" id="shCoefficients.applyDDK">
 <h3><code>shCoefficients.applyDDK(obj, W)</code></h3>
@@ -1274,7 +1226,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   DDK-decorrelated</td></tr>
 </table>
-<b>Example</b><pre>g = g.applyDDK(&quot;DDK3&quot;);</pre>
 </div>
 <div class="entry" id="shCoefficients.applyTN14">
 <h3><code>shCoefficients.applyTN14(obj, tn, opts)</code></h3>
@@ -1285,7 +1236,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   C20 (and C30 when available) replaced by the SLR values, sigmas updated</td></tr>
 </table>
-<b>Example</b><pre>g = g.applyTN14(tn14);                % C20/C30 replacement</pre>
 </div>
 <div class="entry" id="shCoefficients.compare">
 <h3><code>shCoefficients.compare(obj, other, varargin)</code></h3>
@@ -1295,7 +1245,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>rep</code></td><td>(1 x 1) struct   shLowLevel.compareSolutions report</td></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   figure (Plot = true)</td></tr>
 </table>
-<b>Example</b><pre>rep = g.compare(gF, Names = [&quot;raw&quot;, &quot;G350&quot;]);</pre>
 </div>
 <div class="entry" id="shCoefficients.crossover">
 <h3><code>shCoefficients.crossover(obj, opts)</code></h3>
@@ -1305,7 +1254,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>nInterp</code></td><td>(1,1) double  interpolated crossing degree</td></tr>
 </table>
-<b>Example</b><pre>nc = g.crossover();                   % needs formal sigmas</pre>
 </div>
 <div class="entry" id="shCoefficients.deformation">
 <h3><code>shCoefficients.deformation(obj, latDeg, lonDeg, opts)</code></h3>
@@ -1318,8 +1266,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>north</code></td><td>same size   north component [m]</td></tr>
 <tr><td><code>east</code></td><td>same size   east component [m]</td></tr>
 </table>
-<b>Example</b><pre>[up, no, ea] = g.deformation(latPts, lonPts, kn = LN.kn, hn = LN.hn, ...
-    ln = LN.ln, Mode = &quot;points&quot;);</pre>
 </div>
 <div class="entry" id="shCoefficients.degreeRMS">
 <h3><code>shCoefficients.degreeRMS(obj, opts)</code></h3>
@@ -1329,7 +1275,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>spec</code></td><td>struct: n, amp/rms/var, err   degree spectrum incl. formal-error curve</td></tr>
 </table>
-<b>Example</b><pre>spec = g.degreeRMS();                  % degree amplitude + error spectrum</pre>
 </div>
 <div class="entry" id="shCoefficients.destripe">
 <h3><code>shCoefficients.destripe(obj, opts)</code></h3>
@@ -1340,13 +1285,13 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   Swenson-Wahr decorrelated</td></tr>
 </table>
-<b>Example</b><pre>g = g.destripe(minOrder = 6);</pre>
 </div>
 <div class="entry" id="shCoefficients.disp">
 <h3><code>shCoefficients.disp(obj)</code></h3>
 <p class="h1line">Compact display: size, epoch, GM/R, processing history.</p>
 <p>disp(G) prints one header line with the model name, one contract line (nmax, epoch, product type, tide system, GM, R), whether formal sigmas are attached and how many gfct variable terms are carried, followed by the processing history. Called automatically when an shCoefficients object is shown without a semicolon.</p>
-<b>Example</b><pre>disp(g)                                % degree, epoch, history</pre>
+<b>Example</b><pre>    g = shCoefficients.read(&quot;ITSG-Grace2018_n60_2008-04.gfc&quot;);
+    disp(g)                            % degree, epoch, history</pre>
 </div>
 <div class="entry" id="shCoefficients.evalAt">
 <h3><code>shCoefficients.evalAt(obj, epoch)</code></h3>
@@ -1355,7 +1300,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   gfct variable terms evaluated at the epoch; static models pass through unchanged</td></tr>
 </table>
-<b>Example</b><pre>g2015 = g.evalAt(2015.5);              % gfct variable terms AT AN EPOCH</pre>
 </div>
 <div class="entry" id="shCoefficients.fan">
 <h3><code>shCoefficients.fan(obj, rDegKm, rOrdKm)</code></h3>
@@ -1364,7 +1308,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   fan-filtered</td></tr>
 </table>
-<b>Example</b><pre>g = g.fan(350, 200);</pre>
 </div>
 <div class="entry" id="shCoefficients.fromVec">
 <h3><code>shCoefficients.fromVec(x, idx, like)</code></h3>
@@ -1374,7 +1317,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   rebuilt from x with sizes/GM/R/epoch of the template</td></tr>
 </table>
-<b>Example</b><pre>g2 = shCoefficients.fromVec(x, idx, g10);   % sizes/GM/R from template</pre>
 </div>
 <div class="entry" id="shCoefficients.gaussian">
 <h3><code>shCoefficients.gaussian(obj, radiusKm)</code></h3>
@@ -1383,7 +1325,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   Gaussian-smoothed; sigmas scaled by Wn</td></tr>
 </table>
-<b>Example</b><pre>g = g.gaussian(350);                  % radius in km</pre>
 </div>
 <div class="entry" id="shCoefficients.map">
 <h3><code>shCoefficients.map(obj, latDeg, lonDeg, opts)</code></h3>
@@ -1394,7 +1335,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   synthesized map plot</td></tr>
 </table>
-<b>Example</b><pre>g.map(quantity = &quot;geoid&quot;, Title = &quot;Geoid 2008-04 [m]&quot;);</pre>
 </div>
 <div class="entry" id="shCoefficients.minus">
 <h3><code>shCoefficients.minus(a, b)</code></h3>
@@ -1402,7 +1342,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   difference; sigmas RSS</td></tr>
 </table>
-<b>Example</b><pre>dg = g - gMean;                       % anomaly about the mean field</pre>
 </div>
 <div class="entry" id="shCoefficients.mtimes">
 <h3><code>shCoefficients.mtimes(a, b)</code></h3>
@@ -1410,7 +1349,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   scalar-scaled; sigmas scale by |a|</td></tr>
 </table>
-<b>Example</b><pre>gHalf = 0.5 * g;                      % scalar scaling, sigmas follow</pre>
 </div>
 <div class="entry" id="shCoefficients.plus">
 <h3><code>shCoefficients.plus(a, b)</code></h3>
@@ -1418,7 +1356,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   sum; sigmas RSS; epochs must match</td></tr>
 </table>
-<b>Example</b><pre>gsm = g + gad;                        % epoch-checked restore</pre>
 </div>
 <div class="entry" id="shCoefficients.read">
 <h3><code>shCoefficients.read(filename, opts)</code></h3>
@@ -1429,7 +1366,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   parsed gfc/gfct(.gz) with GM, R, sigmas, variable terms, Epoch= as given</td></tr>
 </table>
-<b>Example</b><pre>g = shCoefficients.read(&quot;ITSG-Grace2018_n60_2008-04.gfc&quot;, Epoch = 2008.29);</pre>
 </div>
 <div class="entry" id="shCoefficients.setCoefficient">
 <h3><code>shCoefficients.setCoefficient(obj, n, m, Cval, Sval, opts)</code></h3>
@@ -1439,7 +1375,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   copy with C/S(n+1, m+1) replaced</td></tr>
 </table>
-<b>Example</b><pre>g = g.setCoefficient(2, 0, c20slr);   % SLR C20 by hand</pre>
 </div>
 <div class="entry" id="shCoefficients.shCoefficients">
 <h3><code>shCoefficients.shCoefficients(C, S, opts)</code></h3>
@@ -1449,7 +1384,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shCoefficients   immutable coefficient set with GM (3.986004415e14), R (6378136.3), epoch, sigmas, history</td></tr>
 </table>
-<b>Example</b><pre>g = shCoefficients(C, S, GM = 3.986004415e14, R = 6.3781363e6);</pre>
 </div>
 <div class="entry" id="shCoefficients.spectrum">
 <h3><code>shCoefficients.spectrum(obj, varargin)</code></h3>
@@ -1457,7 +1391,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   spectrum plot</td></tr>
 </table>
-<b>Example</b><pre>g.spectrum(Kaula = true, MarkCrossover = true);</pre>
 </div>
 <div class="entry" id="shCoefficients.subtractNormalField">
 <h3><code>shCoefficients.subtractNormalField(obj, opts)</code></h3>
@@ -1468,7 +1401,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   disturbing field (even zonals of the normal field removed)</td></tr>
 </table>
-<b>Example</b><pre>g = g.subtractNormalField(System = &quot;GRS80&quot;);</pre>
 </div>
 <div class="entry" id="shCoefficients.synthesis">
 <h3><code>shCoefficients.synthesis(obj, latVec, lonVec, opts)</code></h3>
@@ -1481,7 +1413,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>lat</code></td><td>(1 x nlat) double   geocentric latitudes</td></tr>
 <tr><td><code>lon</code></td><td>(1 x nlon) double   longitudes</td></tr>
 </table>
-<b>Example</b><pre>ewh = g.synthesis(-89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);</pre>
 </div>
 <div class="entry" id="shCoefficients.times">
 <h3><code>shCoefficients.times(a, b)</code></h3>
@@ -1490,7 +1421,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   elementwise-scaled coefficients</td></tr>
 </table>
-<b>Example</b><pre>gW = w .* g;                          % per-coefficient weighting</pre>
 </div>
 <div class="entry" id="shCoefficients.toReference">
 <h3><code>shCoefficients.toReference(obj, opts)</code></h3>
@@ -1501,7 +1431,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   rescaled to the given GM/R</td></tr>
 </table>
-<b>Example</b><pre>g = g.toReference(GM = 3.986004415e14, R = 6.3781363e6);</pre>
 </div>
 <div class="entry" id="shCoefficients.triangle">
 <h3><code>shCoefficients.triangle(obj, varargin)</code></h3>
@@ -1509,7 +1438,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   coefficient triangle plot</td></tr>
 </table>
-<b>Example</b><pre>g.triangle();                          % butterfly plot</pre>
 </div>
 <div class="entry" id="shCoefficients.truncate">
 <h3><code>shCoefficients.truncate(obj, nmaxNew)</code></h3>
@@ -1518,7 +1446,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   truncated to the new nmax</td></tr>
 </table>
-<b>Example</b><pre>g60 = g.truncate(60);</pre>
 </div>
 <div class="entry" id="shCoefficients.uminus">
 <h3><code>shCoefficients.uminus(a)</code></h3>
@@ -1526,7 +1453,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shCoefficients   negated coefficients (sigmas kept)</td></tr>
 </table>
-<b>Example</b><pre>gNeg = -g;</pre>
 </div>
 <div class="entry" id="shCoefficients.vec">
 <h3><code>shCoefficients.vec(obj, idx)</code></h3>
@@ -1535,14 +1461,12 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>x</code></td><td>(P x 1) double   coefficients in idx ordering</td></tr>
 </table>
-<b>Example</b><pre>x = g10.vec(idx);                     % idx-ordered coefficient vector</pre>
 </div>
 <div class="entry" id="shCoefficients.write">
 <h3><code>shCoefficients.write(obj, filename, opts)</code></h3>
 <p class="h1line">Export to an ICGEM .gfc file (round-trip tested).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>-</td><td>-</td><td>required</td></tr><tr><td><code>filename</code></td><td>-</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Comment</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Sidecar</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
-<b>Example</b><pre>g.write(&quot;out.gfc&quot;);</pre>
 </div>
 <h2>shSeries methods</h2><p class="toc">
 <a href="#shSeries.addDegree1">addDegree1</a>
@@ -1579,7 +1503,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   degree 1 completed epoch-matched</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.addDegree1(tn13);</pre>
 </div>
 <div class="entry" id="shSeries.applyDDK">
 <h3><code>shSeries.applyDDK(obj, W)</code></h3>
@@ -1589,7 +1512,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   DDK-decorrelated per month</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.applyDDK(&quot;DDK3&quot;);</pre>
 </div>
 <div class="entry" id="shSeries.applyTN14">
 <h3><code>shSeries.applyTN14(obj, tn, opts)</code></h3>
@@ -1600,7 +1522,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   C20/C30 replaced epoch-matched</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.applyTN14(tn14);               % epoch-matched per month</pre>
 </div>
 <div class="entry" id="shSeries.at">
 <h3><code>shSeries.at(obj, k)</code></h3>
@@ -1609,7 +1530,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   month k with epoch and sigmas</td></tr>
 </table>
-<b>Example</b><pre>g = ts.at(37);                         % single month as shCoefficients</pre>
 </div>
 <div class="entry" id="shSeries.basinAverage">
 <h3><code>shSeries.basinAverage(obj, B, opts)</code></h3>
@@ -1621,7 +1541,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>avg</code></td><td>(K x T) double   basin averages (deconvolved when Deconvolve=true)</td></tr>
 <tr><td><code>out</code></td><td>struct: sigma (K x T), c, attn, condA (deconvolution path)</td></tr>
 </table>
-<b>Example</b><pre>[avg, out] = tsF.basinAverage(B, Deconvolve = true, Op = op);</pre>
 </div>
 <div class="entry" id="shSeries.climatology">
 <h3><code>shSeries.climatology(obj, opts)</code></h3>
@@ -1633,7 +1552,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>clim</code></td><td>(1 x 1) shClimatology   fitted bias/trend/annual/semiannual (+Periods=) with coefficient sigmas</td></tr>
 <tr><td><code>resid</code></td><td>(1 x 1) shSeries   residual series about the fit</td></tr>
 </table>
-<b>Example</b><pre>[clim, resid] = ts.climatology(Robust = true, ARCorrect = true);</pre>
 </div>
 <div class="entry" id="shSeries.compare">
 <h3><code>shSeries.compare(obj, others, varargin)</code></h3>
@@ -1643,7 +1561,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>rep</code></td><td>(1 x 1) struct   shLowLevel.compareSeries report</td></tr>
 <tr><td><code>h</code></td><td>(1 x 1) graphics handle   figure (Plot = true)</td></tr>
 </table>
-<b>Example</b><pre>rep = ts.compare({tsGFZ, tsJPL}, Names = [&quot;ref&quot;, &quot;GFZ&quot;, &quot;JPL&quot;]);</pre>
 </div>
 <div class="entry" id="shSeries.destripe">
 <h3><code>shSeries.destripe(obj, opts)</code></h3>
@@ -1653,13 +1570,13 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   destriped per month</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.destripe(minOrder = 6);</pre>
 </div>
 <div class="entry" id="shSeries.disp">
 <h3><code>shSeries.disp(obj)</code></h3>
 <p class="h1line">Compact display: months, span, gaps, processing history.</p>
 <p>disp(TS) prints the product type, the number of epochs, the maximum degree and the covered epoch range, followed by the processing history. Called automatically when an shSeries object is shown without a semicolon.</p>
-<b>Example</b><pre>disp(ts)</pre>
+<b>Example</b><pre>    ts = shSeries.read(&quot;ITSG-Grace2018_n60_*.gfc&quot;);
+    disp(ts)</pre>
 </div>
 <div class="entry" id="shSeries.dropNaN">
 <h3><code>shSeries.dropNaN(obj)</code></h3>
@@ -1668,7 +1585,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   gap months removed</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.dropNaN;                       % remove gap months</pre>
 </div>
 <div class="entry" id="shSeries.fan">
 <h3><code>shSeries.fan(obj, rDegKm, rOrdKm)</code></h3>
@@ -1678,7 +1594,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   fan-filtered per month</td></tr>
 </table>
-<b>Example</b><pre>tsF = ts.fan(350, 200);</pre>
 </div>
 <div class="entry" id="shSeries.filter">
 <h3><code>shSeries.filter(obj, method, opts)</code></h3>
@@ -1691,7 +1606,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <tr><td><code>op</code></td><td>struct   stored linear operator (V/Ut/lam/s or blocks, model, detLeverage/detResVar) for deconvolution and resolution maps</td></tr>
 <tr><td><code>info</code></td><td>struct: sigmaXfres (P x T), sigmaNote, VCE diagnostics</td></tr>
 </table>
-<b>Example</b><pre>[tsF, op, info] = ts.filter(&quot;tvANS&quot;, Constraints = Ac, Blocks = &quot;off&quot;);</pre>
 </div>
 <div class="entry" id="shSeries.fromFolder">
 <h3><code>shSeries.fromFolder(folder, opts)</code></h3>
@@ -1702,7 +1616,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shSeries   all gfc(.gz) files of a folder, epoch-sorted</td></tr>
 </table>
-<b>Example</b><pre>ts = shSeries.fromFolder(shLowLevel.dataFolder() + &quot;/itsg_series&quot;);</pre>
 </div>
 <div class="entry" id="shSeries.gaussian">
 <h3><code>shSeries.gaussian(obj, radiusKm)</code></h3>
@@ -1711,7 +1624,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   Gaussian-smoothed per month</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.gaussian(300);</pre>
 </div>
 <div class="entry" id="shSeries.mean">
 <h3><code>shSeries.mean(obj, opts)</code></h3>
@@ -1722,7 +1634,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   temporal mean field (omits NaN months)</td></tr>
 </table>
-<b>Example</b><pre>gM = ts.mean;                          % NaN-month tolerant</pre>
 </div>
 <div class="entry" id="shSeries.minus">
 <h3><code>shSeries.minus(a, b)</code></h3>
@@ -1730,7 +1641,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   per-month difference (series or single field)</td></tr>
 </table>
-<b>Example</b><pre>dts = ts - ts.mean;</pre>
 </div>
 <div class="entry" id="shSeries.read">
 <h3><code>shSeries.read(files, opts)</code></h3>
@@ -1741,7 +1651,6 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shSeries   wildcard-read, epoch-sorted stack</td></tr>
 </table>
-<b>Example</b><pre>ts2 = shSeries.read(&quot;ITSG-Grace*_n60_*.gfc&quot;);   % wildcard, epoch-sorted</pre>
 </div>
 <div class="entry" id="shSeries.removeAlias">
 <h3><code>shSeries.removeAlias(obj, opts)</code></h3>
@@ -1752,8 +1661,10 @@ sigma = info.sigmaXfres;              % exact posterior (v2.5 incl. constraints)
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) shSeries  copy with the alias harmonic removed from every epoch; the operation is appended to the history</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.removeAlias();                 % S2 161-day alias, 100 deg offset
-ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
+<b>Example</b><pre>    ts = ts.removeAlias();                   % S2, 100 deg offset
+    ts = ts.removeAlias(SplitEpoch = 2018.4);
+
+  See also shSeries.climatology, shLowLevel.standardChain.</pre>
 </div>
 <div class="entry" id="shSeries.removeGIA">
 <h3><code>shSeries.removeGIA(obj, gia, opts)</code></h3>
@@ -1764,7 +1675,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   GIA trend removed about the series mean epoch</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.removeGIA(giaModel);           % e.g. ICE-6G trend gfc</pre>
 </div>
 <div class="entry" id="shSeries.restore">
 <h3><code>shSeries.restore(obj, gax, opts)</code></h3>
@@ -1775,7 +1685,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   background model added back epoch-matched (e.g. GSM + GAD)</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.restore(tsGAD);                % GSM + GAD, epoch-matched</pre>
 </div>
 <div class="entry" id="shSeries.select">
 <h3><code>shSeries.select(obj, which)</code></h3>
@@ -1785,7 +1694,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   months selected by logical/index mask</td></tr>
 </table>
-<b>Example</b><pre>ts = ts.select(ts.epochs &gt; 2018.5);    % GRACE-FO era only</pre>
 </div>
 <div class="entry" id="shSeries.shSeries">
 <h3><code>shSeries.shSeries(in, opts)</code></h3>
@@ -1796,7 +1704,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shSeries   epoch-sorted monthly stack with sigmas and history</td></tr>
 </table>
-<b>Example</b><pre>ts = shSeries(Cs, Ss = Ss, Epochs = tYears);</pre>
 </div>
 <div class="entry" id="shSeries.trendBreaks">
 <h3><code>shSeries.trendBreaks(obj, opts)</code></h3>
@@ -1807,7 +1714,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>struct: trends per segment (shCoefficients), F/p per break, segment epochs</td></tr>
 </table>
-<b>Example</b><pre>out = ts.trendBreaks(Breaks = 2021.0); % F-test on the hinge</pre>
 </div>
 <div class="entry" id="shSeries.truncate">
 <h3><code>shSeries.truncate(obj, nmaxNew)</code></h3>
@@ -1816,7 +1722,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) shSeries   truncated per month</td></tr>
 </table>
-<b>Example</b><pre>ts8 = ts.truncate(8);                  % keep low degrees</pre>
 </div>
 <h2>shClimatology methods</h2><p class="toc">
 <a href="#shClimatology.amplitudeMap">amplitudeMap</a>
@@ -1845,7 +1750,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <tr><td><code>lon</code></td><td>(1 x nlon) double   longitudes</td></tr>
 <tr><td><code>phase</code></td><td>(nlat x nlon) double   phase [rad] of the harmonic</td></tr>
 </table>
-<b>Example</b><pre>[A, lat, lon] = clim.amplitudeMap(&quot;annual&quot;, -89:89, 0:359, quantity = &quot;ewh&quot;, kn = kn);</pre>
 </div>
 <div class="entry" id="shClimatology.bias">
 <h3><code>shClimatology.bias(obj)</code></h3>
@@ -1853,7 +1757,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   bias component with sigmas</td></tr>
 </table>
-<b>Example</b><pre>g0 = clim.bias();</pre>
 </div>
 <div class="entry" id="shClimatology.cosAnnual">
 <h3><code>shClimatology.cosAnnual(obj)</code></h3>
@@ -1861,7 +1764,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   cosine annual component</td></tr>
 </table>
-<b>Example</b><pre>gc = clim.cosAnnual();</pre>
 </div>
 <div class="entry" id="shClimatology.cosSemiannual">
 <h3><code>shClimatology.cosSemiannual(obj)</code></h3>
@@ -1869,13 +1771,13 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   cosine semiannual component</td></tr>
 </table>
-<b>Example</b><pre>gc2 = clim.cosSemiannual();</pre>
 </div>
 <div class="entry" id="shClimatology.disp">
 <h3><code>shClimatology.disp(obj)</code></h3>
 <p class="h1line">Compact display: fitted components, reference epoch, note.</p>
 <p>disp(CLIM) prints the maximum degree and the reference epoch t0, the list of fitted components (bias, trend, annual and semi-annual cosine/sine, plus any extra Periods) and the processing history including the GIA note. Called automatically when an shClimatology object is shown without a semicolon.</p>
-<b>Example</b><pre>disp(clim)</pre>
+<b>Example</b><pre>    clim = ts.climatology();
+    disp(clim)</pre>
 </div>
 <div class="entry" id="shClimatology.eval">
 <h3><code>shClimatology.eval(obj, epoch)</code></h3>
@@ -1884,7 +1786,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   model field evaluated at the epoch</td></tr>
 </table>
-<b>Example</b><pre>g2020 = clim.eval(2020.0);             % model field at an epoch</pre>
 </div>
 <div class="entry" id="shClimatology.fromCoef">
 <h3><code>shClimatology.fromCoef(coef, t0, series, opts)</code></h3>
@@ -1895,7 +1796,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   rebuilt from a coefficient table with the series&#x27; layout</td></tr>
 </table>
-<b>Example</b><pre>clim = shClimatology.fromCoef(coef, t0, ts);</pre>
 </div>
 <div class="entry" id="shClimatology.periodic">
 <h3><code>shClimatology.periodic(obj, k)</code></h3>
@@ -1906,7 +1806,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <tr><td><code>gc</code></td><td>(1 x 1) shCoefficients   cosine component of the k-th extra period</td></tr>
 <tr><td><code>gs</code></td><td>(1 x 1) shCoefficients   sine component</td></tr>
 </table>
-<b>Example</b><pre>[gc, gs] = clim.periodic(1);           % extra Periods= component</pre>
 </div>
 <div class="entry" id="shClimatology.removeGIA">
 <h3><code>shClimatology.removeGIA(obj, gia)</code></h3>
@@ -1916,7 +1815,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1,1) shClimatology  copy with the GIA trend removed from the trend component; history appended</td></tr>
 </table>
-<b>Example</b><pre>clim = clim.removeGIA(giaModel);</pre>
 </div>
 <div class="entry" id="shClimatology.sinAnnual">
 <h3><code>shClimatology.sinAnnual(obj)</code></h3>
@@ -1924,7 +1822,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   sine annual component</td></tr>
 </table>
-<b>Example</b><pre>gs = clim.sinAnnual();</pre>
 </div>
 <div class="entry" id="shClimatology.sinSemiannual">
 <h3><code>shClimatology.sinSemiannual(obj)</code></h3>
@@ -1932,7 +1829,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   sine semiannual component</td></tr>
 </table>
-<b>Example</b><pre>gs2 = clim.sinSemiannual();</pre>
 </div>
 <div class="entry" id="shClimatology.trend">
 <h3><code>shClimatology.trend(obj)</code></h3>
@@ -1940,7 +1836,6 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>g</code></td><td>(1 x 1) shCoefficients   trend component [units/yr] with sigmas</td></tr>
 </table>
-<b>Example</b><pre>gT = clim.trend();                     % [units/yr], sigmas attached</pre>
 </div>
 <div class="entry" id="shClimatology.withNote">
 <h3><code>shClimatology.withNote(obj, txt)</code></h3>
@@ -1950,6 +1845,5 @@ ts = ts.removeAlias(SplitEpoch = 2018.4);</pre>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
-<b>Example</b><pre>clim = clim.withNote(&quot;GIA: ICE-6G_D removed&quot;);</pre>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 11-Aug-2026 (v3.8.5). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.8.6). Generated by tools - do not edit.</p></body></html>

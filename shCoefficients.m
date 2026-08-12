@@ -996,6 +996,12 @@ methods (Static)
         if isfield(m.header, 'tide_system'), ts = string(m.header.tide_system); end
         if isfield(m.header, 'modelname'),   nm = string(m.header.modelname); end
         [~, base, ext] = fileparts(char(filename));
+        if strlength(nm) == 0
+            % headers without modelname (COST-G GSM among them) used to
+            % leave the name empty all the way into shSeries.names; the
+            % filename stem is always available and always identifying
+            nm = string(base);
+        end
         obj = shCoefficients(m.C, m.S, SigmaC = m.sigmaC, SigmaS = m.sigmaS, ...
             GM = m.GM, R = m.R, Epoch = ep, ProductType = pt, ...
             TideSystem = ts, Name = nm, Header = m.header, ...

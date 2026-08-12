@@ -1299,7 +1299,10 @@ story += [para("GravIS publishes seven Greenland drainage basins as "
                "USE: over the full record COST-G RL02 gives "
                "&minus;220.8 Gt/yr, but over the shorter span for which "
                "the auxiliary correction tables were available it is "
-               "&minus;231.1 Gt/yr. Comparing against the wrong span is "
+               "&minus;231.1 Gt/yr (that span: 2002-04..2023-02, n = 217 "
+               "monthly solutions - QUOTE THE DATES with the number; an "
+               "independent audit measured ~10 Gt/yr of reference drift "
+               "over two years of end date). Comparing against the wrong span is "
                "a 5% error before any processing starts.")]
 
 story += [para("V2. Matching the GravIS processing", "h2")]
@@ -1416,6 +1419,20 @@ story += bullets([
     "propagated through the fit, sigma_monthly / sqrt(Sxx) = 0.0115 / "
     "sqrt(8353) = 0.000125 m/yr &mdash; nineteen times smaller.",
 ])
+story += code("""
+% the concrete definitions this chapter previously left implicit
+% (audit 2026-08: the recipe was not runnable as printed):
+lat = (-89.5:89.5)';  lon = (0.5:359.5)';       % 1-degree grid
+[LO, LA] = meshgrid(lon, lat);  lonW = mod(LO+180, 360) - 180;
+box = @(a,b,c,d) LA>=a & LA<=b & lonW>=c & lonW<=d;
+unionMask = gisMask ...                          % basin polygon pixels
+    | box(60, 84, -128, -60) ...                 % Canadian Arctic
+    | box(63, 67,  -25, -13) ...                 % Iceland
+    | box(76, 81,   10,  34);                    % Svalbard
+% Greenland mass rate from the corrected trend grid m [m/yr EWH]:
+A  = (6371e3)^2 .* cosd(LA) * deg2rad(1)^2;      % cell areas [m^2]
+Gt = sum(m(gisMask) .* A(gisMask), 'omitnan') * 1000 / 1e12;
+""")
 story += code("""
 % monthly noise from the residuals about the deterministic fit ...
 sigMon = shLowLevel.oceanRMS(residGrid, lat, lon, openOcean);

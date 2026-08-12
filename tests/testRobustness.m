@@ -290,7 +290,7 @@ function testRealITSGGraceRead(tc)
 % real ITSG-Grace2018 monthly solution (downloaded from TU Graz):
 % header constants, completeness, physically plausible C20, finite sigmas
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(tc, isfile(f), 'real ITSG GRACE file not present');
+verifyTrue(tc, isfile(f), 'real ITSG GRACE file not present');
 g = shCoefficients.read(f, Epoch = 2008 + 3.5/12);
 verifyEqual(tc, g.nmax, 60);
 verifyEqual(tc, g.GM, 3.9860044150e14);
@@ -306,7 +306,7 @@ end
 function testRealGraceFORead(tc)
 % real GRACE-FO operational solution (2025-12) reads identically
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace_operational_n60_2025-12.gfc');
-assumeTrue(tc, isfile(f), 'real GRACE-FO file not present');
+verifyTrue(tc, isfile(f), 'real GRACE-FO file not present');
 g = shCoefficients.read(f, Epoch = 2025 + 11.5/12);
 verifyEqual(tc, g.nmax, 60);
 verifyEqual(tc, g.C(3,1), -4.84e-4, 'AbsTol', 1e-6);
@@ -334,7 +334,7 @@ function testRealSINEXFixture(tc)
 % (CODE=degree, SOLN=order, PT='--') and the 12x12 NEQ principal
 % submatrix. Expected numbers cross-checked in Python.
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n96_2008-04_head12.snx');
-assumeTrue(tc, isfile(f), 'real SINEX fixture not present');
+verifyTrue(tc, isfile(f), 'real SINEX fixture not present');
 snx = shLowLevel.readSINEX(f);
 verifyEqual(tc, snx.kind, 'NEQ');
 verifyEqual(tc, numel(snx.x), 12);
@@ -512,7 +512,7 @@ function testRealTN14GSFC(tc)
 % pin confused the two). Tail checks are lower bounds so a refreshed
 % upstream file with additional months still passes.
 f = fullfile(tc.TestData.dataDir, 'TN-14_C30_C20_SLR_GSFC.txt');
-assumeTrue(tc, isfile(f), 'real TN-14 file not present');
+verifyTrue(tc, isfile(f), 'real TN-14 file not present');
 tn = shLowLevel.readTN14(f);
 verifyGreaterThanOrEqual(tc, numel(tn.epoch), 258);
 verifyEqual(tc, tn.C20(1), -4.8416934147454e-04, 'AbsTol', 0);
@@ -537,7 +537,7 @@ function testRealTN13CSRJPL(tc)
 d = tc.TestData.dataDir;
 fC = fullfile(d, 'TN-13_GEOC_CSR_RL06.3.txt');
 fJ = fullfile(d, 'TN-13_GEOC_JPL_RL06.3.txt');
-assumeTrue(tc, isfile(fC) && isfile(fJ), 'CSR/JPL TN-13 not present');
+verifyTrue(tc, isfile(fC) && isfile(fJ), 'CSR/JPL TN-13 not present');
 tnC = shLowLevel.readTN13(fC);
 tnJ = shLowLevel.readTN13(fJ);
 for tn = [tnC, tnJ]
@@ -594,7 +594,7 @@ if ~isempty(files)
     [~, iu] = unique({files.name}, 'stable');
     files = files(iu);
 end
-assumeTrue(tc, ~isempty(files), 'no Wbd files present');
+verifyTrue(tc, ~isempty(files), 'no Wbd files present');
 strength = zeros(numel(files), 1); gain60 = zeros(numel(files), 1);
 keep = true(numel(files), 1);
 for k = 1:numel(files)
@@ -630,7 +630,7 @@ function testRealTN13GFZ(tc)
 % "GRCOF2 n m Clm Slm sigC sigS begin end" with yyyymmdd.hhmm epochs.
 % Expected numbers cross-checked with an independent Python parse.
 f = fullfile(tc.TestData.dataDir, 'TN-13_GEOC_GFZ_RL06_3.txt');
-assumeTrue(tc, isfile(f), 'real TN-13 file not present');
+verifyTrue(tc, isfile(f), 'real TN-13 file not present');
 tn = shLowLevel.readTN13(f);
 verifyEqual(tc, numel(tn.epoch), 256);
 verifyTrue(tc, all(isfinite(tn.C10) & isfinite(tn.C11) & isfinite(tn.S11)));
@@ -654,7 +654,7 @@ function testRealTN13ChainWithITSG(tc)
 % 0.05-yr tolerance of the file epoch 2008+3.5/12)
 fG = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n60_2008-04.gfc');
 fT = fullfile(tc.TestData.dataDir, 'TN-13_GEOC_GFZ_RL06_3.txt');
-assumeTrue(tc, isfile(fG) && isfile(fT), 'real files not present');
+verifyTrue(tc, isfile(fG) && isfile(fT), 'real files not present');
 g = shCoefficients.read(fG, Epoch = 2008 + 3.5/12);
 verifyEqual(tc, g.C(2,1), 0);                    % ITSG ships degree 1 = 0
 g1 = g.addDegree1(fT);                           % filename form
@@ -670,7 +670,7 @@ end
 function testRealTN13GzipRoundTrip(tc)
 % .gz branch on the real file
 f = fullfile(tc.TestData.dataDir, 'TN-13_GEOC_GFZ_RL06_3.txt');
-assumeTrue(tc, isfile(f), 'real TN-13 file not present');
+verifyTrue(tc, isfile(f), 'real TN-13 file not present');
 tmp = tempname; mkdir(tmp);
 cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
 gz = gzip(f, tmp);
@@ -707,7 +707,10 @@ for k = 1:numel(f)
             verifyTrue(tc, all(est.m <= est.n) & all(est.n <= 2190));
             verifyTrue(tc, all(isfinite(est.x)));
         catch ME
-            fprintf('  [skip] %s: streaming failed (%s)\n', f(k).name, ME.message);
+            % audit F-3: a streaming regression on exactly the file class
+            % this feature exists for must FAIL the suite, not print
+            verifyTrue(tc, false, sprintf('streaming %s failed: %s', ...
+                f(k).name, ME.message));
         end
         continue;
     end
@@ -998,7 +1001,7 @@ end
 function testSINEXStreamingEstimateOnly(tc)
 % streaming Only="estimate" == full-read estimates on the real fixture
 f = fullfile(tc.TestData.dataDir, 'ITSG-Grace2018_n96_2008-04_head12.snx');
-assumeTrue(tc, isfile(f));
+verifyTrue(tc, isfile(f));
 full_ = shLowLevel.readSINEX(f);
 est = shLowLevel.readSINEX(f, Only = "estimate");
 verifyEqual(tc, est.n, full_.n);
@@ -1020,7 +1023,7 @@ function testRealDDKWbdBinary(tc)
 % format, MIT-licensed, github.com/strawpants/GRACE-filter), pinned to
 % the repository-documented reference values
 f = fullfile(tc.TestData.dataDir, 'Wbd_2-120.a_1d12p_4');
-assumeTrue(tc, isfile(f));
+verifyTrue(tc, isfile(f));
 W = shLowLevel.readDDK(f);
 verifyEqual(tc, W.nmax, 120);
 verifyEqual(tc, numel(W.blocks), 241);
@@ -1109,7 +1112,7 @@ function testSeriesTNWrappers(testCase)
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 fT = fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt');
-assumeTrue(testCase, isfile(fG) && isfile(fT));
+verifyTrue(testCase, isfile(fG) && isfile(fT));
 ts = shSeries.read(string(fG));
 ts1 = ts.addDegree1(fT);
 % pinned values from the coefficient-level real-chain test
@@ -1122,7 +1125,7 @@ verifyEqual(testCase, ts1.Cs(3, 1, 1), ts.Cs(3, 1, 1), 'AbsTol', 0);
 % not create partially-sigma'd months (setCoefficient now initializes
 % both sigma stacks; a lone sigmaC used to break shSeries stacking)
 fT14 = fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt');
-assumeTrue(testCase, isfile(fT14));
+verifyTrue(testCase, isfile(fT14));
 n1 = 5; T = 3;
 Cs = 1e-9 * randn(n1, n1, T); Ss = 1e-9 * randn(n1, n1, T);
 tsS = shSeries(Cs, Ss = Ss, Epochs = 2019 + (0:T-1)'/12);
@@ -1137,7 +1140,7 @@ function testDailyKalmanRealFile(testCase)
 % real ITSG daily Kalman file (shipped, 83 kB): format, epoch, sigmas
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fD = fullfile(d, 'ITSG-Grace2018_Kalman_n40_2008-04-15.gfc');
-assumeTrue(testCase, isfile(fD));
+verifyTrue(testCase, isfile(fD));
 g = shCoefficients.read(fD);
 verifyEqual(testCase, g.nmax, 40);
 verifyEqual(testCase, g.epoch, 2008 + 105.5/366, 'AbsTol', 1e-9);
@@ -1156,7 +1159,7 @@ function testFetchICGEMSeriesOffline(tc)
 % advertised workflow: fromFolder on the result
 d = tc.TestData.dataDir;
 src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(tc, isfile(src));
+verifyTrue(tc, isfile(src));
 mir = tempname; mkdir(mir);
 c1 = onCleanup(@() rmIfFolder(mir)); %#ok<NASGU>
 f1 = fullfile(mir, 'ITSG-Grace2018_n60_2008-04.gfc');
@@ -1196,20 +1199,29 @@ verifyEqual(tc, iC.mode, "files");             % fallback engaged
 % forced archive on the broken zip must error, not fall back
 % (the exact ID is platform/protocol dependent - the contract is THAT
 % it throws instead of silently switching modes)
-threw = false;
+threw = false; thrownId = "";
 try
     shLowLevel.fetchICGEM(rowBad, Mode = "archive", ...
         Dest = tempname, Quiet = true);
-catch
-    threw = true;
+catch ME
+    threw = true; thrownId = string(ME.identifier);
 end
 verifyTrue(tc, threw);
+% audit F-5: still platform-agnostic, but a throw caused by a broken CALL
+% (renamed option, missing function) must not satisfy the contract
+verifyFalse(tc, startsWith(thrownId, "MATLAB:InputParser") || ...
+    contains(thrownId, "UndefinedFunction") || ...
+    contains(thrownId, "unrecognizedStringChoice"), ...
+    "threw for the wrong reason: " + thrownId);
 % verified-before-swap: files parse
 g = shLowLevel.shReadGFC(char(fsB(1)));
 verifyEqual(tc, g.nmax, 60);
 % the advertised workflow end-to-end
 ts = shSeries.fromFolder(fileparts(char(fsB(1))), Pattern = "*.gfc*");
 verifyEqual(tc, ts.nEpochs, 2);
+% audit F-11: filename-derived names must survive into the series even
+% when the header carries no modelname
+verifyTrue(tc, all(strlength(ts.names) > 0), 'series names must be populated');
 % v3.1.2: NUMERIC selection of a series through the BULK loop - the
 % path that produced 'left and right sides have a different number of
 % elements' in the field (283 files assigned into strings(1,K))
@@ -1238,7 +1250,7 @@ function testFetchLoveNumbersMirror(tc)
 % v3.0.0: GROOPS Love-number fetch from a local mirror + parser contract
 d = tc.TestData.dataDir;
 src = fullfile(d, 'loadLoveNumbers_Gegout97.txt');
-assumeTrue(tc, isfile(src));
+verifyTrue(tc, isfile(src));
 mir = tempname; mkdir(mir); copyfile(src, mir);
 dst = tempname; mkdir(dst);
 c1 = onCleanup(@() rmIfFolder(mir)); c2 = onCleanup(@() rmIfFolder(dst)); %#ok<NASGU>
@@ -1267,7 +1279,7 @@ m96 = fullfile(mir, 'ITSG-Grace2018', 'monthly', 'monthly_n96');
 mkdir(m96); mkdir(fullfile(mir, 'ITSG-Grace2018', 'daily_kalman'));
 d = tc.TestData.dataDir;
 src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(tc, isfile(src));
+verifyTrue(tc, isfile(src));
 % two months, correct n96 naming for enumeration
 copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-04.gfc'));
 copyfile(src, fullfile(m96, 'ITSG-Grace2018_n96_2008-05.gfc'));
@@ -1294,7 +1306,7 @@ end
 function testICGEMListFixtureAndResolve(testCase)
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fx = fullfile(d, 'icgem_list_fixture.html');
-assumeTrue(testCase, isfile(fx));
+verifyTrue(testCase, isfile(fx));
 T = shLowLevel.listICGEM(Source = fx);
 verifyGreaterThan(testCase, height(T), 30);
 % v3.1.0: bulk fetch is fail-and-continue - one broken model must not
@@ -1373,4 +1385,78 @@ fid = fopen(fullfile(tmp, [b, e]), 'w'); fclose(fid);   % pretend cached
 [f, info] = shLowLevel.fetchICGEM("Tongji-GMMG2025S", List = T, Dest = tmp);
 verifyTrue(testCase, info.skipped);
 verifyTrue(testCase, isfile(f));
+end
+
+% ---------------------------------------------------- audit regressions
+function testMasconReaderCSRTraits(tc)
+%TESTMASCONREADERCSRTRAITS The two CSR RL0603 traits, synthetically.
+%   Audit F-9: CSR writes the time-units attribute as 'Units' (capital U)
+%   and orders lwe_thickness as (lon, lat, time). The real-file bug was a
+%   case-sensitive ncreadatt whose failure was swallowed, returning raw
+%   days as decimal years SILENTLY. This fixture pins both traits in CI.
+tmp = tempname; mkdir(tmp);
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
+f = fullfile(tmp, 'csr_traits.nc');
+lat = (-89.875:0.25:-89.125)'; lon = (0.125:0.25:0.875)'; tt = [100; 465];
+nccreate(f, 'lon', 'Dimensions', {'lon', numel(lon)});
+nccreate(f, 'lat', 'Dimensions', {'lat', numel(lat)});
+nccreate(f, 'time', 'Dimensions', {'time', numel(tt)});
+nccreate(f, 'lwe_thickness', 'Dimensions', ...
+    {'lon', numel(lon), 'lat', numel(lat), 'time', numel(tt)});
+ncwrite(f, 'lat', lat); ncwrite(f, 'lon', lon); ncwrite(f, 'time', tt);
+E = zeros(numel(lon), numel(lat), numel(tt));
+E(2, 3, 1) = 7;                                 % marker: lon=2, lat=3
+ncwrite(f, 'lwe_thickness', E);
+ncwriteatt(f, 'time', 'Units', 'days since 2002-01-01T00:00:00Z');  % capital U
+ncwriteatt(f, 'lwe_thickness', 'Units', 'cm');
+mas = shLowLevel.readMascon(f);
+verifyEqual(tc, mas.epoch(1), 2002 + 100/365, 'AbsTol', 1e-3, ...
+    'capital-U Units must still convert days to decimal years');
+verifyEqual(tc, mas.units, "cm");
+verifySize(tc, mas.ewh, [numel(lat), numel(lon), numel(tt)]);
+verifyEqual(tc, mas.ewh(3, 2, 1), 7, ...
+    '(lon,lat,time) must permute to (lat,lon,time) by dimension NAME');
+% unknown units must ERROR, never fall through to raw values
+ncwriteatt(f, 'time', 'Units', 'months since 2002-01');
+verifyError(tc, @() shLowLevel.readMascon(f), ...
+    'shLowLevel:readMascon:unknownTimeUnits');
+end
+
+function testReadGFCWarnsOnTruncationAndCorruption(tc)
+%TESTREADGFCWARNSONTRUNCATIONANDCORRUPTION Audit F-16/F-17.
+%   A truncated download used to parse cleanly into a plausible partial
+%   field; a corrupt numeric parsed to a silent NaN coefficient.
+d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+raw = fileread(fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc'));
+tmp = tempname; mkdir(tmp);
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
+f1 = fullfile(tmp, 'trunc.gfc');
+fid = fopen(f1, 'w'); fwrite(fid, raw(1:round(0.6*numel(raw)))); fclose(fid);
+verifyWarning(tc, @() shLowLevel.shReadGFC(f1), 'shReadGFC:incomplete');
+bad = regexprep(raw, '(gfc\s+3\s+1\s+)\S+', '$1NOTANUMBER', 'once');
+f2 = fullfile(tmp, 'corrupt.gfc');
+fid = fopen(f2, 'w'); fwrite(fid, bad); fclose(fid);
+verifyWarning(tc, @() shLowLevel.shReadGFC(f2), 'shReadGFC:badRecord');
+end
+
+function testFetchLoveNumbersHeaderlessColumn(tc)
+%TESTFETCHLOVENUMBERSHEADERLESSCOLUMN Audit F-12: the GROOPS folder's own
+%   ak135 files are bare single-column numeric without the matrix header.
+tmp = tempname; mkdir(tmp);
+cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>
+dst = fullfile(tmp, 'dst'); mkdir(dst);
+kn = [0; -1; -0.3052; -0.1958; -0.134 + 0.001*(0:119)'];
+% the REAL upstream constellation: GROOPS' ak135 files carry this exact
+% known name and are bare numeric columns without the matrix header.
+% Written into Dest so the resume path skips the network and verify-by-
+% parse runs on the local file - the parser is what this test pins.
+fid = fopen(fullfile(dst, 'loadLoveNumbers_CM_ak135.txt'), 'w');
+fprintf(fid, ' %.7e\n', kn); fclose(fid);
+[~, inf1] = shLowLevel.fetchLoveNumbers("loadLoveNumbers_CM_ak135.txt", ...
+    Dest = dst);
+verifyEqual(tc, numel(inf1.skipped), 1);
+verifyEqual(tc, numel(inf1.parsed), 1, 'headerless column must parse');
+verifyEqual(tc, inf1.parsed(1).kn(1:4), kn(1:4), 'AbsTol', 1e-12);
+verifyEqual(tc, inf1.parsed(1).kn(2), -1, ...
+    'the CM-frame k1 = -1 must survive the parse');
 end

@@ -208,17 +208,30 @@ verifyLessThan(testCase, err, 1e-8);
 end
 
 function testEigTrickEquivalence(testCase)
-rng(10); P = 40;
-A = randn(P); S = A*A'/P + 0.1*eye(P);
-Bm = randn(P); N = Bm*Bm'/P + 0.1*eye(P);
-[U, D] = eig(S, N, 'chol');
-lam = max(real(diag(D)), 0);
-Ut = U'; V = inv(Ut);
-for s = [0.3, 1.0, 4.7]
-    Wd = S / (S + s*N);
-    Wt = V * ((lam./(lam+s)) .* Ut);
-    verifyLessThan(testCase, norm(Wt - Wd, 'fro')/norm(Wd, 'fro'), 1e-10);
+%TESTEIGTRICKEQUIVALENCE The eig trick AS IMPLEMENTED, not in the abstract.
+%   Audit F-4: the previous version proved the Woodbury/eig identity on
+%   plain MATLAB linear algebra and called ZERO toolbox functions - any
+%   toolbox mutation left it green. This version reconstructs the filter
+%   from the op struct tvANSFilter actually returns and requires it to
+%   reproduce the returned Xf: the identity is now pinned to the code.
+rng(10);
+idx = shLowLevel.shIndex(6, MinDegree = 2);
+T = 24; t = 2020 + (0:T-1)'/12;
+X = 1e-9 * randn(idx.P, T) + 5e-9 * cos(2*pi*t') .* randn(idx.P, 1);
+[Xf, op] = shLowLevel.tvANSFilter(X, t, idx, Blocks = 'off', ...
+    NoiseCov = eye(idx.P));
+verifyEqual(testCase, string(op.layout), "full");
+% generalized-eig contracts of the implementation
+verifyLessThan(testCase, norm(op.Ut * op.V - eye(idx.P), 'fro'), 1e-8);
+verifyTrue(testCase, all(op.lam >= -1e-12));
+% reconstruct: Xf_t = model_t + V * diag(lam/(lam+s_t)) * Ut * Xres_t
+Xr = op.model;
+for tt = 1:T
+    g = op.lam ./ (op.lam + op.s(tt));
+    Xr(:, tt) = Xr(:, tt) + op.V * (g .* (op.Ut * op.Xres(:, tt)));
 end
+verifyEqual(testCase, Xr, Xf, 'AbsTol', 1e-12 * max(abs(Xf(:))), ...
+    'the op struct must reconstruct the filter output exactly');
 end
 
 % ----------------------------------------------------------------- I/O etc
@@ -773,7 +786,7 @@ function testMCPropagateFullCovariance(testCase)
 % sqrt(w' M w)
 f = fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
     'ITSG-Grace2018_n96_2008-04_head12.snx');
-assumeTrue(testCase, isfile(f));
+verifyTrue(testCase, isfile(f));
 idx = shLowLevel.shIndex(3, MinDegree = 2);
 snx = shLowLevel.readSINEX(f, Output = "covariance", Index = idx);
 M = (snx.M + snx.M') / 2;
@@ -1365,7 +1378,7 @@ function testCompareReports(testCase)
 % synthetic 3-center stack (series) incl. TCH ordering and epoch drops
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(testCase, isfile(fG));
+verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
 rep = shLowLevel.compareSolutions(g, g.gaussian(350), Names = ["raw", "G350"]);
 verifyEqual(testCase, rep.nmax, 60);
@@ -1441,7 +1454,7 @@ verifyEqual(testCase, Sa, S, 'AbsTol', 0);
 % object form: epoch from the object, history through setCoefficient
 d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
-assumeTrue(testCase, isfile(fG));
+verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
 g18 = shLowLevel.poleTideConvert(g);
 verifyNotEqual(testCase, g18.C(3, 2), g.C(3, 2));
@@ -2185,4 +2198,76 @@ verifyError(testCase, @() shLowLevel.sensitivityKernel(idx, cap, ...
     Noise = ones(3, 1)), 'shLowLevel:sensitivityKernel:badNoise');
 verifyError(testCase, @() shLowLevel.sensitivityKernel(idx, cap, ...
     FarField = ones(3, 1)), 'shLowLevel:sensitivityKernel:badFarField');
+end
+
+% ---------------------------------------------------- audit regressions
+function testKernelFactorsLoveNumberContract(testCase)
+%TESTKERNELFACTORSLOVENUMBERCONTRACT Audit F-13/F-19.
+%   A short kn used to die as MATLAB:badsubscript; 1+kn = 0 (the CM-frame
+%   k1 = -1 convention, shipped in GROOPS' own ak135 files) produced a
+%   silent Inf kernel.
+d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+kn = readmatrix(fullfile(d, 'loadLoveNumbers_Gegout97.txt'), ...
+    FileType = 'text', NumHeaderLines = 2);
+verifyError(testCase, @() shLowLevel.kernelFactors("ewh", 60, ...
+    3.986004415e14, 6378136.3, kn = kn(1:31)), ...
+    'shLowLevel:kernelFactors:knTooShort');
+knBad = kn; knBad(2) = -1;
+verifyError(testCase, @() shLowLevel.kernelFactors("ewh", 5, ...
+    3.986004415e14, 6378136.3, kn = knBad), ...
+    'shLowLevel:kernelFactors:badLoveNumbers');
+% and the valid path is untouched
+kf = shLowLevel.kernelFactors("ewh", 5, 3.986004415e14, 6378136.3, kn = kn);
+verifyTrue(testCase, all(isfinite(kf(:))));
+end
+
+function testSensitivityKernelFullCovariancePath(testCase)
+%TESTSENSITIVITYKERNELFULLCOVARIANCEPATH The matrix Noise input is used
+%   IN FULL: a diagonal matrix must reproduce the vector path exactly,
+%   and off-diagonal correlations must change the propagated noise -
+%   pinning that the solve routes through the full covariance.
+idx = shLowLevel.shIndex(12, MinDegree = 0);
+cap = @(la, lo) double(acosd(min(1, max(-1, sind(20)*sind(la) + ...
+    cosd(20)*cosd(la).*cosd(lo - 40)))) <= 15);
+sig = 1 + (idx.n / 5).^2;
+[k1, i1] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 0.5, Noise = sig);
+[k2, i2] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 0.5, ...
+    Noise = diag(sig.^2));
+verifyEqual(testCase, k2, k1, 'AbsTol', 1e-10 * max(abs(k1)));
+verifyEqual(testCase, i2.noise, i1.noise, 'RelTol', 1e-10);
+% strong off-diagonal correlation between two low-degree rows
+Nf = diag(sig.^2);
+Nf(2, 5) = 0.9 * sig(2) * sig(5); Nf(5, 2) = Nf(2, 5);
+[k3, i3] = shLowLevel.sensitivityKernel(idx, cap, Alpha = 0.5, Noise = Nf);
+verifyGreaterThan(testCase, abs(i3.noise - i1.noise), 1e-8 * i1.noise, ...
+    'off-diagonals must reach the noise metric - diag-only would not');
+verifyGreaterThan(testCase, norm(k3 - k1), 0, ...
+    'off-diagonals must reach the solve');
+verifyEqual(testCase, i3.gain, 1, 'RelTol', 1e-10);
+end
+
+function testLeakageCorrectRejectsNaNInsideMask(testCase)
+%TESTLEAKAGECORRECTREJECTSNANINSIDEMASK Audit F-20: non-finite data where
+%   the model or the stopping rule looks must error with the CAUSE, not
+%   diverge; NaN outside both regions stays tolerated.
+lat = (-89:4:89)'; lon = (1:4:359)';
+rng(3); obs = randn(numel(lat), numel(lon));
+mk = false(size(obs)); mk(20:30, 40:60) = true;
+bad = obs; bad(25, 50) = NaN;
+verifyError(testCase, @() shLowLevel.leakageCorrect(bad, lat, lon, ...
+    Mask = mk, Filter = "gauss500", NoiseLevel = 1e-3, Quiet = true), ...
+    'shLowLevel:leakageCorrect:nanInput');
+ok = obs; ok(1, 1) = NaN;                       % far outside mask
+[m, info] = shLowLevel.leakageCorrect(ok, lat, lon, Mask = mk, ...
+    Filter = "gauss500", NoiseLevel = 1e-3, MaxIter = 5, Quiet = true);
+verifyTrue(testCase, all(isfinite(m(mk))));
+verifyTrue(testCase, info.iterations >= 1);
+end
+
+function testBasinKernelWarnsOnZeroArea(testCase)
+%TESTBASINKERNELWARNSONZEROAREA Audit F-18: a degenerate region used to
+%   return a silent all-zero kernel that any average divides by.
+idx = shLowLevel.shIndex(10, MinDegree = 0);
+verifyWarning(testCase, @() shLowLevel.basinKernel(idx, ...
+    [10 10; 10 10; 10 10]), 'shLowLevel:basinKernel:zeroArea');
 end

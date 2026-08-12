@@ -344,6 +344,60 @@ for k = 1:size(rows,1)
     sigmaS(n+1,m+1) = rows(k,6);
 end
 
+% completeness against the header's own announcement (audit F-16): a
+% truncated download parses cleanly and looks plausible on a map, so the
+% record count is checked against the (max_degree+1)(max_degree+2)/2
+% triangle the header promises.
+if isempty(rows)
+    nmSeen = zeros(0, 2);                       % gfct-only files
+else
+    nmSeen = rows(:, 1:2);
+end
+if ~isempty(varRows)
+    isP = strcmp(varRows(:, 1), 'gfct');
+    nmSeen = [nmSeen; cell2mat(varRows(isP, 2:3))];
+end
+nmSeen = unique(nmSeen, 'rows');
+if isfield(header, 'max_degree') && isnumeric(header.max_degree) && ...
+        isfinite(header.max_degree) && ~isempty(nmSeen)
+    % legitimate files start above degree 0 (many GRACE products carry
+    % no n = 0..1), so the expected triangle is counted from the lowest
+    % degree the file itself provides. Two truncation signatures:
+    %   (a) the file never reaches the max_degree the header announces
+    %   (b) it reaches it, but a large fraction of the triangle between
+    %       min and max is missing (a cut lands mid-triangle) - gated at
+    %       >= 50% present so sparse single-record fixtures stay quiet
+    hd = header.max_degree;
+    minSeen = min(nmSeen(:, 1));
+    expectRec = (hd + 1) * (hd + 2) / 2 - minSeen * (minSeen + 1) / 2;
+    got = size(nmSeen, 1);
+    nmaxSeen = max(nmSeen(:, 1));
+    % dirty files lose ISOLATED lines (a fraction of a percent); a
+    % truncation cut removes a tail. Cap (b) at 95% so the former
+    % stays quiet while a mid-triangle cut still warns.
+    frac = got / expectRec;
+    % (b) additionally requires a real-model-sized triangle: single-
+    % record teaching fixtures (expect < 50) cannot be 'truncated'
+    if nmaxSeen < hd || (expectRec >= 50 && frac >= 0.5 && frac <= 0.95)
+        warning('shReadGFC:incomplete', ...
+            ['%s: %d of %d coefficient records (degrees %d..%d) for ' ...
+             'the header''s max_degree %d - truncated file?'], filename, ...
+            got, expectRec, minSeen, nmaxSeen, hd);
+    end
+end
+% corrupt numeric fields parse to NaN and would otherwise propagate
+% silently through every synthesis (audit F-17)
+badRec = false(0, 1);
+if ~isempty(rows)
+    badRec = isnan(rows(:, 3)) | isnan(rows(:, 4));
+end
+if any(badRec)
+    kb = find(badRec, 1);
+    warning('shReadGFC:badRecord', ...
+        '%s: %d unparseable C/S value(s), first at n=%d m=%d (stored as NaN).', ...
+        filename, nnz(badRec), rows(kb, 1), rows(kb, 2));
+end
+
 model.header = header;
 model.nmax = nmax;
 model.C = C;
