@@ -40,7 +40,10 @@ politely on 429/5xx honouring the server's Retry-After header
 (`shLowLevel.httpFetch`). Data locations persist across sessions via
 `setup_shAnalysis(SeriesFolder=..., GravisFolder=..., DDKFolder=...)`
 (setpref-backed); `quantity="none"` synthesizes raw coefficient
-fields.
+fields. `shLowLevel.oceanChain` closes the chain family with the
+barystatic ocean series (measured GIA lever +0.89 mm/yr), and
+`slepianProject` turns the Slepian basis into well-posed regional
+analysis.
 
 ## Documentation
 

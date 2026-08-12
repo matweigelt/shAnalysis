@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.10 (R2026a-compatible) 12-Aug-2026
+% Version 3.9.0 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,29 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.9.0 (ocean chain; Slepian application; gfc dot terms)
+%   - shLowLevel.oceanChain (roadmap item 7): the ocean sibling of the
+%     validated chains - gravisL2B corrections + GIA (ON: the ocean-
+%     floor correction is a measured +0.89 mm/yr lever), gauss445,
+%     area-weighted ocean-mean series, trend/annual fit, and the honest
+%     residual noise proxy sigMon. Acceptance run (COST-G RL02.1, 252
+%     months, |lat|<=66 crude-continent mask): +1.49 +/- 0.02 mm/yr
+%     (+312 Gt/yr), annual amp 8.0 mm, sigMon 0.0121 m; the ocean MEAN
+%     is filter-invariant to 0.01 mm/yr while unfiltered pixel
+%     residuals are stripe-dominated (1.62 m) - the guide-V6 "trend
+%     ocean RMS is mostly real signal" finding, now an API. GAD/GAA
+%     restoration is a declared limitation (GADFolder= adds GAD where
+%     available; AOD1B carries no secular trend by construction).
+%   - shLowLevel.slepianProject (roadmap item 8): the application half
+%     of the existing slepianBasis - project coefficient series onto
+%     the ~Shannon leading tapers and back; regional analysis estimates
+%     ~N coefficients instead of P. Cross-validated: the Gauss-Legendre
+%     kernel reproduces an independent Python ring-quadrature reference
+%     (30-deg cap, lambda_1 = 0.999981).
+%   - ICGEM 'dot' secular lines (roadmap item 8) are read as 'trnd'
+%     synonyms; files carrying them route through the line parser so
+%     the bulk fast-path's group semantics stay untouched.
 %
 % New in v3.8.10 (name-value convention; quantity "none"; setup prefs)
 %   - Name-value convention, codified and regression-tested: canonical

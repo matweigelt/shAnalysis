@@ -16,6 +16,7 @@ function model = shReadGFC(filename)
 %     .variableTerms   struct array of time-variable terms from gfct-style
 %                       files (trnd/acos/asin lines), fields:
 %                       .type ('trnd'/'acos'/'asin'), .n, .m, .C, .S,
+%                       ('dot' lines are read as 'trnd' - ICGEM synonym),
 %                       .t0, .t1 (validity/reference epochs, as given in
 %                       the file, format/units not reinterpreted here --
 %                       check the file header for the epoch convention).
@@ -102,6 +103,12 @@ if fastPath                                     %#ok<ALIGN>
     kk = {'gfc', 'gfct', 'trnd', 'acos', 'asin'};
     Gv = cell(1, 5); Gn = cell(1, 5);           % per width-subgroup
     okBulk = true;
+    if ~isempty(regexp(body, '^[ \t]*dot[ \t]', 'once', 'lineanchors'))
+        % ICGEM 'dot' secular lines: handled by the line parser (which
+        % maps them to 'trnd'); the bulk groups' ki semantics stay
+        % untouched. Static models with dot terms are small enough.
+        okBulk = false;
+    end
     for ki = 1:5
         % [ \t]+ after the key cannot match the 't' of gfct, so the
         % 'gfc' pattern already excludes gfct lines - no filter needed
@@ -284,7 +291,8 @@ while ischar(line)
                 varRows(end+1,:) = {'gfct', n, m, str2double(parts{4}), ...
                     str2double(parts{5}), t0, t1, NaN}; %#ok<AGROW>
                 nmax = max(nmax, n);
-            elseif strcmp(key, 'trnd') || strcmp(key, 'acos') || strcmp(key, 'asin')
+            elseif any(strcmp(key, {'trnd', 'dot', 'acos', 'asin'}))
+                if strcmp(key, 'dot'), key = 'trnd'; end   % ICGEM synonym
                 n = str2double(parts{2});
                 m = str2double(parts{3});
                 Cval = str2double(parts{4});
