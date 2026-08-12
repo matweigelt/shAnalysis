@@ -100,9 +100,15 @@ if fastPath                                     %#ok<ALIGN>
     body = regexprep(body, '^\s*#[^\n]*\n', '', 'lineanchors');
     isV2f = isfield(header, 'format') && ...
         contains(lower(char(string(header.format))), 'icgem2.0');
-    kk = {'gfc', 'gfct', 'trnd', 'dot', 'acos', 'asin'};
+    kk = {'gfc', 'gfct', 'trnd', 'acos', 'asin'};
     Gv = cell(1, 5); Gn = cell(1, 5);           % per width-subgroup
     okBulk = true;
+    if ~isempty(regexp(body, '^[ \t]*dot[ \t]', 'once', 'lineanchors'))
+        % ICGEM 'dot' secular lines: handled by the line parser (which
+        % maps them to 'trnd'); the bulk groups' ki semantics stay
+        % untouched. Static models with dot terms are small enough.
+        okBulk = false;
+    end
     for ki = 1:5
         % [ \t]+ after the key cannot match the 't' of gfct, so the
         % 'gfc' pattern already excludes gfct lines - no filter needed
