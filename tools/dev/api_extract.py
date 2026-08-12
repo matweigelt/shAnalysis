@@ -196,6 +196,154 @@ def merge_iodocs(args, iodocs):
 # Toolbox-wide fixed meanings (C(n+1,m+1) indexing, geocentric latitudes,
 # user-supplied Love numbers). Used only when a help section adds nothing.
 CONVENTION_DESCS = {
+    # --- v3.10.0 completeness pass: shared toolbox conventions.
+    # Defaults in the tables come from the arguments blocks, never from
+    # here - these entries carry semantics only.
+    "ln": "load Love numbers l_n (horizontal), same layout as kn",
+    "quantity": "output functional: 'ewh', 'geoid', 'potential', "
+        "'gravity_anomaly', 'gravity_disturbance', "
+        "'gravity_gradient_rr' or 'none' (dimensionless passthrough)",
+    "latdeg": "geocentric latitudes [deg]",
+    "londeg": "longitudes [deg], [0, 360)",
+    "latvec": "geocentric latitude vector of the grid [deg]",
+    "lonvec": "longitude vector of the grid [deg], [0, 360)",
+    "idx": "coefficient index from shLowLevel.shIndex (mind its "
+        "MinDegree = 2 default)",
+    "grid": "spatial grid, (nLat x nLon) or (nLat x nLon x T)",
+    "nmax": "maximum spherical-harmonic degree",
+    "nmin": "minimum degree included",
+    "mindegree": "lowest degree carried by the index/operation",
+    "epoch": "epoch as decimal year",
+    "epochs": "epochs as decimal years, (T x 1)",
+    "tyears": "time stamps as decimal years, (T x 1)",
+    "rho_ave": "mean Earth density [kg/m^3] (default 5517, overridable)",
+    "rho_water": "water density [kg/m^3] (default 1000, overridable)",
+    "sigmac": "1-sigma uncertainties of C, same indexing",
+    "sigmas": "1-sigma uncertainties of S, same indexing",
+    "height": "evaluation height above the reference radius [m]",
+    "weights": "per-observation or per-cell weights",
+    "kaula": "Kaula-rule regularization scale (0 disables)",
+    "mask": "logical region mask on the working grid",
+    "names": "display names, one per series/solution",
+    "plot": "produce the diagnostic figure",
+    "ax": "target axes handle ([] creates a new figure)",
+    "clim": "color limits [lo hi] ([] = automatic)",
+    "coast": "draw coastlines",
+    "units": "unit label used for annotation",
+    "projection": "map projection name",
+    "title": "figure title",
+    "colormap": "colormap name or array",
+    "dest": "destination folder (created if absent)",
+    "baseurl": "server base URL - override for mirrors or testing",
+    "timeout": "per-request timeout [s]",
+    "proxy": "proxy server URL ('' = direct)",
+    "update": "re-download/overwrite files that already exist",
+    "quiet": "suppress progress output",
+    "release": "product release identifier",
+    "catalog": "pre-fetched catalogue table (skips the listing call)",
+    "filename": "output/input file path",
+    "sidecar": "write the metadata sidecar next to the file",
+    "robust": "iteratively reweighted (Huber) estimation",
+    "huberk": "Huber tuning constant",
+    "maxiter": "iteration cap",
+    "tol": "convergence tolerance",
+    "oversample": "quadrature-grid refinement factor (boundary "
+        "resolution grows linearly, cost quadratically)",
+    "bufferkm": "outward buffer of the region boundary [km]",
+    "taperkm": "cosine taper width at the region edge [km]",
+    "chunksize": "rows processed per block (memory/speed trade-off)",
+    "usecache": "reuse the Legendre cache between calls",
+    "maxmemgb": "memory ceiling for the operation [GB]",
+    "lattype": "'geocentric' (native) or 'geodetic' (converted via "
+        "Flattening)",
+    "flattening": "flattening used for geodetic-latitude conversion "
+        "(default 1/298.257223563)",
+    "t0": "reference epoch of the fit [decimal years]",
+    "periods": "periodic components to fit [yr]",
+    "arcorrect": "inflate sigmas for lag-1 autocorrelation",
+    "breaks": "break epochs for piecewise terms [decimal years]",
+    "noisecov": "noise covariance from shLowLevel.buildNoiseCov",
+    "constraints": "linear constraint spec applied to the estimate",
+    "blocks": "order-block structure exploited by the solver",
+    "seed": "random seed for reproducibility",
+    "keepsamples": "return the raw Monte-Carlo samples",
+    "fun": "function handle mapping a coefficient set to the target "
+        "quantity",
+    "cov": "coefficient covariance (full or per-coefficient)",
+    "n": "number of samples/realizations",
+    "basin": "basin polygon [lat lon] in degrees or mask",
+    "matchtolerance": "epoch matching tolerance [yr]",
+    "tslist": "cell array of shSeries to compare",
+    "tscell": "cell array of shSeries, one per centre",
+    "tsmodel": "model series the scaling is derived from",
+    "allowmissing": "tolerate epochs absent from some centres",
+    "tolerance": "epoch matching tolerance [yr]",
+    "region": "region as polygon [lat lon] deg, mask, or "
+        "@(lat, lon) handle (see evalMask)",
+    "which": "selection of items to act on",
+    "system": "normal-field system, e.g. 'GRS80' or 'WGS84'",
+    "a": "semi-major axis of the normal ellipsoid [m]",
+    "f": "flattening of the normal ellipsoid",
+    "omega": "angular velocity of the normal ellipsoid [rad/s]",
+    "gm1": "GM the coefficients are currently scaled to [m^3/s^2]",
+    "r1": "R the coefficients are currently scaled to [m]",
+    "gm2": "target GM [m^3/s^2]",
+    "r2": "target R [m]",
+    "columns": "column selection/order of the input table",
+    "maxdegree": "truncate the table at this degree",
+    "interp": "fill gaps by interpolation across degree",
+    "inframe": "reference frame of the input (CM/CE/CF)",
+    "outframe": "reference frame of the output (CM/CE/CF)",
+    "gapthreshold": "gap length that breaks the plotted line [yr]",
+    "trend": "overlay the fitted trend line",
+    "label": "series label used in the legend",
+    "months": "month selection, 'YYYY-MM' strings",
+    "product": "product identifier to download",
+    "pattern": "filename glob the folder is scanned with",
+    "truncate": "truncate solutions at this degree",
+    "xres": "residual coefficient stack after the deterministic fit",
+    "fullcov": "assemble the full covariance (memory-heavy)",
+    "shrinkage": "shrink off-diagonal covariance toward diagonal",
+    "assemble": "return the assembled matrix instead of factors",
+    "mode": "operating mode of the routine (see the function help)",
+    "signalmode": "signal-covariance construction mode",
+    "nitersignal": "signal/noise re-estimation iterations",
+    "vcemindegree": "lowest degree entering variance-component "
+        "estimation",
+    "vcebands": "degree bands for variance-component estimation",
+    "floorrel": "relative floor applied to the signal spectrum",
+    "mapsmooth": "spatial smoothing radius of the variance map [km]",
+    "degvar": "degree-variance model of the signal",
+    "noise": "noise degree-variance model or level",
+    "signal": "signal degree-variance model",
+    "alpha": "filter strength/regularization parameter",
+    "op": "linear operator/kernel the map is derived from",
+    "t": "target point or epoch of the evaluation",
+    "naz": "number of azimuth samples",
+    "psimax": "maximum spherical distance evaluated [deg]",
+    "npsi": "number of spherical-distance samples",
+    "loadregion": "load region as polygon/mask/handle (see evalMask)",
+    "ocean": "ocean function as polygon/mask/handle (see evalMask)",
+    "loadvalue": "load amplitude assigned to the region [m EWH]",
+    "b": "basin-kernel coefficient vector from basinKernel",
+    "permonth": "return one factor per month instead of one overall",
+    "g1": "first coefficient set",
+    "g2": "second coefficient set",
+    "in": "input the object is constructed from (see the class help)",
+    "producttype": "product type string, e.g. 'gravity_field'",
+    "tidesystem": "tide system, e.g. 'zero_tide'",
+    "header": "raw header key/value struct",
+    "variableterms": "gfct time-variable terms (trnd/acos/asin)",
+    "history": "provenance strings carried along",
+    "modelname": "model name written to the header",
+    "comment": "free-text comment written to the header",
+    "cval": "cosine coefficient value",
+    "sval": "sine coefficient value",
+    "m": "spherical-harmonic order",
+    "x": "coefficient stack, (P x T) in index ordering",
+    "ts": "shSeries the operation runs on",
+    "framerate": "animation frame rate [1/s]",
+    "description": "free-text description written to the sidecar",
     "obj": "the object the method is called on",
     "gm": "gravitational constant times Earth mass [m^3/s^2] "
           "(default 3.986004415e14, overridable)",
@@ -367,6 +515,26 @@ def main():
     print(f"missing description: {len(miss_desc)}")
     if miss_desc:
         print("  " + ", ".join(miss_desc))
+    # v3.10.0: convention fallback as a FINAL pass over every entity,
+    # whatever extraction path built it - help text always wins, the
+    # lexicon only fills what stayed blank.
+    def _fallback(a):
+        if isinstance(a, dict) and not (a.get("desc") or "").strip():
+            key = str(a.get("name", "")).lower()
+            stem = re.sub(r"(vec|deg|grid|0|1)$", "", key)
+            a["desc"] = (CONVENTION_DESCS.get(key)
+                         or CONVENTION_DESCS.get(stem, ""))
+    def _walk_entity(e):
+        for k in ("args", "options", "inputs", "outputs", "props",
+                  "properties"):
+            for a in e.get(k, []) or []:
+                _fallback(a)
+        for meth in e.get("methods", []) or []:
+            _walk_entity(meth)
+    for _grp in entries.values() if isinstance(entries, dict) else [entries]:
+        for _e in _grp:
+            if isinstance(_e, dict):
+                _walk_entity(_e)
     with open("/home/claude/api_data.py", "w") as f:
         f.write("# generated by api_extract.py - do not edit\n")
         f.write("API = " + repr(entries) + "\n")

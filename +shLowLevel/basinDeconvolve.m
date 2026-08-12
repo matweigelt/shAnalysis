@@ -13,6 +13,10 @@ function [avgHat, out] = basinDeconvolve(B, op, opts)
 %   prototype). The deterministic part is added back via B'*model (it was
 %   never filtered).
 %
+%   Options
+%     Ridge (0)       ridge regularization scale added to the normal
+%                     matrix (times norm(A); 0 disables)
+%
 %   Outputs (K x T):
 %     avgHat        deconvolved basin averages  ((B'B)*c + B'model)/diag(B'B)
 %     out.avgNaive  naive averages of the filtered field (attenuated+leaky)

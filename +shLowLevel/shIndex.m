@@ -8,6 +8,9 @@ function idx = shIndex(Lmax, opts)
 %   Fields: n, m, cs (0=C, 1=S) [P x 1], P, Lmax, minDegree,
 %           pos (Lmax+1 x Lmax+1 x 2) lookup: pos(n+1,m+1,cs+1) -> linear
 %           index (0 if absent).
+%   Inputs
+%     Lmax            maximum spherical-harmonic degree of the index
+%
 %   Outputs
 %     idx        struct: n/m/cs (P x 1), P (1 x 1), nmax, MinDegree - the canonical vector ordering of the toolbox
 %

@@ -9,6 +9,10 @@ function y = icgemDate2Year(d)
 %   keeps pre-v2.1 files evaluating identically.
 %
 %   Inputs   d  double array, yyyymmdd(.hhmm) or decimal years
+%   Inputs
+%     d               dates as yyyymmdd(.hhmm) numbers or decimal
+%                     years (passed through)
+%
 %   Outputs  y  double array, decimal years
 %
 %   Claude (Fable 5), 2026-08-07.

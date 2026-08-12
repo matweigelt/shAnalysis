@@ -15,11 +15,12 @@ function [files, info] = fetchGAX(dest, opts)
 %             are created as needed
 %
 %   Options
-%     Products (["GAD" "GAA"]) (1 x k string) any of GAA/GAB/GAC/GAD;
+%     Products (["GAD", "GAA"])  (1 x k string) any of GAA/GAB/GAC/GAD;
 %              GAD restores the model ocean signal, the ocean mean of
 %              GAA removes the atmospheric land-ocean mass term
-%     Series (GFZ RL06 + RL06.3 GFO) (1 x s string) ICGEM catalogue
-%              paths "group/center/series" fed to shLowLevel.listICGEM
+%     Series (["01_GRACE/GFZ/GFZ Release 06", "01_GRACE/GFZ/GFZ Release 06.3 (GFO)"])
+%              (1 x s string) ICGEM catalogue paths
+%              "group/center/series" fed to shLowLevel.listICGEM
 %     Update (false) (1 x 1) re-download files that already exist
 %     MaxFiles (Inf) (1 x 1) stop after this many downloads per
 %              product - bounded acceptance runs, not a user knob

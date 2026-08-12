@@ -77,6 +77,9 @@ methods
         %WITHNOTE Append a provenance note to the history (v2.2).
         %   OBJ = clim.withNote(TXT) - the only supported way to annotate
         %   from outside the class (history is SetAccess=private).
+        %   Inputs
+        %     txt  free-text provenance note appended to the history
+        %
         %   Outputs
         %     obj        (1 x 1) shClimatology   copy with the note appended to its history
         %
@@ -98,6 +101,10 @@ methods
         %   are kept - the model is treated as exact (documented
         %   limitation; GIA model spread often dominates regional trend
         %   error budgets - compare several models).
+        %   Inputs
+        %     gia  GIA rate field (shCoefficients, struct or file) removed
+        %          from the trend component
+        %
         %   Outputs
         %     out  (1,1) shClimatology  copy with the GIA trend removed from the
         %          trend component; history appended
@@ -210,6 +217,9 @@ methods
         %   cos and sin terms of period obj.periods(K) [yr] - e.g. the
         %   S2/K2/K1 tidal alias terms when fitted via
         %   ts.climatology(Periods=[161/365.25, 3.66, 7.48]).
+        %   Inputs
+        %     k  harmonic index: 1 = annual, 2 = semiannual, ...
+        %
         %   Outputs
         %     gc         (1 x 1) shCoefficients   cosine component of the k-th extra period
         %     gs         (1 x 1) shCoefficients   sine component

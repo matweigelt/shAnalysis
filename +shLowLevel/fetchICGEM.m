@@ -44,6 +44,9 @@ function [file, info] = fetchICGEM(model, opts)
 %       fs = shLowLevel.fetchICGEM(T(12, :));
 %       ts = shSeries.fromFolder(fileparts(fs(1)), Pattern = "*.gfc*");
 %
+%   Inputs
+%     model           ICGEM model name as listed by shLowLevel.listICGEM
+%
 %   Outputs
 %     file  string   local path(s): one per model, or every file of the
 %              series in temporal mode (bulk selections are concatenated)

@@ -23,12 +23,17 @@ function snx = readSINEX(filename, opts)
 %
 %   Options
 %     Index   ([]) shLowLevel.shIndex struct for reordering
+%     Output  ("raw")  "raw" returns the parsed blocks, "covariance"
+%                     assembles the covariance from a NEQ solution
+%     Only    ("all")  "estimate" streams only the SOLUTION/ESTIMATE
+%                     block (large files)
+%
 %   Outputs
 %     snx  (1,1) struct  fields: x (P x 1 double), idx (struct),
 %          Cxx (P x P double, [] unless Only="full"), epoch (1,1 double),
 %          N/b (normal equations when present)
 %
-%   Outputs (struct)
+%   Fields of the returned struct
 %     n, m, cs (Q,1)  parameter list (cs: 0=C, 1=S), file order or IDX order
 %     x, sig   (Q,1)  estimates and formal sigmas (NaN if absent)
 %     M        (Q,Q)  symmetric matrix (covariance or NEQ), [] if absent

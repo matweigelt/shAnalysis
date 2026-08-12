@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.10.0] - 2026-08-12 - fetchGAX, full ocean restoration, API completeness
+
+fetchGAX downloads the AOD1B GAA/GAB/GAC/GAD monthly means from the
+GFZ ICGEM pages (2002 on, centre-independent). oceanChain gains the
+GAAFolder ocean-mean subtraction completing the Chambers & Willis
+(2010) restoration, with epoch coverage reported. API tables: blank
+argument descriptions 616 -> 0 (convention lexicon as final pass +
+26 functions with new help lines); chains_flow now shows all four
+lanes including the fetchGAX feed.
+
 ## [3.9.0] - 2026-08-12 - oceanChain, Slepian application, gfc dot terms
 
 oceanChain delivers the barystatic ocean-mean series (+1.49 +/- 0.02

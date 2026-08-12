@@ -175,6 +175,9 @@ methods
 
     function g = at(obj, k)
         %AT Extract epoch k as an shCoefficients.
+        %   Inputs
+        %     k  epoch index (1-based) or decimal year (nearest match)
+        %
         %   Outputs
         %     g          (1 x 1) shCoefficients   month k with epoch and sigmas
         %
@@ -202,6 +205,9 @@ methods
         %MEAN Mean field of the series.
         %   G = ts.mean (Omitnan=true default) returns an shCoefficients;
         %   its sigmas, when present, are the standard error of the mean.
+        %   Inputs
+        %     Omitnan (true)  ignore NaN coefficients in the average
+        %
         %   Outputs
         %     g          (1 x 1) shCoefficients   temporal mean field (omits NaN months)
         %
@@ -582,6 +588,10 @@ methods
         %   is NOT propagated - documented limitation, see the guide).
         %   The GIA model is truncated to the series nmax; a model with
         %   smaller nmax is zero-padded with a note in history.
+        %   Inputs
+        %     gia  GIA rate field: shCoefficients, coefficient struct or
+        %          .gz/.gfc file path (subtracted as rate times (t - Epoch))
+        %
         %   Outputs
         %     out        (1 x 1) shSeries   GIA trend removed about the series mean epoch
         %
@@ -665,6 +675,10 @@ methods
         %   Each epoch of OBJ is matched to the nearest GAX epoch within
         %   Tolerance [yr]. Missing matches error (or, with
         %   AllowMissing=true, leave those epochs unchanged with a note).
+        %   Inputs
+        %     gax  GAX product to add back: shSeries, folder of monthly
+        %          .gfc, or file list (epoch-matched)
+        %
         %   Outputs
         %     out        (1 x 1) shSeries   background model added back epoch-matched (e.g. GSM + GAD)
         %
@@ -1037,6 +1051,10 @@ methods
         %   stored operator from ts.filter (see shLowLevel.basinDeconvolve).
         %   OUT.sigma (K x T) is the 1-sigma noise uncertainty of AVG
         %   propagated through the deconvolution (v2.1).
+        %   Inputs
+        %     Deconvolve (false)  apply shLowLevel.basinDeconvolve to the
+        %          basin series (undo kernel attenuation)
+        %
         %   Outputs
         %     avg        (K x T) double   basin averages (deconvolved when Deconvolve=true)
         %     out        struct: sigma (K x T), c, attn, condA (deconvolution path)
@@ -1103,6 +1121,9 @@ methods (Static)
     function obj = read(files, opts)
         %READ Read a series of gfc files (pattern or list), sorted by epoch.
         %   TS = shSeries.read("GSM-2_*.gfc") or shSeries.read(fileList).
+        %   Inputs
+        %     files  folder, file list or glob of monthly .gfc solutions
+        %
         %   Outputs
         %     obj        (1 x 1) shSeries   wildcard-read, epoch-sorted stack
         %

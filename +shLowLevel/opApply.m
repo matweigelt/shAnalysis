@@ -9,6 +9,9 @@ function Yout = opApply(op, Z, t, mode)
 %
 %   Inputs
 %     mode  (1,1) string  'apply' | 'applyT' - forward or transposed operator action
+%     Z               coefficient vector/stack in index ordering the
+%                     operator acts on
+%
 %   Outputs
 %     Yout  (P x T) double  operator applied to every column of Y
 %

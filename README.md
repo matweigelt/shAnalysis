@@ -43,7 +43,9 @@ politely on 429/5xx honouring the server's Retry-After header
 fields. `shLowLevel.oceanChain` closes the chain family with the
 barystatic ocean series (measured GIA lever +0.89 mm/yr), and
 `slepianProject` turns the Slepian basis into well-posed regional
-analysis.
+analysis. `shLowLevel.fetchGAX` completes the ocean story:
+GAD/GAA from 2002 on, one call, full Chambers-&-Willis restoration in
+`oceanChain`.
 
 ## Documentation
 

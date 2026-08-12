@@ -11,6 +11,9 @@ function out = effectiveCorr(x, y)
 %   p-value uses the incomplete beta function (base MATLAB betainc),
 %   no Statistics Toolbox required.
 %
+%   Inputs
+%     y               series the lag-1 autocorrelation is estimated from
+%
 %   Outputs
 %     out        (1,1) struct  fields:
 %                  .r     (1,1) double  Pearson correlation

@@ -46,6 +46,10 @@ function W = readDDK(source, opts)
 %   through unfiltered - consistent with the reference implementation.
 %
 %   Claude (Fable 5), 2026-08-07 (binary support v2.2.1, same day).
+%   Inputs
+%     source          DDK filter file or folder the coefficients are
+%                     read from
+%
 %   Outputs
 %     W          struct: nmax (1 x 1), name, blocks (1 x 241) struct array with m, cs, n (degrees), M (square block matrix)
 %
