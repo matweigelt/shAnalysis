@@ -946,11 +946,14 @@ methods
         %     Robust (false)     (1 x 1) logical, Huber re-weighting of
         %         epoch residuals
         %     MinDegree (2)      (1 x 1) lowest degree entering the filter
-        %     Blocks ("order")   ("order" | "full") normal-matrix blocking
-        %     Shrinkage (0)      (1 x 1) shrink the empirical signal
-        %         covariance toward its diagonal, 0..1
-        %     VCEMinDegree (2)   (1 x 1) lowest degree in the VCE bands
-        %     VCEBands (4)       (1 x 1) number of variance-component bands
+        %     Blocks ("auto")    ("auto" | "on" | "off") order-block usage in
+        %         the normal matrix
+        %     Shrinkage ([])     (1 x 1) shrink the empirical signal
+        %         covariance toward its diagonal, 0..1; [] auto-selects
+        %     VCEMinDegree ([])  (1 x 1) lowest degree in the VCE bands;
+        %         [] follows MinDegree
+        %     VCEBands ([])      (1 x B) variance-component band edges;
+        %         [] uses the built-in banding
         %
         %   Outputs
         %     out        (1 x 1) shSeries   tvANS-filtered series with sigmaCs/Ss posterior stacks (exact incl. constraints, v2.5)
