@@ -2325,6 +2325,13 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testFetchGAXContract(testCase)
+%TESTFETCHGAXCONTRACT bad products fail loudly before any network use.
+verifyError(testCase, ...
+    @() shLowLevel.fetchGAX(tempdir, Products = "GAX"), ...
+    'shLowLevel:fetchGAX:badProduct');
+end
+
 function testOceanChainContract(testCase)
 %TESTOCEANCHAINCONTRACT kn is required (no silent frame assumption),
 %   mirroring the other chains' contract.
