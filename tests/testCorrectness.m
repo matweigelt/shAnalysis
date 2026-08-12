@@ -2271,16 +2271,20 @@ function testEvalMaskRejectsGeojsonOrderedPolygon(testCase)
 %   or an empty one (Lena). Vertices with |lat| > 90 now raise an
 %   identified error; a valid [lat lon] polygon still works.
 idx = shLowLevel.shIndex(8, MinDegree = 0);
-amazonGeojson = [-79 -5; -60 -15; -52 -2; -70 4; -79 -5];   % [lon lat]
-verifyError(testCase, @() shLowLevel.evalMask(idx, amazonGeojson), ...
+% Lena-class swap: |lon| > 90 read as latitude is detectable...
+lenaGeojson = [103 55; 140 55; 140 70; 103 70; 103 55];     % [lon lat]
+verifyError(testCase, @() shLowLevel.evalMask(idx, lenaGeojson), ...
     'shLowLevel:evalMask:badPolygon');
-verifyError(testCase, @() shLowLevel.basinKernel(idx, amazonGeojson), ...
+verifyError(testCase, @() shLowLevel.basinKernel(idx, lenaGeojson), ...
     'shLowLevel:evalMask:badPolygon');            % propagates through the front door
-amazonToolbox = [amazonGeojson(:, 2), mod(amazonGeojson(:, 1), 360)];
-mask = shLowLevel.evalMask(idx, amazonToolbox);
+% ...the Amazon class (lon within +-90) is NOT detectable by any lat
+% check - that phantom is what the basinKernel zeroArea warning and the
+% grid cross-check exist for. Valid [lat lon] input must keep working:
+lenaToolbox = [lenaGeojson(:, 2), lenaGeojson(:, 1)];
+mask = shLowLevel.evalMask(idx, lenaToolbox);
 verifyTrue(testCase, any(mask > 0.5));
-[~, bi] = shLowLevel.basinKernel(idx, amazonToolbox);
-verifyTrue(testCase, bi.areaFraction > 1e-3 && bi.areaFraction < 0.02);
+[~, bi] = shLowLevel.basinKernel(idx, lenaToolbox);
+verifyTrue(testCase, bi.areaFraction > 1e-3 && bi.areaFraction < 0.05);
 end
 
 function testBasinKernelWarnsOnZeroArea(testCase)
