@@ -28,8 +28,14 @@ function [out, rep] = oceanChain(folder, opts)
 %                        over land (oceanRMS contract; the chains'
 %                        documented 5 Gt/yr latitude-band lesson)
 %     gravisFolder ("")  GravIS aux folder; "" = shipped data/gravis
-%     GIAFile (default)  "" disables the GIA rate (see gravisL2B)
+%     GIAFile (GravIS ICE-6G_D)  "" disables the GIA rate; the default
+%                        ocean-floor correction raises the barystatic
+%                        trend by about +1 mm/yr (the guide-V10 lever)
 %     GIAEpoch (2011)    (1 x 1) GIA reference epoch
+%     Filter ("gauss445") "none" | "gaussN" [km]; the ocean MEAN is
+%                        nearly filter-invariant, but sigMon describes
+%                        the filtered world - unfiltered, the pixel
+%                        residuals are stripe-dominated (1.6 m measured)
 %     GridStep (1)       (1 x 1) synthesis graticule [deg]
 %     SpanEnd ([])       (1 x 1) keep epochs <= SpanEnd [decimal years]
 %     GADFolder ("")     folder of GAD-2_*.gfc; when set, epochs with a
@@ -69,8 +75,9 @@ arguments
     opts.kn double = []
     opts.OceanMask = []
     opts.gravisFolder (1,1) string = ""
-    opts.GIAFile string {mustBeScalarOrEmpty} = missing
+    opts.GIAFile (1,1) string = "GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz"
     opts.GIAEpoch (1,1) double = 2011
+    opts.Filter (1,1) string = "gauss445"
     opts.GridStep (1,1) double {mustBePositive} = 1
     opts.SpanEnd double {mustBeScalarOrEmpty} = []
     opts.GADFolder (1,1) string = ""
@@ -82,9 +89,8 @@ if isempty(opts.kn)
 end
 R = 6378136.3; GM = 3.986004415e14; Re = 6371e3;
 % ---- corrected series (shared core)
-l2bArgs = {'GIAEpoch', opts.GIAEpoch};
+l2bArgs = {'GIAEpoch', opts.GIAEpoch, 'GIAFile', opts.GIAFile};
 if ~isempty(opts.SpanEnd), l2bArgs = [l2bArgs, {'SpanEnd', opts.SpanEnd}]; end
-if ~ismissing(opts.GIAFile), l2bArgs = [l2bArgs, {'GIAFile', opts.GIAFile}]; end
 [ts, repL] = shLowLevel.gravisL2B(folder, opts.gravisFolder, l2bArgs{:});
 ep = ts.epochs(:); T = numel(ep);
 steps = repL.steps;
@@ -106,6 +112,15 @@ else
 end
 kn = opts.kn; if size(kn, 2) > 1, kn = kn(:, 2); end
 nmaxS = size(ts.Cs, 1) - 1;
+if opts.Filter ~= "none"
+    rkm = double(extractAfter(opts.Filter, "gauss"));
+    wf = shLowLevel.shGaussianWeights(nmaxS, rkm); wf = wf(:);
+    for k = 1:T
+        ts.Cs(:,:,k) = ts.Cs(:,:,k) .* wf;
+        ts.Ss(:,:,k) = ts.Ss(:,:,k) .* wf;
+    end
+    steps(end+1) = "filter " + opts.Filter + " applied before synthesis";
+end
 E = zeros(numel(lat), numel(lon), T); Pl = [];
 for k = 1:T
     if isempty(Pl)
