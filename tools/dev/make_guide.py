@@ -1748,6 +1748,32 @@ story += [para("<b>The fetch family, one function per source and "
 story += code("""f = shLowLevel.fetchITSGBackground(["2018-06", "2018-07"]);
 s = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
 snx = shLowLevel.readSINEX(s(1), Only = "estimate");""")
+story += [para("<b>VDK decorrelation - the reason the SINEX fetcher "
+               "exists.</b> With the monthly normal-equation matrices "
+               "the VDK/VADER filter of Horvath et al. (2018) becomes "
+               "buildable: x<sub>f</sub> = (N + &alpha;M)<sup>-1</sup>N x "
+               "with the FORMAL monthly N (structure changes with "
+               "orbit, repeat cycles and instrument state) and a "
+               "cyclostationary Kaula signal model sigma_M(l) = a l^b "
+               "estimated per calendar month from a pre-filtered "
+               "series (signalVarianceKaula, with the exact "
+               "log-chi-square bias correction - without it a biases "
+               "6%% low). Algebraically this is the SAME family as the "
+               "tvANS Wiener filter (S = M<sup>-1</sup>, "
+               "Python-verified to 1e-15); the difference is the "
+               "input, and it is worth 15%% median cumulative geoid "
+               "error - an order of magnitude in short-repeat-cycle "
+               "months (paper Table 2). tvANS remains the tool for "
+               "series without released covariances. The full series "
+               "is a deliberate batch (~460 MB SINEX per month): "
+               "tools/dev/run_vdk_series.m is the resumable driver - "
+               "downloads skip present files, months skip existing "
+               "output, the signal model is cached, and the paper's "
+               "closed-form identity runs as a built-in self-test.")]
+story += code("""idx = shLowLevel.shIndex(96, MinDegree = 2);
+snx = shLowLevel.readSINEX(f, Index = idx);        % N + x, idx order
+[ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
+xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(mo, :), Alpha = 1);""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

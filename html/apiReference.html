@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.12.0)</h1>
+<h1>shAnalysis API reference (v3.13.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -107,6 +107,7 @@ code itself.</p>
 <a href="#shLowLevel.shSynthesis">shSynthesis</a>
 <a href="#shLowLevel.shSynthesisDeformation">shSynthesisDeformation</a>
 <a href="#shLowLevel.shSynthesisGradientTensor">shSynthesisGradientTensor</a>
+<a href="#shLowLevel.signalVarianceKaula">signalVarianceKaula</a>
 <a href="#shLowLevel.slepianBasis">slepianBasis</a>
 <a href="#shLowLevel.slepianProject">slepianProject</a>
 <a href="#shLowLevel.spatialStats">spatialStats</a>
@@ -118,6 +119,7 @@ code itself.</p>
 <a href="#shLowLevel.tvANSFilter">tvANSFilter</a>
 <a href="#shLowLevel.twsChain">twsChain</a>
 <a href="#shLowLevel.vceRescale">vceRescale</a>
+<a href="#shLowLevel.vdkApply">vdkApply</a>
 <a href="#shLowLevel.vecFromCS">vecFromCS</a>
 <a href="#shLowLevel.version">version</a>
 <a href="#shLowLevel.writeAnimation">writeAnimation</a>
@@ -1179,6 +1181,18 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: maxTraceResidual (max |trace|/max|G| over the grid, excluding poles) - the built-in Laplace self-check</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.signalVarianceKaula">
+<h3><code>shLowLevel.signalVarianceKaula(Cs, Ss, epochs, opts)</code></h3>
+<p class="h1line">Cyclostationary Kaula signal variance (VDK input).</p>
+<p>[AB, INFO] = shLowLevel.signalVarianceKaula(CS, SS, EPOCHS) estimates the degree-dependent signal-variance approximation sigma_M(l) = a * l^b (Horvath et al. 2018, Eq. 2) per CALENDAR month from a coefficient series - the cyclostationary signal model of the VDK/VADER decorrelation filter. Feed a PRE-FILTERED series (e.g. DDK4, as in the paper): the estimator reads signal, so the input must not be stripe-dominated.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Cs</code></td><td>: x : x :</td><td>double</td><td>required</td></tr><tr><td><code>Ss</code></td><td>: x : x :</td><td>double</td><td>required</td></tr><tr><td><code>epochs</code></td><td>: x 1</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>LRange</code></td><td>1 x 2</td><td>double</td><td>[10, 60]</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>ab</code></td><td>(12 x 2) double  [a, b] per calendar month (Jan..Dec); evaluate as sigmaM = ab(mo, 1) * l.^ab(mo, 2) info (1 x 1) struct  nPerMonth (12 x 1 epochs used), LRange, abAll (T x 2 per-epoch fits, for inspection)</td></tr>
+</table>
+<b>Example</b><pre>    [ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
+    sigM = ab(4, 1) * (2:96)&#x27;.^ab(4, 2);   % April signal model</pre>
+</div>
 <div class="entry" id="shLowLevel.slepianBasis">
 <h3><code>shLowLevel.slepianBasis(idx, region, opts)</code></h3>
 <p class="h1line">Spatially concentrated (Slepian) basis for a region.</p>
@@ -1318,6 +1332,19 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>s</code></td><td>(T x 1) or (nBands x T) double   monthly (band-wise) VCE noise variance factors</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.vdkApply">
+<h3><code>shLowLevel.vdkApply(x, N, degOfPar, sigM, opts)</code></h3>
+<p class="h1line">Apply the VDK/VADER decorrelation filter to one solution.</p>
+<p>XF = shLowLevel.vdkApply(X, N, DEGOFPAR, SIGM) computes</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>x</code></td><td>: x 1</td><td>double</td><td>required</td></tr><tr><td><code>N</code></td><td>: x :</td><td>double</td><td>required</td></tr><tr><td><code>degOfPar</code></td><td>: x 1</td><td>double</td><td>required</td></tr><tr><td><code>sigM</code></td><td>n x m</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Alpha</code></td><td>1 x 1</td><td>double</td><td>1</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>xf</code></td><td>(P x 1) double  filtered coefficient vector info (1 x 1) struct  alpha, P, cholOK (true when (N + alpha M) factorized cleanly)</td></tr>
+</table>
+<b>Example</b><pre>    idx = shLowLevel.shIndex(96, MinDegree = 2);
+    snx = shLowLevel.readSINEX(f, Index = idx);
+    xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(mo, :), Alpha = 1);</pre>
 </div>
 <div class="entry" id="shLowLevel.vecFromCS">
 <h3><code>shLowLevel.vecFromCS(cnm, snm, idx)</code></h3>
@@ -2092,4 +2119,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.12.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.13.0). Generated by tools - do not edit.</p></body></html>

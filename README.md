@@ -51,7 +51,9 @@ column and delivers GravIS-style bottom-pressure fields, while
 `oceanChain`'s noise proxy stops blaming the ocean for being dynamic. The fetch family is complete and consistently named:
 series via `fetchITSG`/`fetchICGEM`, products via `fetchGAX`,
 `fetchSINEX` (ITSG monthly normals - the only public per-month SINEX,
-~460 MB each) and `fetchITSGBackground`.
+~460 MB each) and `fetchITSGBackground`. Those normals feed `vdkApply` - the
+VDK/VADER decorrelation of Horvath et al. (2018) with true monthly
+covariance structure; `run_vdk_series.m` drives the full-series batch.
 
 ## Documentation
 

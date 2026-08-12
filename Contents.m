@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.12.0 (R2026a-compatible) 12-Aug-2026
+% Version 3.13.0 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,26 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.13.0 (VDK/VADER decorrelation from monthly SINEX)
+%   - shLowLevel.vdkApply: the Horvath et al. (2018) filter
+%     (N + alpha*M)^-1 * N * x with the formal monthly normal-equation
+%     matrix from the ITSG SINEX; never forms the filter matrix (one
+%     Cholesky per month). Python-prevalidated: form-equivalence to
+%     the tvANS Wiener family 1e-15, closed form for M = c*N, Wiener
+%     MSE optimality on synthetics.
+%   - shLowLevel.signalVarianceKaula: cyclostationary Kaula a*l^b per
+%     calendar month from a pre-filtered series, with the EXACT
+%     log-chi-square bias correction 0.5*(psi(k/2)-log(k/2)), k=2l+1
+%     (without it the intercept biases 6% low - found by the Python
+%     pre-validation).
+%   - tools/dev/run_vdk_series.m: resumable batch driver for the full
+%     series on another machine (~460 MB SINEX/month): skip-present
+%     downloads, skip-existing outputs, cached signal model,
+%     provenance log, built-in closed-form self-test and the paper's
+%     acceptance probes.
+%   - tvANSFilter help: the exact algebraic relation and the honest
+%     division of labour between tvANS and VDK.
 %
 % New in v3.12.0 (fetch family: SINEX and ITSG background models)
 %   - shLowLevel.fetchSINEX: ITSG monthly normal-equation SINEX from
