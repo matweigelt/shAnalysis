@@ -82,7 +82,8 @@ if isempty(opts.kn)
 end
 R = 6378136.3; GM = 3.986004415e14; Re = 6371e3;
 % ---- corrected series (shared core)
-l2bArgs = {'SpanEnd', opts.SpanEnd, 'GIAEpoch', opts.GIAEpoch};
+l2bArgs = {'GIAEpoch', opts.GIAEpoch};
+if ~isempty(opts.SpanEnd), l2bArgs = [l2bArgs, {'SpanEnd', opts.SpanEnd}]; end
 if ~ismissing(opts.GIAFile), l2bArgs = [l2bArgs, {'GIAFile', opts.GIAFile}]; end
 [ts, repL] = shLowLevel.gravisL2B(folder, opts.gravisFolder, l2bArgs{:});
 ep = ts.epochs(:); T = numel(ep);

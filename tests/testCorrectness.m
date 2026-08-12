@@ -2276,8 +2276,11 @@ idx = shLowLevel.shIndex(12, MinDegree = 0);
 % assumed)
 [~, lam, info] = shLowLevel.slepianBasis(idx, @(la, lo) double(la > 60), ...
     NKeep = 3, OverSample = 8);
-verifyEqual(testCase, lam(1), 0.999981, AbsTol = 2e-4);
-verifyEqual(testCase, info.shannon, idx.P * (1 - cosd(30)) / 2, RelTol = 5e-3);
+verifyEqual(testCase, lam(1), 0.999981, AbsTol = 2e-4);   % Python ref
+verifyEqual(testCase, info.shannon, info.areaFraction * idx.P, ...
+    RelTol = 1e-10);                                       % exact identity
+verifyEqual(testCase, info.areaFraction, (1 - cosd(30)) / 2, ...
+    RelTol = 0.02);   % boundary quantization converges O(1/NLat) - measured
 end
 
 function testSlepianProjectRoundtrip(testCase)
