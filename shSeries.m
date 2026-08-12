@@ -238,10 +238,12 @@ methods
         %   significance-masked trend maps. Requires >= 6+2K epochs and
         %   NaN-free stacks (use dropNaN/select across the 2017-2018 gap).
         %   Options
-        %     Periods ([1 0.5]) (1 x K) harmonic periods to fit [yr]
-        %     ExtraPeriods (1)  (1 x 1) additional S2-alias-type periods
-        %     Breaks ([])       (1 x B) trend break epochs [decimal years]
         %     Robust (false)    (1 x 1) logical Huber re-weighting
+        %     T0 (NaN)          (1 x 1) reference epoch; NaN uses the mean
+        %     Periods ([])      (1 x K) extra harmonic periods [yr] beyond
+        %         the built-in annual + semiannual
+        %     Weights ([])      (T x 1) epoch weights
+        %     ARCorrect (false) (1 x 1) AR(1) correction of the sigmas
         %
         %   Outputs
         %     clim       (1 x 1) shClimatology   fitted bias/trend/annual/semiannual (+Periods=) with coefficient sigmas
@@ -310,11 +312,10 @@ methods
         %   trend1 + cumsum of hinges), sigmas, F (n1 x n1 x K),
         %   pValue, breaks, t0.
         %   Options
-        %     Candidates ([])  (1 x B) candidate break epochs; [] scans
-        %         the series on a regular grid
-        %     Alpha (0.01)     (1 x 1) F-test significance level
-        %     MinSpan (2)      (1 x 1) minimum segment length [yr]
-        %     Quiet (false)    (1 x 1) suppress progress output
+        %     Breaks (required) (1 x B) trend break epochs [decimal years]
+        %     Periods ([])      (1 x K) extra harmonic periods [yr]
+        %     T0 (NaN)          (1 x 1) reference epoch; NaN uses the mean
+        %     ARCorrect (false) (1 x 1) AR(1) correction of the sigmas
         %
         %   Outputs
         %     out        struct: trends per segment (shCoefficients), F/p per break, segment epochs

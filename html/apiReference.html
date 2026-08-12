@@ -180,7 +180,7 @@ code itself.</p>
 <p class="h1line">Monthly-solution noise covariance (shape matrix).</p>
 <p>[N, info] = shLowLevel.buildNoiseCov(Xres, idx) estimates the noise covariance from the residual coefficient series Xres (P x T, residuals about the deterministic model). Two modes:</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Xres</code></td><td>P x T</td><td>double</td><td>required</td></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Mode</code></td><td>n x m</td><td>-</td><td>&#x27;empirical&#x27;</td></tr><tr><td><code>FullCov</code></td><td>false</td><td>double</td><td>[]</td></tr><tr><td><code>Shrinkage</code></td><td>1 x 1</td><td>double</td><td>0.1</td></tr><tr><td><code>Assemble</code></td><td>true</td><td>-</td><td>&#x27;full&#x27;</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Mode</code></td><td>n x m</td><td>-</td><td>&#x27;empirical&#x27;</td></tr><tr><td><code>FullCov</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>Shrinkage</code></td><td>1 x 1</td><td>double</td><td>0.1</td></tr><tr><td><code>Assemble</code></td><td>n x m</td><td>-</td><td>&#x27;full&#x27;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>N</code></td><td>(P x P) double or block struct   noise covariance (order/parity block-diagonal for Assemble (&#x27;full&#x27;)=&#x27;blocks&#x27;)</td></tr>
 <tr><td><code>info</code></td><td>struct: mode, shrinkage, blocks metadata</td></tr>
@@ -190,7 +190,7 @@ code itself.</p>
 <h3><code>shLowLevel.buildSignalCov(Xres, N, idx, opts)</code></h3>
 <p class="h1line">Iterative, data-driven signal covariance.</p>
 <p>[S, info] = shLowLevel.buildSignalCov(Xres, N, idx) estimates the signal covariance from the residual series itself - no hydrology prior.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Xres</code></td><td>P x T</td><td>double</td><td>required</td></tr><tr><td><code>N</code></td><td>struct</td><td>-</td><td>required</td></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Xres</code></td><td>P x T</td><td>double</td><td>required</td></tr><tr><td><code>N</code></td><td>n x m</td><td>-</td><td>required</td></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Mode</code></td><td>n x m</td><td>-</td><td>&#x27;isotropic&#x27;</td></tr><tr><td><code>NIter</code></td><td>1 x 1</td><td>double</td><td>3</td></tr><tr><td><code>FloorRel</code></td><td>1 x 1</td><td>double</td><td>1e-8</td></tr><tr><td><code>MapSmooth</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>S</code></td><td>(P x P) double   signal covariance in idx ordering</td></tr>

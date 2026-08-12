@@ -1050,10 +1050,10 @@ methods (Static)
         %     latVec  (P,1) double  observation latitudes [deg, geocentric]
         %            nmax (1,1) double
         %   Options
-        %     Method ("quadrature")  "quadrature" | "lsq", see shAnalysisGrid
-        %     Weights ([])  (nLat x 1) latitude quadrature weights
-        %     Kaula (0)     (1 x 1) Kaula regularization for "lsq"
-        %     Name ("")     (1 x 1) string stored as the object name
+        %     Method ("auto")  "auto" | "rings" | "ls", see shAnalysisGrid
+        %     Weights ("none") ("none" | "coslat") latitude weighting
+        %     Kaula (0)     (1 x 1) Kaula regularization for "ls"
+        %     Name ("analysis")  (1 x 1) string stored as the object name
         %
         %   Outputs  obj  shCoefficients;  info: see shLowLevel.shAnalysisGrid
         %   Outputs

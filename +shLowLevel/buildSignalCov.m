@@ -31,12 +31,13 @@ function [S, info] = buildSignalCov(Xres, N, idx, opts)
 %   info: c per iteration (per-coefficient variances), variance map (mode 2).
 %   Inputs
 %     Xres (P x T) residual coefficient vectors (shIndex ordering)
-%     N    (struct) noise covariance container from buildNoiseCov
+%     N    (P x P | struct) noise covariance, dense or the block
+%         container from buildNoiseCov(Assemble="blocks")
 %   Options
 %     Mode ("isotropic")  "isotropic" | "inhomogeneous" signal model
-%     NIter (3)      (1 x 1) re-estimation iterations
-%     FloorRel (0.01)(1 x 1) relative variance floor
-%     MapSmooth (0)  (1 x 1) spatial smoothing of the variance map [deg]
+%     NIter (3)        (1 x 1) re-estimation iterations
+%     FloorRel (1e-8)  (1 x 1) relative variance floor
+%     MapSmooth (true) (1 x 1) logical, smooth the variance map
 %
 %   Outputs
 %     S          (P x P) double   signal covariance in idx ordering

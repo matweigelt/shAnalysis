@@ -314,7 +314,7 @@ methods (Static)
     %     t0     (1 x 1) reference epoch of the fit [decimal years]
     %     series (1 x 1) shSeries the fit came from (history carrier)
     %   Options
-    %     Periods ([1 0.5]) (1 x K2) harmonic periods [yr]
+    %     Periods ([])      (1 x K2) extra harmonic periods [yr]
     %     CoefSigma ([])    (P x K) 1-sigma uncertainties of coef
     %
     %   Outputs
