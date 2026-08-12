@@ -2392,9 +2392,9 @@ function testHttpFetchRejectsHardClientError(testCase)
 %   spin through the retry budget. Network opt-in: skipped offline.
 try
     ok = true; %#ok<NASGU>
-    java.net.InetAddress.getByName('isdc-data.gfz.de');
+    java.net.InetAddress.getByName('icgem.gfz.de');
 catch
-    assumeTrue(testCase, false, 'offline - DNS for isdc failed');
+    assumeTrue(testCase, false, 'offline - DNS for icgem failed');
 end
 verifyError(testCase, @() shLowLevel.httpFetch( ...
     "https://icgem.gfz.de/definitely-not-a-real-path-404", ...
