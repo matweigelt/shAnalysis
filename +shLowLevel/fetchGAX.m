@@ -54,6 +54,10 @@ function [files, info] = fetchGAX(dest, opts)
 %         GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
 %         GAAFolder = "E:/DATAPOOL/GravityField/GAX/GAA");
 %
+%   See fetchSINEX and fetchITSGBackground for the ITSG-side products;
+%   the ITSG background models are per-release means, NOT the AOD1B
+%   GAX split.
+%
 %   Error identifiers
 %     shLowLevel:fetchGAX:badProduct  product not one of GAA/GAB/GAC/GAD
 %     shLowLevel:fetchGAX:noFiles     a requested product listed zero
@@ -76,7 +80,6 @@ arguments
     opts.RetryAfterCap (1,1) double {mustBePositive} = 30
     opts.Quiet (1,1) logical = false
 end
-t0 = tic;
 bad = setdiff(upper(opts.Products), ["GAA","GAB","GAC","GAD"]);
 if ~isempty(bad)
     error('shLowLevel:fetchGAX:badProduct', ...
@@ -96,59 +99,20 @@ for pi = 1:numel(prods)
     p = prods(pi);
     sub = fullfile(char(dest), char(p));
     if ~isfolder(sub), mkdir(sub); end
-    nL = 0; nD = 0; nS = 0; nF = 0; nRem = 0;
+    Uall = strings(0,1); Nall = strings(0,1);
     for si = 1:numel(opts.Series)
         T = L{si};
         keep = contains(T.url, "GAX_products/" + p + "/");
-        U = T.url(keep); N = T.name(keep);
-        nL = nL + numel(U);
-        for k = 1:numel(U)
-            out = fullfile(sub, char(N(k)));
-            if isfile(out) && ~opts.Update
-                nS = nS + 1; files(end+1, 1) = string(out); %#ok<AGROW>
-                continue
-            end
-            if nD >= opts.MaxFiles, break, end
-            if toc(t0) > opts.BudgetSec
-                nRem = nRem + numel(U) - k + 1;
-                break
-            end
-            try
-                if opts.Downloader == "websave"
-                    try
-                        websave(out, U(k), weboptions('Timeout', 60));
-                    catch MEi
-                        if strcmp(MEi.identifier, ...
-                                'MATLAB:webservices:HTTP429StatusCodeError')
-                            pause(opts.RetryAfterCap);        % once, capped
-                            websave(out, U(k), weboptions('Timeout', 60));
-                        else
-                            rethrow(MEi);
-                        end
-                    end
-                else
-                    shLowLevel.httpFetch(U(k), out);
-                end
-                if opts.PauseSec > 0, pause(opts.PauseSec); end
-                nD = nD + 1; files(end+1, 1) = string(out); %#ok<AGROW>
-                if ~opts.Quiet && mod(nD, 25) == 0
-                    fprintf('  %s: %d files\n', p, nD);
-                end
-            catch ME
-                nF = nF + 1;
-                if ~opts.Quiet
-                    fprintf('  [fail] %s: %s\n', N(k), ME.identifier);
-                end
-                if nF >= opts.MaxFailures
-                    warning('shLowLevel:fetchGAX:tooManyFailures', ...
-                        '%s: stopping after %d failures (last: %s); %d files not attempted.', ...
-                        p, nF, ME.identifier, numel(U) - k);
-                    nRem = nRem + numel(U) - k;
-                    break
-                end
-            end
-        end
+        Uall = [Uall; T.url(keep)]; Nall = [Nall; T.name(keep)]; %#ok<AGROW>
     end
+    nL = numel(Uall);
+    [fs, st] = fetchFileSet(Uall, Nall, string(sub), ...
+        Update = opts.Update, MaxFiles = opts.MaxFiles, ...
+        BudgetSec = opts.BudgetSec, MaxFailures = opts.MaxFailures, ...
+        PauseSec = opts.PauseSec, RetryAfterCap = opts.RetryAfterCap, ...
+        Downloader = opts.Downloader, Quiet = opts.Quiet);
+    files = [files; fs];
+    nD = st.nDownloaded; nS = st.nSkipped; nF = st.nFailed; nRem = st.nRemaining;
     if nL == 0
         error('shLowLevel:fetchGAX:noFiles', ...
             '%s: zero files listed on every series page.', p);

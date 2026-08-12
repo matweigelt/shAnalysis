@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.12.0] - 2026-08-12 - fetch family: SINEX and ITSG background
+
+fetchSINEX (ITSG monthly normals, the only public per-month SINEX;
+months required, one month ~460 MB) and fetchITSGBackground (monthly
+background-model means, era-dependent palettes verified live; not the
+AOD1B GAX split). Consistent naming across the family; one shared
+robust download loop (fetchFileSet) and shared month validation.
+
 ## [3.11.0] - 2026-08-12 - obpChain, residual circulation separation, fetch fallback
 
 obpChain delivers GravIS-style bottom-pressure fields (GSM + GAD,

@@ -48,7 +48,10 @@ GAD/GAA from 2002 on, one call, full Chambers-&-Willis restoration in
 `oceanChain`. The ocean lane now forks: `obpChain` keeps the air
 column and delivers GravIS-style bottom-pressure fields, while
 `eofSeparate` splits residual circulation from noise (North rule) so
-`oceanChain`'s noise proxy stops blaming the ocean for being dynamic.
+`oceanChain`'s noise proxy stops blaming the ocean for being dynamic. The fetch family is complete and consistently named:
+series via `fetchITSG`/`fetchICGEM`, products via `fetchGAX`,
+`fetchSINEX` (ITSG monthly normals - the only public per-month SINEX,
+~460 MB each) and `fetchITSGBackground`.
 
 ## Documentation
 

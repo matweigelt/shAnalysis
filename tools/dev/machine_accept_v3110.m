@@ -97,6 +97,25 @@ fprintf(['%s  oceanChain+EOF %.0f s: %d modes, circ RMS %.4f m, ' ...
         && abs(out.trend - 1.41) < 0.05, "PASS", "FAIL"), ...
     toc, out.nModes, out.circulationRMS, out.sigMon, out.trend);
 
+%% 6b - v3.12 fetch family live (bounded; TU Graz is not rate-limited)
+try
+    d1 = fullfile(tempdir, 'itsg_bg');
+    [f1, i1] = shLowLevel.fetchITSGBackground("2018-06", Dest = d1, Quiet = true);
+    g = shCoefficients.read(f1(1));
+    fprintf('%s  fetchITSGBackground: %d file(s), parsed nmax %d\n', ...
+        ternary(numel(f1) >= 1 && size(g.C, 1) > 90, "PASS", "FAIL"), ...
+        numel(f1), size(g.C, 1) - 1);
+    % SINEX: 460 MB - only the URL/HEAD path is exercised via MaxFiles=0-like
+    % budget; a real download is a deliberate manual decision.
+    [~, i2] = shLowLevel.fetchSINEX("2018-06", Dest = fullfile(tempdir, 'itsg_snx'), ...
+        BudgetSec = 1, Quiet = true);   % budget cut BEFORE the 460 MB download
+    fprintf('%s  fetchSINEX plumbing: %d listed, %d remaining (budget cut as designed)\n', ...
+        ternary(i2.nListed == 1 && i2.nRemaining == 1, "PASS", "FAIL"), ...
+        i2.nListed, i2.nRemaining);
+catch ME
+    fprintf('FAIL  fetch family: %s\n', ME.identifier);
+end
+
 %% 6 - optional GravIS OBP cross-check (503-tolerant)
 try
     gvDir = fullfile(tempdir, 'gravis_obp');

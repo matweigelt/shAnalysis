@@ -1727,6 +1727,27 @@ story += [para("<b>Residual circulation, separated instead of ignored.</b> "
 story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = gadF, GAAFolder = gaaF, SeparateCirculation = true);
 [out.nModes, out.circulationRMS, out.sigMon]   % modes, circ, noise""")
+story += [para("<b>The fetch family, one function per source and "
+               "product.</b> fetchITSG and fetchICGEM download solution "
+               "series; fetchGAX the AOD1B GAA/GAB/GAC/GAD monthly "
+               "means from the ICGEM/GFZ pages; fetchSINEX the ITSG "
+               "monthly normal-equation SINEX from TU Graz - the ONLY "
+               "public per-month SINEX source, and heavy: one n96 "
+               "month is about 460 MB gzipped (verified live), so "
+               "months are a required argument and there is no "
+               "convenience \"all\"; fetchITSGBackground the ITSG "
+               "monthly background models (dealiasing, tides, and in "
+               "the GRACE era also atmosphere/ocean splits, c20, "
+               "degree-1, GIA, hydrology). The ITSG background means "
+               "are NOT the AOD1B GAX split - dealiasing is the "
+               "closest GAC counterpart and no GAD substitute. All "
+               "fetchers share one robust download loop: "
+               "skip-if-present, MaxFiles/BudgetSec/MaxFailures caps, "
+               "polite pauses, a single capped 429 retry, and a "
+               "websave transport fallback.")]
+story += code("""f = shLowLevel.fetchITSGBackground(["2018-06", "2018-07"]);
+s = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
+snx = shLowLevel.readSINEX(s(1), Only = "estimate");""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
