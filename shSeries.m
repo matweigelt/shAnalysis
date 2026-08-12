@@ -237,6 +237,14 @@ methods
         %   accessors return shCoefficients WITH sigmas, enabling
         %   significance-masked trend maps. Requires >= 6+2K epochs and
         %   NaN-free stacks (use dropNaN/select across the 2017-2018 gap).
+        %   Options
+        %     Robust (false)    (1 x 1) logical Huber re-weighting
+        %     T0 (NaN)          (1 x 1) reference epoch; NaN uses the mean
+        %     Periods ([])      (1 x K) extra harmonic periods [yr] beyond
+        %         the built-in annual + semiannual
+        %     Weights ([])      (T x 1) epoch weights
+        %     ARCorrect (false) (1 x 1) AR(1) correction of the sigmas
+        %
         %   Outputs
         %     clim       (1 x 1) shClimatology   fitted bias/trend/annual/semiannual (+Periods=) with coefficient sigmas
         %     resid      (1 x 1) shSeries   residual series about the fit
@@ -303,6 +311,12 @@ methods
         %   (n1 x n1 x K rate CHANGES per break; post-break rate =
         %   trend1 + cumsum of hinges), sigmas, F (n1 x n1 x K),
         %   pValue, breaks, t0.
+        %   Options
+        %     Breaks (required) (1 x B) trend break epochs [decimal years]
+        %     Periods ([])      (1 x K) extra harmonic periods [yr]
+        %     T0 (NaN)          (1 x 1) reference epoch; NaN uses the mean
+        %     ARCorrect (false) (1 x 1) AR(1) correction of the sigmas
+        %
         %   Outputs
         %     out        struct: trends per segment (shCoefficients), F/p per break, segment epochs
         %
@@ -921,6 +935,27 @@ methods
         %     method  (1,1) string  filter chain to run; currently "tvANS"
         %             (the simple filters are their own methods:
         %             gaussian / fan / destripe / applyDDK)
+        %   Options
+        %     Constraints ([])   (P x P | struct) prior constraint matrix or
+        %         a designFilter constraint struct added to the normals
+        %     NoiseCov ([])      (P x P | struct) noise covariance from
+        %         shLowLevel.buildNoiseCov; [] uses a scaled identity
+        %     SignalMode ("isotropic")  "isotropic" | "inhomogeneous" signal
+        %         covariance model (see shLowLevel.buildSignalCov)
+        %     NIterSignal (3)    (1 x 1) signal-covariance re-estimation
+        %         iterations
+        %     Robust (false)     (1 x 1) logical, Huber re-weighting of
+        %         epoch residuals
+        %     MinDegree (2)      (1 x 1) lowest degree entering the filter
+        %     Blocks ("auto")    ("auto" | "on" | "off") order-block usage in
+        %         the normal matrix
+        %     Shrinkage ([])     (1 x 1) shrink the empirical signal
+        %         covariance toward its diagonal, 0..1; [] auto-selects
+        %     VCEMinDegree ([])  (1 x 1) lowest degree in the VCE bands;
+        %         [] follows MinDegree
+        %     VCEBands ([])      (1 x B) variance-component band edges;
+        %         [] uses the built-in banding
+        %
         %   Outputs
         %     out        (1 x 1) shSeries   tvANS-filtered series with sigmaCs/Ss posterior stacks (exact incl. constraints, v2.5)
         %     op         struct   stored linear operator (V/Ut/lam/s or blocks, model, detLeverage/detResVar) for deconvolution and resolution maps

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.8 (R2026a-compatible) 12-Aug-2026
+% Version 3.8.9 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,25 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.9 (Retry-After fetchers; API-table completeness)
+%   - shLowLevel.httpFetch / httpRetryDelay: every toolbox download now
+%     retries 429/5xx with exponential backoff + jitter and honours the
+%     server's Retry-After header (matlab.net.http - websave discards
+%     the headers, which is why this was never possible before). All
+%     fetchers route through the shared private webFetch; the HTML
+%     listing reads retry with backoff. Motivated by the GravIS portal
+%     503 bursts hit live during the V7/V8 validation.
+%   - Opt-in real-data tests accept persistent MATLAB preferences as an
+%     alternative to SHX_* env vars: setpref("shAnalysis",
+%     "GravisFolder"|"SeriesFolder"|"DDKFolder", path).
+%   - Guide V9 adds the standardChain flow diagram (the generic TN-based
+%     core) next to the gravisL2B chain diagram.
+%   - API reference tables: sizes are now always populated (help-declared
+%     size, else n x 1 / n x m per convention) and descriptions are
+%     merged from the help Inputs/Options sections plus toolbox-wide
+%     convention texts; ~120 remaining blank descriptions across ~35
+%     minor entries are on the roadmap.
 %
 % New in v3.8.8 (validated chains as one-call methods)
 %   The executed GravIS validations (guide V1-V8) are now toolbox

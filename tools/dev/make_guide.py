@@ -1569,6 +1569,12 @@ story += [para("The hydrology test inverts the roles: small signals, "
                "hydrology product to three hundredths of a centimetre "
                "per year.")]
 story += [para("V9. The chains: the validation as an API", "h2")]
+story += fig("standardchain_flow.png",
+    "The generic core: shLowLevel.standardChain applies the classic "
+    "TN-14/TN-13 corrections in the only correct order, with the same "
+    "drop-and-record policy for uncovered epochs. gravisL2B (below) is "
+    "its GravIS-flavoured sibling: same shape, GravIS aux tables and "
+    "NFIL mean instead of the TN files.", width=200)
 story += fig("chains_flow.png",
     "The three validated chains. gravisL2B is the single shared "
     "correction core; the ice chains share one engine "
@@ -1613,7 +1619,14 @@ story += [para("The two ice chains share one engine (<font "
                "face='Courier'>gravisRegionChain</font>); every input "
                "above is exchangeable, every deviation from the "
                "defaults is a declared sensitivity study, and REP "
-               "records each step with the toolbox version.")]
+               "records each step with the toolbox version. Data "
+               "fetches behind these chains and all fetchers retry "
+               "politely on 429/5xx: <font face='Courier'>httpFetch"
+               "</font> honours the server's Retry-After header and "
+               "<font face='Courier'>httpRetryDelay</font> supplies "
+               "the capped, jittered backoff otherwise &mdash; the "
+               "policy the GravIS portal's 503 bursts demanded during "
+               "the V7/V8 data collection.")]
 story += [PageBreak()]
 
 story += [para("Demo gallery", "h1"),

@@ -19,6 +19,12 @@ function [C2, S2, sig] = rescaleGMR(C, S, GM1, R1, GM2, R2, sigmaC, sigmaS)
 %     GM2, R2   (1,1) double  target reference
 %     sigmaC/S  (n1,n1) double, optional: rescaled by the same positive
 %               factors, returned in sig.C / sig.S
+%   Inputs
+%     GM2    (1 x 1) target gravitational parameter [m^3/s^2]
+%     R2     (1 x 1) target reference radius [m]
+%     sigmaC (n+1 x n+1) cosine sigmas rescaled alongside C (optional)
+%     sigmaS (n+1 x n+1) sine sigmas rescaled alongside S (optional)
+%
 %   Outputs
 %     C2, S2    (n1,n1) double
 %     sig       struct with fields C, S (empty if no sigmas given)

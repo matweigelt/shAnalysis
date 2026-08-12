@@ -1268,10 +1268,18 @@ function testGravisChainsRealData(testCase)
 %TESTGRAVISCHAINSREALDATA Opt-in science anchor (SHX_GRAVIS_FOLDER +
 %   SHX_SERIES_FOLDER + SHX_DDK_FOLDER): twsChain must reproduce the
 %   validated Amazonas numbers (guide V8) on the real series.
-gf = getenv('SHX_GRAVIS_FOLDER'); sf = getenv('SHX_SERIES_FOLDER');
+% opt-in via env vars OR persistent MATLAB preferences - the latter
+% survive sessions without touching the environment:
+%   setpref("shAnalysis", "GravisFolder", "E:/.../GravIS") etc.
+gf = getenv('SHX_GRAVIS_FOLDER');
+if isempty(gf), gf = getpref('shAnalysis', 'GravisFolder', ''); end
+sf = getenv('SHX_SERIES_FOLDER');
+if isempty(sf), sf = getpref('shAnalysis', 'SeriesFolder', ''); end
 df = getenv('SHX_DDK_FOLDER');
+if isempty(df), df = getpref('shAnalysis', 'DDKFolder', ''); end
 assumeTrue(testCase, ~isempty(gf) && ~isempty(sf) && ~isempty(df), ...
-    'set SHX_GRAVIS_FOLDER, SHX_SERIES_FOLDER, SHX_DDK_FOLDER to enable');
+    ['set SHX_* env vars or setpref("shAnalysis", ...) preferences ' ...
+     '(GravisFolder/SeriesFolder/DDKFolder) to enable']);
 kn = readmatrix(fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
     'loadLoveNumbers_Gegout97.txt'), FileType = 'text', NumHeaderLines = 2);
 out = shLowLevel.twsChain(sf, gf, kn = kn, DDKFolder = df, ...

@@ -125,7 +125,16 @@ if (isstring(months) || ischar(months)) && string(months) == "all"
             dd = dir(fullfile(char(folder), '*.gfc'));
             names = [names, string({dd.name})]; %#ok<AGROW>
         else
-            html = webread(folder + "/", weboptions('Timeout', opts.Timeout));
+            html = "";
+for wfTry = 1:4
+    try
+        html = webread(folder + "/", weboptions('Timeout', opts.Timeout)); %#ok<*AGROW>
+        break
+    catch wfME
+        if wfTry == 4, rethrow(wfME); end
+        pause(shLowLevel.httpRetryDelay(wfTry, NaN));
+    end
+end
             tok = regexp(html, 'href="([^"]+\.gfc)"', 'tokens');
             names = [names, string(cellfun(@(t) t{1}, tok, ...
                 'UniformOutput', false))]; %#ok<AGROW>

@@ -309,7 +309,15 @@ methods (Static)
         %   CoefSigma=[]) with COEF (6+2K) x (2*Nc) over the flattened
         %   [C(:); S(:)] stack of SERIES; rows 7:end are the cos/sin
         %   pairs of the K extra Periods [yr].
-        %   Outputs
+        %   Inputs
+    %     coef   (P x K) fitted component coefficients in shIndex ordering
+    %     t0     (1 x 1) reference epoch of the fit [decimal years]
+    %     series (1 x 1) shSeries the fit came from (history carrier)
+    %   Options
+    %     Periods ([])      (1 x K2) extra harmonic periods [yr]
+    %     CoefSigma ([])    (P x K) 1-sigma uncertainties of coef
+    %
+    %   Outputs
         %     obj        (1 x 1) shClimatology   rebuilt from a coefficient table with the series' layout
         %
         %   Outputs

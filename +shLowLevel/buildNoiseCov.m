@@ -25,6 +25,15 @@ function [N, info] = buildNoiseCov(Xres, idx, opts)
 %     Shrinkage  (0.1)  gamma in C <- (1-g)*C + g*diag(diag(C))
 %
 %   info: struct with block bookkeeping.
+%   Inputs
+%     Xres (P x T) residual coefficient vectors (shIndex ordering)
+%   Options
+%     Mode ("empirical")  ("empirical" | "full") estimate from Xres or
+%         wrap a user-supplied dense covariance
+%     FullCov ([])     (P x P) dense covariance for Mode="full"
+%     Shrinkage (0.1)  (1 x 1) shrink toward the diagonal, 0..1
+%     Assemble ("full") ("full" | "blocks") container layout
+%
 %   Outputs
 %     N          (P x P) double or block struct   noise covariance (order/parity block-diagonal for Assemble ('full')='blocks')
 %     info       struct: mode, shrinkage, blocks metadata
