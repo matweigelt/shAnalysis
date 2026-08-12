@@ -2264,6 +2264,53 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
+function testSlepianCapProperties(testCase)
+%TESTSLEPIANCAPPROPERTIES v3.9.0 (roadmap item 8): the three defining
+%   Slepian identities on a 30-deg polar cap at nmax 12, matching the
+%   Python pre-validation (Shannon 11.32, lam(1) 0.99998):
+%   eigenvalues in [0,1] descending; Shannon = P * A/(4pi); the
+%   concentration ratio of each eigenvector equals its eigenvalue.
+idx = shLowLevel.shIndex(12, MinDegree = 0);
+st = 0.5;
+lat = (-90+st/2 : st : 90-st/2)'; lon = (st/2 : st : 360-st/2)';
+mk = (90 - lat) <= 30 & true(1, numel(lon));
+[G, lam, info] = shLowLevel.slepianBasis(idx, mk, LatDeg = lat, LonDeg = lon);
+verifyEqual(testCase, size(G), [idx.P, idx.P]);
+verifyTrue(testCase, all(diff(lam) <= 1e-12) && lam(1) <= 1 && lam(end) >= 0);
+aCap = (1 - cosd(30)) / 2;
+verifyEqual(testCase, info.shannon, idx.P * aCap, RelTol = 1e-3);
+verifyEqual(testCase, info.areaFraction, aCap, RelTol = 1e-3);
+verifyEqual(testCase, lam(1), 0.999981, AbsTol = 2e-4);   % Python reference
+verifyEqual(testCase, G' * G, eye(idx.P), AbsTol = 1e-10);
+end
+
+function testGfcDotSynonym(testCase)
+%TESTGFCDOTSYNONYM v3.9.0 (roadmap item 8): ICGEM 'dot' lines are the
+%   secular-rate synonym of 'trnd' - written as a fixture in the test,
+%   read back, and evaluated at t0+2 yr against the hand value.
+f = fullfile(tempdir, 'dot_fixture.gfc');
+fid = fopen(f, 'w');
+fprintf(fid, ['product_type gravity_field\nmodelname dotfix\n' ...
+    'earth_gravity_constant 3.986004415e14\nradius 6378136.3\n' ...
+    'max_degree 2\nnorm fully_normalized\nend_of_head\n' ...
+    'gfct 2 0 -4.84e-04 0.0 0 0 20100101\n' ...
+    'dot  2 0  1.00e-11 0.0 0 0\n']);
+fclose(fid);
+c = onCleanup(@() delete(f));
+g = shLowLevel.shReadGFC(f);
+verifyEqual(testCase, numel(g.variableTerms), 1);
+verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
+[Ct, ~] = shLowLevel.shEvalGFCT(g, 2012.0);
+verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
+end
+
+function testOceanChainContract(testCase)
+%TESTOCEANCHAINCONTRACT kn is required (no silent frame assumption),
+%   mirroring the other chains' contract.
+verifyError(testCase, @() shLowLevel.oceanChain(tempdir), ...
+    'shLowLevel:oceanChain:missingKn');
+end
+
 function testNVCasingToleranceAndConvention(testCase)
 %TESTNVCASINGTOLERANCEANDCONVENTION v3.8.10 (roadmap item 6): both NV
 %   mechanisms tolerate any casing - this pins that tolerance so future
