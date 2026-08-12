@@ -220,6 +220,11 @@
 %     ICGEM server rate-limits bursts (observed live on the acceptance
 %     machine; the Retry-After-aware httpFetch waited so faithfully on
 %     429 storms that calls exceeded the MCP bridge window).
+%   - Full-restoration acceptance (COST-G RL02.1, 252 months, GAD/GAA
+%     251 covered): annual amplitude 8.0 -> 9.1 mm (published
+%     manometric range), trend +1.41 +- 0.03 mm/yr (moved 0.08 -
+%     AOD1B is trend-free by construction), residual RMS 1.21 ->
+%     1.49 cm (GAD restores real sub-annual variability).
 %
 % New in v3.10.0 (fetchGAX; full ocean restoration; API completeness)
 %   - shLowLevel.fetchGAX downloads the AOD1B monthly means (GAA/GAB/
