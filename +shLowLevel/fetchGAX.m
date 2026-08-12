@@ -24,13 +24,20 @@ function [files, info] = fetchGAX(dest, opts)
 %     Update (false) (1 x 1) re-download files that already exist
 %     MaxFiles (Inf) (1 x 1) stop after this many downloads per
 %              product - bounded acceptance runs, not a user knob
+%     Downloader ("websave") (1 x 1) "websave" (webread network stack,
+%              matches listICGEM) or "httpFetch" (matlab.net.http with
+%              Retry-After support); the stacks differ in proxy/TLS
+%              behaviour, websave is the robust default for ICGEM
+%     BudgetSec (Inf) (1 x 1) wall-clock budget; on expiry the fetch
+%              stops CLEANLY, keeps what it has, and reports the
+%              remainder (info.nRemaining) - never a hung call
 %     Quiet (false)  (1 x 1) suppress progress output
 %
 %   Outputs
 %     files (n x 1) string  full paths of all matching local files
 %           (downloaded now or already present)
-%     info  (1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed
-%           per product (struct arrays), series actually used
+%     info  (1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed,
+%           nRemaining (budget cut) per product, series actually used
 %
 %   Example
 %     f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
@@ -52,8 +59,12 @@ arguments
         "01_GRACE/GFZ/GFZ Release 06.3 (GFO)"]
     opts.Update (1,1) logical = false
     opts.MaxFiles (1,1) double = Inf
+    opts.Downloader (1,1) string ...
+        {mustBeMember(opts.Downloader, ["websave", "httpFetch"])} = "websave"
+    opts.BudgetSec (1,1) double {mustBePositive} = Inf
     opts.Quiet (1,1) logical = false
 end
+t0 = tic;
 bad = setdiff(upper(opts.Products), ["GAA","GAB","GAC","GAD"]);
 if ~isempty(bad)
     error('shLowLevel:fetchGAX:badProduct', ...
@@ -62,7 +73,7 @@ end
 prods = upper(opts.Products);
 files = strings(0, 1);
 pinfo = struct('product', {}, 'nListed', {}, 'nDownloaded', {}, ...
-    'nSkipped', {}, 'nFailed', {});
+    'nSkipped', {}, 'nFailed', {}, 'nRemaining', {});
 % one listing per series page, reused for every product
 L = cell(1, numel(opts.Series));
 for si = 1:numel(opts.Series)
@@ -73,7 +84,7 @@ for pi = 1:numel(prods)
     p = prods(pi);
     sub = fullfile(char(dest), char(p));
     if ~isfolder(sub), mkdir(sub); end
-    nL = 0; nD = 0; nS = 0; nF = 0;
+    nL = 0; nD = 0; nS = 0; nF = 0; nRem = 0;
     for si = 1:numel(opts.Series)
         T = L{si};
         keep = contains(T.url, "GAX_products/" + p + "/");
@@ -86,8 +97,16 @@ for pi = 1:numel(prods)
                 continue
             end
             if nD >= opts.MaxFiles, break, end
+            if toc(t0) > opts.BudgetSec
+                nRem = nRem + numel(U) - k + 1;
+                break
+            end
             try
-                shLowLevel.httpFetch(U(k), out);
+                if opts.Downloader == "websave"
+                    websave(out, U(k), weboptions('Timeout', 60));
+                else
+                    shLowLevel.httpFetch(U(k), out);
+                end
                 nD = nD + 1; files(end+1, 1) = string(out); %#ok<AGROW>
                 if ~opts.Quiet && mod(nD, 25) == 0
                     fprintf('  %s: %d files\n', p, nD);
@@ -105,7 +124,7 @@ for pi = 1:numel(prods)
             '%s: zero files listed on every series page.', p);
     end
     pinfo(end+1) = struct('product', p, 'nListed', nL, 'nDownloaded', nD, ...
-        'nSkipped', nS, 'nFailed', nF); %#ok<AGROW>
+        'nSkipped', nS, 'nFailed', nF, 'nRemaining', nRem); %#ok<AGROW>
     if ~opts.Quiet
         fprintf('%s: %d listed, %d downloaded, %d present, %d failed\n', ...
             p, nL, nD, nS, nF);
