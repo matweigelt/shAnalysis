@@ -2264,6 +2264,25 @@ verifyTrue(testCase, all(isfinite(m(mk))));
 verifyTrue(testCase, info.iterations >= 1);
 end
 
+function testEvalMaskRejectsGeojsonOrderedPolygon(testCase)
+%TESTEVALMASKREJECTSGEOJSONORDEREDPOLYGON v3.8.7 guard, born in the GravIS
+%   TWS validation: a GeoJSON [lon lat] polygon handed to the [lat lon]
+%   convention built a SILENT phantom basin with plausible area (Amazonas)
+%   or an empty one (Lena). Vertices with |lat| > 90 now raise an
+%   identified error; a valid [lat lon] polygon still works.
+idx = shLowLevel.shIndex(8, MinDegree = 0);
+amazonGeojson = [-79 -5; -60 -15; -52 -2; -70 4; -79 -5];   % [lon lat]
+verifyError(testCase, @() shLowLevel.evalMask(idx, amazonGeojson), ...
+    'shLowLevel:evalMask:badPolygon');
+verifyError(testCase, @() shLowLevel.basinKernel(idx, amazonGeojson), ...
+    'shLowLevel:evalMask:badPolygon');            % propagates through the front door
+amazonToolbox = [amazonGeojson(:, 2), mod(amazonGeojson(:, 1), 360)];
+mask = shLowLevel.evalMask(idx, amazonToolbox);
+verifyTrue(testCase, any(mask > 0.5));
+[~, bi] = shLowLevel.basinKernel(idx, amazonToolbox);
+verifyTrue(testCase, bi.areaFraction > 1e-3 && bi.areaFraction < 0.02);
+end
+
 function testBasinKernelWarnsOnZeroArea(testCase)
 %TESTBASINKERNELWARNSONZEROAREA Audit F-18: a degenerate region used to
 %   return a silent all-zero kernel that any average divides by.

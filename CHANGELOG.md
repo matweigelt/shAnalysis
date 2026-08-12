@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.8.7] - 2026-08-12 - Antarctica + TWS validation
+
+Guide chapters V7/V8: the GravIS chain validated against Antarctica
+(-125.7 vs AWI -146.9; the 14% is the map-estimator-vs-joint-inversion
+method distance, proven by a 0.905 difference-pattern correlation with
+the official TUD kernel grid) and terrestrial water storage (eleven
+river basins, amplitude ratio 1.001, trend RMS 0.032 cm/yr after GIA -
+documenting that the GravIS TWS product carries a GIA correction its
+Technical Note omits). evalMask rejects |lat| > 90 polygon vertices
+(catches [lon lat] GeoJSON handed to the [lat lon] toolbox convention,
+which used to build silent phantom basins).
+
 ## [3.8.6] - 2026-08-12 - audit fixes
 
 Twenty findings from an independent adversarial audit, fixed with
