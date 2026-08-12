@@ -2340,10 +2340,14 @@ x = randn(P, 1);
 % alpha = 0: identity
 x0 = shLowLevel.vdkApply(x, N, idx.n, sig, Alpha = 0);
 verifyEqual(testCase, x0, x, AbsTol = 1e-8);
-% M = c*N closed form
+% M = c*N closed form - on a DIAGONAL N, where the diagonal-M API
+% represents c*N exactly (with full N it cannot, caught in CI: the
+% first version pressed c*diag(N) through the API and failed by 0.1)
 c = 2.5; al = 0.7;
-sigC = 1 ./ sqrt(c * diag(N));
-xc = shLowLevel.vdkApply(x, N, idx.n, sigC, Alpha = al);
+dN = 1 + rand(P, 1);
+Nd = diag(dN);
+sigC = 1 ./ sqrt(c * dN);
+xc = shLowLevel.vdkApply(x, Nd, idx.n, sigC, Alpha = al);
 verifyEqual(testCase, xc, x / (1 + al*c), AbsTol = 1e-10);
 % form equivalence vs Wiener S(S + a N^-1)^-1
 xf = shLowLevel.vdkApply(x, N, idx.n, sig, Alpha = al);
