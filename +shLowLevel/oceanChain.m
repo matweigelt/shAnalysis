@@ -111,23 +111,24 @@ else
     mk = logical(opts.OceanMask);
 end
 kn = opts.kn; if size(kn, 2) > 1, kn = kn(:, 2); end
-nmaxS = size(ts.Cs, 1) - 1;
+Cs = ts.Cs; Ss = ts.Ss;                     % value class: local working copy
+nmaxS = size(Cs, 1) - 1;
 if opts.Filter ~= "none"
     rkm = double(extractAfter(opts.Filter, "gauss"));
     wf = shLowLevel.shGaussianWeights(nmaxS, rkm); wf = wf(:);
     for k = 1:T
-        ts.Cs(:,:,k) = ts.Cs(:,:,k) .* wf;
-        ts.Ss(:,:,k) = ts.Ss(:,:,k) .* wf;
+        Cs(:,:,k) = Cs(:,:,k) .* wf;
+        Ss(:,:,k) = Ss(:,:,k) .* wf;
     end
     steps(end+1) = "filter " + opts.Filter + " applied before synthesis";
 end
 E = zeros(numel(lat), numel(lon), T); Pl = [];
 for k = 1:T
     if isempty(Pl)
-        [E(:,:,k), ~, ~, Pl] = shLowLevel.shSynthesis(ts.Cs(:,:,k), ...
-            ts.Ss(:,:,k), GM, R, lat, lon, 'quantity','ewh', 'kn',kn, 'nmin',0);
+        [E(:,:,k), ~, ~, Pl] = shLowLevel.shSynthesis(Cs(:,:,k), ...
+            Ss(:,:,k), GM, R, lat, lon, 'quantity','ewh', 'kn',kn, 'nmin',0);
     else
-        E(:,:,k) = shLowLevel.shSynthesis(ts.Cs(:,:,k), ts.Ss(:,:,k), ...
+        E(:,:,k) = shLowLevel.shSynthesis(Cs(:,:,k), Ss(:,:,k), ...
             GM, R, lat, lon, 'quantity','ewh', 'kn',kn, 'nmin',0, 'P',Pl);
     end
 end
