@@ -23,6 +23,15 @@ function info = httpFetch(url, dest, opts)
 %     MaxDelay (60)    (1 x 1) cap on any single wait [s], also applied
 %                      to server-sent Retry-After values
 %     Timeout (60)     (1 x 1) per-attempt timeout [s]
+%     WebsaveFallback (true) (1 x 1) after all matlab.net.http attempts
+%                      fail WITHOUT ever receiving an HTTP status (a
+%                      transport-level failure: proxy, TLS, or a
+%                      stalled connection), try ONE websave, which
+%                      uses MATLAB's webread network stack and may
+%                      succeed where matlab.net.http cannot (observed
+%                      on a machine where only websave reached ICGEM).
+%                      Received statuses (404, 429, ...) NEVER fall
+%                      back - the badStatus/failed contract holds
 %     Quiet (true)     (1 x 1) suppress the per-retry progress line
 %
 %   Outputs
@@ -51,6 +60,7 @@ arguments
     opts.BaseDelay (1,1) double {mustBePositive} = 2
     opts.MaxDelay (1,1) double {mustBePositive} = 60
     opts.Timeout (1,1) double {mustBePositive} = 60
+    opts.WebsaveFallback (1,1) logical = true
     opts.Quiet (1,1) logical = true
 end
 import matlab.net.http.RequestMessage
@@ -96,6 +106,19 @@ for attempt = 1:opts.MaxTries
         w = shLowLevel.httpRetryDelay(attempt, NaN, ...
             BaseDelay = opts.BaseDelay, MaxDelay = opts.MaxDelay);
         if attempt < opts.MaxTries, pause(w); waited = waited + w; end
+    end
+end
+if opts.WebsaveFallback && isnan(lastStatus)
+    % transport-level failure only: no HTTP status ever arrived
+    try
+        websave(dest, url, weboptions('Timeout', opts.Timeout));
+        d = dir(dest);
+        info = struct('status', NaN, 'tries', opts.MaxTries + 1, ...
+            'waited', waited, 'bytes', d.bytes, ...
+            'transport', "websave-fallback");
+        return
+    catch
+        % fall through to the original loud error
     end
 end
 error('shLowLevel:httpFetch:failed', ...

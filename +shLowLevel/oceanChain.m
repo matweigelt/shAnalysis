@@ -20,6 +20,12 @@ function [out, rep] = oceanChain(folder, opts)
 %   them the TREND stays interpretable (AOD1B carries no secular trend
 %   by construction) while sub-annual ocean variability is incomplete.
 %
+%   Filter note: GAD is added BEFORE the filter, so model and
+%   observation see the same smoothing (the GravIS Level-3 order). The
+%   ocean MEAN is filter-invariant to 0.01 mm/yr (measured); pixel
+%   FIELDS are not - declare the filter when comparing gridded output
+%   (see shLowLevel.obpChain for the field product).
+%
 %   Inputs
 %     folder  (1 x 1) string  monthly .gfc folder (GSM-2_*, any centre)
 %
@@ -50,6 +56,11 @@ function [out, rep] = oceanChain(folder, opts)
 %                        Willis 2010) - removes the atmospheric
 %                        land-ocean mass term that GRACE sees but that
 %                        is not water
+%     SeparateCirculation (false) split the pixel residuals (after the
+%                        trend + seasonal fit) into coherent residual
+%                        circulation and noise via shLowLevel.eofSeparate
+%                        (North rule); sigMon is then the NOISE RMS and
+%                        OUT gains circulationRMS / nModes / lamModes
 %     Quiet (true)       (1 x 1) suppress progress output
 %
 %   Outputs
@@ -64,6 +75,13 @@ function [out, rep] = oceanChain(folder, opts)
 %       sigMon    (1 x 1) open-ocean residual RMS after the per-pixel
 %                 trend+seasonal fit [m] (the honest noise proxy)
 %       oceanArea (1 x 1) mask area [m^2]
+%       circulationRMS (1 x 1) area-weighted RMS of the separated
+%                 residual circulation [m] (NaN unless
+%                 SeparateCirculation)
+%       nModes    (1 x 1) EOF modes the North rule kept (0 unless
+%                 SeparateCirculation)
+%       lamModes  (K x 1) variance per EOF mode ([] unless
+%                 SeparateCirculation)
 %     rep  (1 x 1) struct  steps, version, dropped/uncovered epochs
 %
 %   Example
@@ -91,6 +109,7 @@ arguments
     opts.SpanEnd double {mustBeScalarOrEmpty} = []
     opts.GADFolder (1,1) string = ""
     opts.GAAFolder (1,1) string = ""
+    opts.SeparateCirculation (1,1) logical = false
     opts.Quiet (1,1) logical = true
 end
 if isempty(opts.kn)
@@ -119,7 +138,7 @@ kn = opts.kn; if size(kn, 2) > 1, kn = kn(:, 2); end
 Cs = ts.Cs; Ss = ts.Ss;                     % value class: local working copy
 nmaxS = size(Cs, 1) - 1;
 if strlength(opts.GADFolder) > 0            % optional GAD restore
-    [Cs, Ss, nGad] = local_addGAD(Cs, Ss, ep, opts.GADFolder);
+    [Cs, Ss, nGad] = addGADFolder(Cs, Ss, ep, opts.GADFolder);
     steps(end+1) = sprintf("GAD restored for %d/%d epochs (folder %s)", ...
         nGad, T, opts.GADFolder);
 end
@@ -173,38 +192,30 @@ trendGt = (x(2)/100) * oceanArea * 1000 / 1e12;           % m/yr*m^2*rho/1e12
 coef = A6 \ X(mk(:), :)';
 residRMS = sqrt(mean((X(mk(:), :)' - A6*coef).^2, 1));
 sigMon = sqrt(median(residRMS.^2));                       % robust vs coasts
+if opts.SeparateCirculation
+    Rpx = X(mk(:), :)' - A6 * coef;                       % T x Q residuals
+    [circ, nz, infE] = shLowLevel.eofSeparate(Rpx', wA);
+    sigMon = infE.rmsNoise;                               % noise, de-circulated
+    circulationRMS = sqrt(sum(wA .* mean(circ.^2, 2)) / sum(wA));
+    steps(end+1) = sprintf(...
+        "EOF separation: %d modes (North), circ RMS %.4f m, noise %.4f m", ...
+        infE.nKeep, circulationRMS, sigMon);
+else
+    circulationRMS = NaN; infE = struct('nKeep', 0, 'lam', []); nz = []; %#ok<NASGU>
+end
 steps(end+1) = sprintf(...
     "ocean mean: trend %+.2f mm/yr (%+.1f Gt/yr), amp %.1f mm, sigMon %.4f m", ...
     trend, trendGt, ampAnnual, sigMon);
 out = struct('epochs', ep, 'oceanMean', om, 'trend', trend, ...
     'trendGt', trendGt, 'trendSigma', trendSigma, 'ampAnnual', ampAnnual, ...
-    'sigMon', sigMon, 'oceanArea', oceanArea);
+    'sigMon', sigMon, 'oceanArea', oceanArea, ...
+    'circulationRMS', circulationRMS, 'nModes', infE.nKeep, ...
+    'lamModes', infE.lam);
 rep = struct('steps', steps(:), 'version', shLowLevel.version(), ...
     'nEpochs', T, 'nGadRestored', nGad, 'nGaaApplied', nGaa);
 if ~opts.Quiet, fprintf('%s\n', steps); end
 end
 
-function [Cs, Ss, nGad] = local_addGAD(Cs, Ss, ep, gadFolder)
-% add back GAD-2 monthly means, matched on the begin date in the name
-df = dir(fullfile(char(gadFolder), 'GAD-2_*.gfc'));
-tok = regexp({df.name}, 'GAD-2_(\d{4})(\d{3})-', 'tokens', 'once');
-yd = @(y) 365 + double(mod(y,4)==0 & (mod(y,100)~=0 | mod(y,400)==0));
-begG = nan(numel(tok), 1);
-for k = 1:numel(tok)
-    y = str2double(tok{k}{1}); d = str2double(tok{k}{2});
-    begG(k) = y + (d-1)/yd(y);
-end
-nGad = 0; nmax = size(Cs, 1) - 1;
-for k = 1:numel(ep)
-    [dmin, j] = min(abs(begG - (ep(k) - 15/365)));  % ~mid - half month
-    if isempty(dmin) || dmin > 0.05, continue; end
-    g = shCoefficients.read(fullfile(df(j).folder, df(j).name));
-    nm = min(nmax, size(g.C, 1) - 1);
-    Cs(1:nm+1, 1:nm+1, k) = Cs(1:nm+1, 1:nm+1, k) + g.C(1:nm+1, 1:nm+1);
-    Ss(1:nm+1, 1:nm+1, k) = Ss(1:nm+1, 1:nm+1, k) + g.S(1:nm+1, 1:nm+1);
-    nGad = nGad + 1;
-end
-end
 
 function [gaaM, nGaa] = local_gaaOceanMean(gaaFolder, ep, GM, R, lat, lon, ...
     kn, mk, wA, oceanArea)

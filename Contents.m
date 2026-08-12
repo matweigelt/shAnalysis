@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.10.1 (R2026a-compatible) 12-Aug-2026
+% Version 3.11.0 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,26 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.11.0 (obpChain; residual circulation separation; fetch fallback)
+%   - shLowLevel.obpChain: GravIS-style ocean-bottom-pressure FIELDS
+%     (GSM + GAD, filter after GAD, anomalies vs the GravIS window
+%     2002/04-2020/03, land NaN). Bottom pressure keeps the air
+%     column; oceanChain removes it - same core, one step apart.
+%   - shLowLevel.eofSeparate + oceanChain SeparateCirculation=: the
+%     residual ocean circulation is split from noise (area-weighted
+%     EOF, North 1982 rule; Python-prevalidated incl. the
+%     Marchenko-Pastur separability limit); sigMon becomes the
+%     de-circulated noise RMS.
+%   - httpFetch WebsaveFallback (default on): transport-level failures
+%     (no HTTP status ever received) fall back to ONE websave attempt;
+%     received statuses never fall back - the badStatus contract holds.
+%   - The GAD filter-order note (GAD before the filter, GravIS order;
+%     ocean mean filter-invariant, fields not) is now stated in both
+%     ocean chain helps. addGADFolder is a shared private helper.
+%   - tools/dev/machine_accept_v3110.m: sectioned acceptance script
+%     for the next bridge session (suite, fetchGAX live, obpChain and
+%     EOF acceptance, optional GravIS OBP grid cross-check).
 %
 % New in v3.10.1 (fetch robustness against ICGEM rate limiting)
 %   - fetchGAX: MaxFailures cap (a machine-side failure no longer walks

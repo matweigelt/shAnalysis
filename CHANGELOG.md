@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.11.0] - 2026-08-12 - obpChain, residual circulation separation, fetch fallback
+
+obpChain delivers GravIS-style bottom-pressure fields (GSM + GAD,
+GravIS filter order and reference window, land NaN) - one GAA step
+apart from the barystatic oceanChain. eofSeparate splits residual
+ocean circulation from noise (weighted EOF + North rule,
+Python-prevalidated with the Marchenko-Pastur separability limit
+stated); oceanChain gains SeparateCirculation=. httpFetch falls back
+to websave on transport-level failures only. GAD filter-order note
+documented; machine acceptance script shipped for the next bridge
+session.
+
 ## [3.10.1] - 2026-08-12 - fetch robustness (ICGEM 429)
 
 fetchGAX hardening: consecutive-failure cap, polite inter-download
