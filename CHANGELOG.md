@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.8.10] - 2026-08-12 - NV convention, quantity "none", setup preferences
+
+Name-value casing convention codified (Capitalized canonical for
+arguments-block options, lowercase for legacy inputParser names and
+quantity strings) with a regression test pinning the case-insensitive
+tolerance of both mechanisms. quantity "none" gives a dimensionless
+passthrough (kernel 1, no GM/R/kn), retiring the GM=R=1 workaround.
+setup_shAnalysis now persists SeriesFolder/MasconFile/GravisFolder/
+DDKFolder via setpref('shAnalysis', ...) alongside the session SHX_*
+env vars.
+
 ## [3.8.9] - 2026-08-12 - Retry-After fetchers, API tables, V9 additions
 
 httpFetch/httpRetryDelay give every toolbox download Retry-After-aware

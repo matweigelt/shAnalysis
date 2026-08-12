@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.8.9 (R2026a-compatible) 12-Aug-2026
+% Version 3.8.10 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,23 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.8.10 (name-value convention; quantity "none"; setup prefs)
+%   - Name-value convention, codified and regression-tested: canonical
+%     spelling is Capitalized for arguments-block options (Filter=,
+%     OceanMask=) and lowercase for the legacy inputParser names and all
+%     quantity strings ('ewh', 'geoid'); BOTH mechanisms tolerate any
+%     casing, and testNVCasingToleranceAndConvention pins that tolerance
+%     so refactorings cannot silently break existing scripts.
+%   - quantity "none": dimensionless passthrough (kernel 1, no GM, R or
+%     kn enter) in kernelFactors and every synthesis front door - the
+%     clean way to synthesize raw coefficient fields such as kernels or
+%     masks. Retires the documented workaround 'geoid' with GM = R = 1.
+%   - setup_shAnalysis persists data locations: SeriesFolder, MasconFile
+%     and the new GravisFolder/DDKFolder options are exported as SHX_*
+%     env vars for the session AND stored via setpref('shAnalysis', ...)
+%     so they survive restarts; the opt-in tests read env first, then
+%     the preference.
 %
 % New in v3.8.9 (Retry-After fetchers; API-table completeness)
 %   - shLowLevel.httpFetch / httpRetryDelay: every toolbox download now

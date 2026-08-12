@@ -1626,7 +1626,14 @@ story += [para("The two ice chains share one engine (<font "
                "<font face='Courier'>httpRetryDelay</font> supplies "
                "the capped, jittered backoff otherwise &mdash; the "
                "policy the GravIS portal's 503 bursts demanded during "
-               "the V7/V8 data collection.")]
+               "the V7/V8 data collection. Spelling convention "
+               "throughout: Capitalized names for arguments-block "
+               "options (<font face='Courier'>OceanMask=</font>), "
+               "lowercase for the legacy inputParser names and all "
+               "quantity strings; both mechanisms tolerate any casing "
+               "(regression-tested), and <font face='Courier'>quantity"
+               "='none'</font> is the dimensionless passthrough for "
+               "synthesizing raw coefficient fields.")]
 story += [PageBreak()]
 
 story += [para("Demo gallery", "h1"),

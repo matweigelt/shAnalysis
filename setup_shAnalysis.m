@@ -44,7 +44,10 @@ function summary = setup_shAnalysis(opts)
 %                       with a safe, parse-verified swap (temporal files
 %                       like TN-13/TN-14 grow monthly)
 %     SeriesFolder ("")   folder of monthly .gfc files, exported as the
-%                         SHX_SERIES_FOLDER environment variable. This
+%                         SHX_SERIES_FOLDER environment variable AND
+%                         persisted via setpref('shAnalysis',
+%                         'SeriesFolder', ...) - preferences survive
+%                         MATLAB restarts, no startup.m needed. This
 %                         enables the opt-in trend regression in
 %                         testScience: a trend needs a real monthly
 %                         series, which is far too large to ship as a
@@ -54,13 +57,19 @@ function summary = setup_shAnalysis(opts)
 %                         to the persistent data folder, so a routine
 %                         acceptance run never touches a network or
 %                         archive drive
-%     MasconFile ("")     a mascon .nc, exported as SHX_MASCON_FILE. This
+%     MasconFile ("")     a mascon .nc, exported as SHX_MASCON_FILE and
+%                         persisted as preference 'MasconFile'. This
 %                         enables the opt-in readMascon check against a
 %                         REAL product: the synthetic fixture writes
 %                         (lon, lat, time) while the JPL file writes
 %                         (time, lat, lon), and a size check passes
 %                         either way. Sources: CSR (no login), GSFC, or
 %                         JPL PO.DAAC (free Earthdata login)
+%     GravisFolder ("")   GravIS aux folder for the validated chains,
+%                         exported as SHX_GRAVIS_FOLDER + preference
+%                         'GravisFolder' (opt-in real-data tests)
+%     DDKFolder ("")      DDK filter binaries folder, exported as
+%                         SHX_DDK_FOLDER + preference 'DDKFolder'
 %     Quiet (false)       suppress progress output
 %     DataFolder ("")  persistent data folder, applied BEFORE any fetcher runs
 %     FetchITSG ("none")  "all" additionally downloads every monthly ITSG solution
@@ -110,6 +119,8 @@ arguments
     opts.Update (1,1) logical = false
     opts.SeriesFolder (1,1) string = ""
     opts.MasconFile (1,1) string = ""
+    opts.GravisFolder (1,1) string = ""
+    opts.DDKFolder (1,1) string = ""
     opts.Quiet (1,1) logical = false
 end
 root = string(fileparts(mfilename('fullpath')));
@@ -267,30 +278,31 @@ end
 % filter themselves out when it is empty, so setting them here is the
 % one place a user has to think about it.
 %
-% setenv only lasts for the session. A permanent setting belongs in
-% startup.m, and the summary says so rather than pretending otherwise.
-if strlength(opts.SeriesFolder) > 0
-    if ~isfolder(opts.SeriesFolder)
-        warning('shAnalysis:setup:noSeriesFolder', ...
-            'SeriesFolder is not a folder: %s', opts.SeriesFolder);
+% Data locations: setenv for this session AND setpref('shAnalysis', ...)
+% for persistence across sessions - the opt-in tests and chains read
+% both (env first). getpref survives restarts; no startup.m needed.
+locs = ["SeriesFolder", "SHX_SERIES_FOLDER", "folder"
+        "MasconFile",   "SHX_MASCON_FILE",   "file"
+        "GravisFolder", "SHX_GRAVIS_FOLDER", "folder"
+        "DDKFolder",    "SHX_DDK_FOLDER",    "folder"];
+for li = 1:size(locs, 1)
+    val = opts.(locs(li, 1));
+    if strlength(val) == 0, continue; end
+    isOk = (locs(li, 3) == "folder" && isfolder(val)) || ...
+           (locs(li, 3) == "file" && isfile(val));
+    if ~isOk
+        warning("shAnalysis:setup:no" + locs(li, 1), ...
+            '%s is not a %s: %s', locs(li, 1), locs(li, 3), val);
     end
     if ~opts.DryRun
-        setenv('SHX_SERIES_FOLDER', char(opts.SeriesFolder));
+        setenv(locs(li, 2), char(val));
+        setpref('shAnalysis', char(locs(li, 1)), char(val));
     end
-    summary.testData(end+1) = "SHX_SERIES_FOLDER = " + opts.SeriesFolder;
-end
-if strlength(opts.MasconFile) > 0
-    if ~isfile(opts.MasconFile)
-        warning('shAnalysis:setup:noMasconFile', ...
-            'MasconFile is not a file: %s', opts.MasconFile);
-    end
-    if ~opts.DryRun
-        setenv('SHX_MASCON_FILE', char(opts.MasconFile));
-    end
-    summary.testData(end+1) = "SHX_MASCON_FILE = " + opts.MasconFile;
+    summary.testData(end+1) = locs(li, 1) + " = " + val + ...
+        "   (env " + locs(li, 2) + " + setpref)"; %#ok<AGROW>
 end
 if ~isempty(summary.testData) && ~opts.Quiet
-    fprintf('opt-in test data (this session only - put in startup.m to keep):\n');
+    fprintf('data locations (session env + persistent preference):\n');
     fprintf('  %s\n', summary.testData);
 end
 

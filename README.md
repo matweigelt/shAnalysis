@@ -37,7 +37,10 @@ exchangeable inputs: `shLowLevel.greenlandChain`,
 `shLowLevel.antarcticaChain` and `shLowLevel.twsChain`, built on the
 shared `shLowLevel.gravisL2B` correction core. All downloads retry
 politely on 429/5xx honouring the server's Retry-After header
-(`shLowLevel.httpFetch`).
+(`shLowLevel.httpFetch`). Data locations persist across sessions via
+`setup_shAnalysis(SeriesFolder=..., GravisFolder=..., DDKFolder=...)`
+(setpref-backed); `quantity="none"` synthesizes raw coefficient
+fields.
 
 ## Documentation
 
