@@ -324,6 +324,57 @@ story += [para("<font face='Courier'>SHX_SERIES_FOLDER</font> is "
 # ========================================================= Part I theory
 story += [para("Part I &mdash; Theory as implemented", "h1")]
 
+story += [para("0. What GRACE measures, for readers starting from zero", "h2"),
+          para("Mass attracts. Every redistribution of water on and in the "
+               "Earth &mdash; a monsoon soaking a river basin, an ice sheet "
+               "shedding meltwater, groundwater pumped from an aquifer "
+               "&mdash; changes the gravity field by a minute amount. The "
+               "GRACE mission (2002&ndash;2017) and its successor GRACE-FO "
+               "(2018&ndash;) measure exactly this: two satellites chase "
+               "each other about 220 km apart on a near-polar orbit, and a "
+               "microwave (GRACE) or laser (GRACE-FO) link measures their "
+               "separation to micrometers or better. Flying toward extra "
+               "mass, the leading satellite accelerates first and the gap "
+               "stretches; the gap history maps the gravity field, month "
+               "after month. The magic number to remember: converted to "
+               "water, GRACE resolves changes of roughly a centimeter of "
+               "water spread over a few hundred kilometers &mdash; enough "
+               "to weigh continents breathing."),
+          para("The monthly product is not a map but a set of a few "
+               "thousand numbers: <b>Stokes coefficients</b>, the "
+               "spherical-harmonic spectrum of the field (Section 1 "
+               "explains the mathematics; for now: degree l is inverse "
+               "wavelength, about 20000/l km, so degree 60 means ~330 km "
+               "features). Everything in this toolbox starts from such "
+               "coefficient files. The product vocabulary, once and for "
+               "all:"),
+          *bullets([
+    "GSM &mdash; the monthly gravity solution, with atmosphere and ocean "
+    "dynamics already subtracted by background models. GSM over land = "
+    "water storage; GSM over the ocean = nearly nothing, ON PURPOSE.",
+    "GAA/GAB/GAC/GAD &mdash; monthly means of exactly those subtracted "
+    "background models (atmosphere / ocean / both / ocean bottom "
+    "pressure). To study ocean mass you must ADD the right one back "
+    "(Section 23); shLowLevel.fetchGAX provisions them.",
+    "Monthly SINEX &mdash; the full normal-equation matrix of a solution "
+    "(ITSG only), i.e. its complete error description; the key to the "
+    "VDK filter (Sections 21&ndash;22). One month is ~460 MB.",
+    "Daily Kalman solutions &mdash; low-resolution (n40) daily fields "
+    "from ITSG, the basis of near-real-time flood tracking (Section 26).",
+    "Mascons &mdash; an alternative representation on mass tiles with "
+    "built-in regularization; readMascon reads CSR and JPL products."]),
+          para("Two truths shape all processing. First, the raw monthly "
+               "fields are STRIPED: the along-track sampling makes "
+               "north&ndash;south errors much smaller than east&ndash;west "
+               "ones, and unfiltered maps drown in meridional stripes "
+               "&mdash; hence the whole filtering industry of Sections "
+               "7&ndash;9 and 21. Second, low degrees are special: the "
+               "satellites cannot see degree 1 (geocenter) at all and "
+               "measure C20 poorly, so both are completed from external "
+               "series (Section 16). Skipping either correction silently "
+               "biases every trend you compute afterwards."),
+]
+
 story += [para("1. Spherical harmonics, normalization, storage", "h2"),
           para("The disturbing potential is expanded in fully "
                "(4&pi;-)normalized real spherical harmonics:")]
@@ -788,6 +839,236 @@ story += [para("20. Gravity gradient tensor (v2.4)", "h2"),
                "'gravity_gradient_rr' kernel route. 1 Eotvos = 1e-9 "
                "s<super>-2</super>."),
           PageBreak()]
+
+story += [para("21. Time-variable decorrelation: the VDK/VADER filter "
+               "(v3.13)", "h2"),
+          para("Sections 8&ndash;9 introduced the Wiener family: damp each "
+               "coefficient by how much you trust it. The DDK filter fixes "
+               "ONE synthetic error model for the whole mission; tvANS "
+               "estimates one empirical structure from the series itself. "
+               "Both assume the error STRUCTURE never changes &mdash; but "
+               "it does: orbit height decays, ground tracks enter and "
+               "leave short repeat cycles, instruments age. The VDK filter "
+               "(Horvath et al. 2018; VADER in the paper) uses the actual "
+               "monthly normal-equation matrix N from the ITSG SINEX:"),
+          *eq(r"x_\alpha = (N + \alpha M)^{-1} N\, x"),
+          para("with M the inverse signal variance (a Kaula rule "
+               "a&thinsp;l<sup>b</sup> per calendar month, estimated by "
+               "signalVarianceKaula with an exact log-chi-square bias "
+               "correction) and &alpha; the strength knob. With "
+               "S&nbsp;=&nbsp;M<sup>-1</sup> this is ALGEBRAICALLY the "
+               "tvANS form S(S+&alpha;N<sup>-1</sup>)<sup>-1</sup> &mdash; "
+               "same family, different inputs, and the difference is worth "
+               "15% median error and an order of magnitude in bad months "
+               "(paper Table 2). The price: the one-eigendecomposition "
+               "trick of tvANS requires a stationary structure, so VDK "
+               "pays one Cholesky factorization per month instead "
+               "(seconds at n96). vdkApply never forms the filter matrix; "
+               "tools/dev/run_vdk_series.m drives the archive-scale batch."),
+          *fig("t04_wiener.png",
+               "Figure T4 &mdash; the Wiener principle behind DDK, tvANS "
+               "and VDK (computed illustration). (a) Signal follows a "
+               "falling Kaula law while GRACE errors rise with degree; "
+               "(b) the resulting gain damps degrees where noise wins. "
+               "VDK recomputes the gain every month from the measured N."),
+          *code("""idx = shLowLevel.shIndex(96, MinDegree = 2);
+f = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
+snx = shLowLevel.readSINEX(f(1), Index = idx);     % N + x in idx order
+[ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
+xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(6, :), Alpha = 1);""")]
+
+story += [para("22. Normal equations and SINEX, demystified", "h2"),
+          para("A monthly solution is a least-squares estimate: the "
+               "satellites provide millions of range observations, the "
+               "unknowns are the ~9400 Stokes coefficients (n96, degrees "
+               "2&ndash;96), and the NORMAL-EQUATION MATRIX "
+               "N&nbsp;=&nbsp;A<sup>T</sup>PA condenses the whole "
+               "adjustment: its inverse is the error covariance, its "
+               "structure encodes which coefficient combinations that "
+               "month's orbit could or could not see. SINEX is simply the "
+               "exchange format that ships x, N and metadata in labelled "
+               "blocks; the ITSG monthly files carry "
+               "SOLUTION/NORMAL_EQUATION_MATRIX as a packed triangle "
+               "&mdash; hence 460 MB. readSINEX streams the blocks and "
+               "reorders everything onto a shIndex layout, verified "
+               "against exactly this product. COST-G distributes no "
+               "per-month SINEX (their combination happens internally), "
+               "so ITSG is the only public source."),]
+
+story += [para("23. Ocean mass: restoring GAX, barystatic sea level and "
+               "OBP (v3.10&ndash;3.11)", "h2"),
+          para("Because GSM has ocean dynamics removed by construction, "
+               "the honest recipe for ocean-mass questions is: restore "
+               "what was subtracted, then average. oceanChain adds the "
+               "monthly GAD field (ocean bottom pressure) back, subtracts "
+               "GAA over the ocean to avoid double-counting atmosphere, "
+               "filters, masks (|lat| &le; 66&deg; away from the crude "
+               "coasts) and area-averages to the barystatic curve "
+               "&mdash; the ocean-mass part of sea-level rise, "
+               "+1.41&thinsp;&plusmn;&thinsp;0.03 mm/yr in the shipped "
+               "acceptance on COST-G (published range ~1.6&ndash;2.2; "
+               "Section 24 explains the gap's main suspect). obpChain "
+               "keeps the FIELDS instead (GravIS OBP recipe: GAD before "
+               "the filter, reference period 2002/04&ndash;2020/03, land "
+               "NaN). The pixel residuals still contain real ocean "
+               "circulation; SeparateCirculation splits them by EOF with "
+               "a Marchenko&ndash;Pastur significance limit &mdash; modes "
+               "are only removed where they rise above what pure noise "
+               "eigenvalues could produce."),
+          *code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = gadF, GAAFolder = gaaF, SeparateCirculation = true);
+[out.trend, out.nModes, out.sigMon]""")]
+
+story += [para("24. Coastal leakage: buffers and support separation "
+               "(v3.15)", "h2"),
+          para("A band-limited field has no sharp edges: truncate any "
+               "coastline at degree 60&ndash;96 and it rings; filter it "
+               "and land signal smears hundreds of kilometers into the "
+               "ocean. Greenland alone biases the North Atlantic mean "
+               "visibly. Two controls, both quantified before they were "
+               "built. CoastBufferKm erodes the ocean mask by a "
+               "great-circle distance (shLowLevel.erodeMask): for "
+               "gauss445, 300 km removes 54% of a coastal point-source "
+               "leak, 500 km 82%, at under 1% ocean-area loss. "
+               "RemoveLandLeakage attacks the cause: separate the field "
+               "into land-supported and ocean-supported band-limited "
+               "components by two-sided alternating projections "
+               "(Papoulis&ndash;Gerchberg style) and subtract the land "
+               "part BEFORE filtering. The pre-validation taught a hard "
+               "lesson worth stating in bold: a naive ONE-step "
+               "subtraction makes the leak WORSE, because the "
+               "reconstruction of the outside field rings INTO the mask. "
+               "The two-sided iteration (LandLeakIter = 5) cuts an "
+               "adjacent-source leak of 47% of the ocean mean by 94%."),
+          *fig("t05_leak_pocs.png",
+               "Figure T5 &mdash; the 1D reference experiment behind the "
+               "v3.15 leakage controls (computed, identical mathematics "
+               "to the sphere). (a) A band-limited land source adjacent "
+               "to the ocean mask leaks under filtering; (b) two-sided "
+               "support separation converges within a few sweeps to a "
+               "small fraction of the raw leak &mdash; the CI test "
+               "freezes the <0.5 criterion, the converged value is ~0.06."),]
+
+story += [para("25. Hydrological extremes: standardized indices (v3.14)",
+               "h2"),
+          para("A TWS anomaly of &minus;12 cm means nothing by itself: is "
+               "that a dry month for THIS place and season, or business "
+               "as usual? Standardized indices answer by comparing "
+               "against the local seasonal climatology. The GRACE-DSI "
+               "(Zhao et al. 2017) is the z-score per calendar month, "
+               "binned into the 11 USDM-style classes D4 (exceptional "
+               "drought, z &le; &minus;2) through W4; it agrees with "
+               "USDM, PDSI, SPEI, NDVI and in-situ groundwater in the "
+               "validation literature &mdash; while seeing the FULL "
+               "storage column including groundwater, which no "
+               "precipitation-based index does. Two policies are "
+               "measured, not assumed: DETREND FIRST (a 0.5 cm/yr GIA or "
+               "depletion trend weakens a planted exceptional-drought "
+               "month from &minus;2.41 to &minus;1.44 &mdash; out of its "
+               "class &mdash; and turns 45% of the late decade spuriously "
+               "wet), and a robust sigma option (one corrupt month "
+               "inflates the classical sigma sixfold; the 1.4826&middot;"
+               "MAD not at all). For floods, the causal Reager storage "
+               "deficit S<sub>def</sub>(t) = max of the past minus the "
+               "last state measures how much water the basin can still "
+               "take; with a precipitation grid it becomes the full "
+               "Flood Potential Index behind multi-month lead times "
+               "(Reager et al. 2014)."),
+          *fig("t07_dsi.png",
+               "Figure T7 &mdash; the DSI construction on the "
+               "pre-validation experiment (computed). The planted "
+               "&minus;2.5&sigma; event keeps its D4 class only when the "
+               "trend is removed first; the class edges are the USDM "
+               "convention."),
+          *fig("t08_sdef.png",
+               "Figure T8 &mdash; the causal storage deficit (computed "
+               "illustration): zero at a running maximum, growing as the "
+               "basin dries; small deficit means flood-prone."),
+          *code("""[tws, rep] = shLowLevel.twsChain(ser, kn = kn);
+[Z, ih] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
+ih.categoryNames(ih.category(iLat, iLon, end) + 6)""")]
+
+story += [para("26. Daily solutions and near-real-time monitoring "
+               "(v3.14 stage 2)", "h2"),
+          para("Monthly fields cannot see a two-week flood wave. The ITSG "
+               "daily Kalman solutions (n40, one gfc per day, fetchITSG "
+               "Product = &quot;daily&quot;) can &mdash; Gouweleeuw et al. "
+               "(2018) tracked major Ganges&ndash;Brahmaputra floods this "
+               "way. hydroExtremeIndex switches automatically to a "
+               "day-of-year climatology on daily input: means per exact "
+               "DOY, sigma from the RESIDUALS in a circular 31-day window "
+               "that wraps December into January, with the sqrt(n/(n-1)) "
+               "correction for the estimated mean. The construction is "
+               "measured, not assumed: window sigma on RAW values leaks "
+               "the seasonal cycle (1.99 instead of 1.5), the two-stage "
+               "form does not; a planted +3&sigma; January-2nd flood "
+               "scores z = 2.9 straight across the year boundary."),]
+
+story += [para("27. References", "h2"),
+          *bullets([
+    "Chambers, D.P., Willis, J.K. (2010): A global evaluation of ocean "
+    "bottom pressure from GRACE, OMCT, and steric-corrected altimetry. "
+    "J. Atmos. Oceanic Technol. 27, 1395&ndash;1402.",
+    "Cheng, M., Tapley, B.D., Ries, J.C. (2013): Deceleration in the "
+    "Earth's oblateness. J. Geophys. Res. Solid Earth 118, 740&ndash;747.",
+    "Gerchberg, R.W. (1974): Super-resolution through error energy "
+    "reduction. Optica Acta 21, 709&ndash;720. (With Papoulis 1975, the "
+    "support-projection principle behind Section 24.)",
+    "Gouweleeuw, B.T. et al. (2018): Daily GRACE gravity field solutions "
+    "track major flood events in the Ganges&ndash;Brahmaputra Delta. "
+    "Hydrol. Earth Syst. Sci. 22, 2867&ndash;2880.",
+    "Horvath, A., Murboeck, M., Pail, R., Horwath, M. (2018): "
+    "Decorrelation of GRACE time variable gravity field solutions using "
+    "full covariance information. Geosciences 8, 323.",
+    "Jekeli, C. (1981): Alternative methods to smooth the Earth's "
+    "gravity field. Rep. 327, Dept. of Geodetic Science, Ohio State "
+    "University.",
+    "Kusche, J. (2007): Approximate decorrelation and non-isotropic "
+    "smoothing of time-variable GRACE-type gravity field models. "
+    "J. Geodesy 81, 733&ndash;749.",
+    "Kvas, A. et al. (2019): ITSG-Grace2018: overview and evaluation of "
+    "a new GRACE-only gravity field time series. J. Geophys. Res. Solid "
+    "Earth 124, 9332&ndash;9344.",
+    "Mayer-Guerr, T. et al.: ITSG GRACE/GRACE-FO monthly, daily and "
+    "SINEX products. TU Graz, ftp.tugraz.at/pub/ITSG/GRACE.",
+    "Papoulis, A. (1975): A new algorithm in spectral analysis and "
+    "band-limited extrapolation. IEEE Trans. Circuits Syst. 22, "
+    "735&ndash;742.",
+    "Reager, J.T., Famiglietti, J.S. (2009): Global terrestrial water "
+    "storage capacity and flood potential using GRACE. Geophys. Res. "
+    "Lett. 36, L23402.",
+    "Reager, J.T., Thomas, B.F., Famiglietti, J.S. (2014): River basin "
+    "flood potential inferred using GRACE gravity observations at "
+    "several months lead time. Nature Geosci. 7, 588&ndash;592.",
+    "Sasgen, I. et al. (2012): Timing and origin of recent regional "
+    "ice-mass loss in Greenland. Earth Planet. Sci. Lett. 333&ndash;334, "
+    "293&ndash;303.",
+    "Sinha, D., Syed, T.H., Famiglietti, J.S., Reager, J.T., Thomas, "
+    "R.C. (2017): Characterizing drought in India using GRACE "
+    "observations of terrestrial water storage deficit. "
+    "J. Hydrometeorol. 18, 381&ndash;396.",
+    "Swenson, S., Wahr, J. (2002): Methods for inferring regional "
+    "surface-mass anomalies from GRACE. J. Geophys. Res. 107, 2193.",
+    "Swenson, S., Wahr, J. (2006): Post-processing removal of correlated "
+    "errors in GRACE data. Geophys. Res. Lett. 33, L08402.",
+    "Swenson, S., Chambers, D., Wahr, J. (2008): Estimating geocenter "
+    "variations from a combination of GRACE and ocean model output. "
+    "J. Geophys. Res. 113, B08410.",
+    "Wahr, J., Molenaar, M., Bryan, F. (1998): Time variability of the "
+    "Earth's gravity field. J. Geophys. Res. 103, 30205&ndash;30229. "
+    "(The EWH kernel of Section 4.)",
+    "Zhao, M., Geruo, A., Velicogna, I., Kimball, J.S. (2017): A global "
+    "gridded dataset of GRACE drought severity index. "
+    "J. Hydrometeorol. 18, 2117&ndash;2129."]),
+          para("Data providers to cite alongside the methods: ITSG (TU "
+               "Graz), COST-G, GFZ/GravIS, CSR and JPL (mascons), ICGEM "
+               "as the archive. The shipped acceptance numbers "
+               "(&minus;224.6 Gt/yr Greenland vs the published "
+               "&minus;231.1; +1.41 mm/yr barystatic) are reproduced "
+               "against these products with the exact recipes of this "
+               "guide.")]
+
+story += [PageBreak()]
 
 # ================================================== Part II best practices
 story += [para("Part II &mdash; Best practices", "h1"),

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.15.0 (R2026a-compatible) 13-Aug-2026
+% Version 3.15.1 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,22 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.15.1 (guide: complete theory edition)
+%   - Part I extended for readers without prior knowledge: new entry
+%     chapter 0 (what GRACE measures, the product vocabulary GSM/GAX/
+%     SINEX/daily/mascons, why stripes and low degrees matter) and new
+%     chapters 21-26 covering everything since v3.10: VDK/VADER theory
+%     and its exact relation to DDK/tvANS, normal equations and SINEX,
+%     ocean-mass restoration and OBP with EOF circulation separation,
+%     coastal leakage (buffer numbers and the two-sided support
+%     separation, including the one-step warning), standardized
+%     hydrological indices, daily Kalman NRT monitoring.
+%   - New chapter 27: full reference list (19 primary sources).
+%   - Four new computed theory figures (Wiener gain family, 1D leakage
+%     + POCS convergence, DSI categories with the detrend effect,
+%     causal storage deficit) - all from the session-validated
+%     experiments, honestly labelled as computed illustrations.
 %
 % New in v3.15.0 (coastal-leakage controls for the ocean chain)
 %   - oceanChain CoastBufferKm=: great-circle mask erosion (public
