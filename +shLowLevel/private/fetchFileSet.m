@@ -14,7 +14,11 @@ function [files, st] = fetchFileSet(urls, names, destFolder, opts)
 %     destFolder  (1 x 1) string  target folder (created if absent)
 %
 %   Options (defaults mirror the fetch-family front ends)
-%     Update (false), MaxFiles (Inf), BudgetSec (Inf), MaxFailures (5),
+%     Update (false), MaxFiles (Inf; 0 = list/plan only, cuts BEFORE
+%     the first download), BudgetSec (Inf; checked BETWEEN files -
+%     it never interrupts a running transfer and never blocks the
+%     first file, measured the hard way with a 460 MB SINEX),
+%     MaxFailures (5),
 %     PauseSec (1.5), RetryAfterCap (30),
 %     Downloader ("websave") "websave" | "httpFetch",
 %     Quiet (false)

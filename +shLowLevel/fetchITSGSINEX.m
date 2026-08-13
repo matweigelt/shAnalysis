@@ -14,7 +14,9 @@ function [files, info] = fetchITSGSINEX(months, opts)
 %   460 MB gzipped (verified live 2026-08-12); the full 257-month
 %   series is on the order of 120 GB. MONTHS is therefore a required
 %   argument - there is deliberately no "all" convenience here, unlike
-%   fetchITSG where a month is 1 MB.
+%   fetchITSG where a month is 1 MB. To exercise the plumbing WITHOUT
+%   transferring anything, pass MaxFiles = 0 (BudgetSec cannot cut the
+%   first file - it only checks between downloads).
 %
 %   Inputs
 %     months  (1 x k string | numeric years) "YYYY-MM" strings or
