@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.16.1 (R2026a-compatible) 13-Aug-2026
+% Version 3.16.2 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,12 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.16.2 (final documentation audit)
+%   - Guide Part IV input tables now carry a DESCRIPTION column, fed
+%     from the help Inputs/Options lines the extractor already parsed
+%     (881 documented arguments; coverage 99.5% -> 100% after adding
+%     the missing demo_shAnalysis Inputs/Options block).
 %
 % New in v3.16.1 (CoastBufferKm default 300; iter5 acceptance)
 %   - oceanChain CoastBufferKm defaults to 300 km (author decision on

@@ -44,6 +44,21 @@ function reg = demo_shAnalysis(cases, opts)
 %   Outputs
 %     reg        (D x 3) table   demo registry: id, title, exercised API
 %
+%   Inputs
+%     cases   (1 x n) string  demo IDs to run, e.g. "D01" or ["D01" "D13"];
+%             "core" expands to the curated smoke set, "all" runs the
+%             full registry in order
+%
+%   Options
+%     Visible     (1 x 1) logical  show figures (false keeps them
+%                 off-screen for batch/CI runs)
+%     OutDir      (1 x 1) string   output folder for exported files;
+%                 "" = a fresh folder under tempdir
+%     StopOnError (1 x 1) logical  true stops at the first failing
+%                 case; false (default) prints FAILED and continues -
+%                 the fail-and-continue contract the suite exercises
+%
+%
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 arguments
     cases (1,:) string = "core"
