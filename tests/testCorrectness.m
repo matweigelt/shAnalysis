@@ -2580,15 +2580,15 @@ verifyError(testCase, ...
     'shLowLevel:obpChain:missingGAD');
 end
 
-function testFetchSINEXContract(testCase)
-%TESTFETCHSINEXCONTRACT v3.12.0: loud errors before any network use -
+function testFetchITSGSINEXContract(testCase)
+%TESTFETCHITSGSINEXCONTRACT v3.12.0: loud errors before any network use -
 %   bad Nmax, empty month set, malformed month strings.
-verifyError(testCase, @() shLowLevel.fetchSINEX("2018-06", Nmax = 90), ...
-    'shLowLevel:fetchSINEX:badNmax');
-verifyError(testCase, @() shLowLevel.fetchSINEX(strings(0, 1)), ...
-    'shLowLevel:fetchSINEX:noMonths');
-verifyError(testCase, @() shLowLevel.fetchSINEX("June 2018"), ...
-    'shLowLevel:fetchSINEX:badMonth');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX("2018-06", Nmax = 90), ...
+    'shLowLevel:fetchITSGSINEX:badNmax');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX(strings(0, 1)), ...
+    'shLowLevel:fetchITSGSINEX:noMonths');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX("June 2018"), ...
+    'shLowLevel:fetchITSGSINEX:badMonth');
 end
 
 function testFetchITSGBackgroundContract(testCase)

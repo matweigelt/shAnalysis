@@ -872,7 +872,7 @@ story += [para("21. Time-variable decorrelation: the VDK/VADER filter "
                "(b) the resulting gain damps degrees where noise wins. "
                "VDK recomputes the gain every month from the measured N."),
           *code("""idx = shLowLevel.shIndex(96, MinDegree = 2);
-f = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
+f = shLowLevel.fetchITSGSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
 snx = shLowLevel.readSINEX(f(1), Index = idx);     % N + x in idx order
 [ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
 xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(6, :), Alpha = 1);""")]
@@ -2011,7 +2011,7 @@ story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc
 story += [para("<b>The fetch family, one function per source and "
                "product.</b> fetchITSG and fetchICGEM download solution "
                "series; fetchGAX the AOD1B GAA/GAB/GAC/GAD monthly "
-               "means from the ICGEM/GFZ pages; fetchSINEX the ITSG "
+               "means from the ICGEM/GFZ pages; fetchITSGSINEX the ITSG "
                "monthly normal-equation SINEX from TU Graz - the ONLY "
                "public per-month SINEX source, and heavy: one n96 "
                "month is about 460 MB gzipped (verified live), so "
@@ -2027,7 +2027,7 @@ story += [para("<b>The fetch family, one function per source and "
                "polite pauses, a single capped 429 retry, and a "
                "websave transport fallback.")]
 story += code("""f = shLowLevel.fetchITSGBackground(["2018-06", "2018-07"]);
-s = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
+s = shLowLevel.fetchITSGSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
 snx = shLowLevel.readSINEX(s(1), Only = "estimate");""")
 story += [para("<b>VDK decorrelation - the reason the SINEX fetcher "
                "exists.</b> With the monthly normal-equation matrices "
@@ -2117,7 +2117,14 @@ story += [para("<b>Offline by design.</b> No chain ever fetches: "
                "setup_shAnalysis preferences (SeriesFolder, "
                "MasconFile, GravisFolder, DDKFolder - "
                "setpref-persistent) and dataFolder() as the root for "
-               "fetch targets; at the bottom the shipped freezes. "
+               "fetch targets; at the bottom the shipped freezes. The "
+               "on-disk layout since v3.16 is uniform: temporal "
+               "products under series/ (series/itsg/monthly|daily|"
+               "sinex|background, series/icgem/&lt;name&gt;, "
+               "series/GAX/&lt;product&gt;), static models under "
+               "static/, auxiliaries under DDK/ and TN/; the fetchers "
+               "warn once when they find data in a pre-v3.16 location "
+               "instead of silently re-downloading. "
                "The single deliberate exception is gravisL2B with an "
                "explicit GravisFolder= requesting fresh tables - and "
                "even there the shipped freeze is the default, "

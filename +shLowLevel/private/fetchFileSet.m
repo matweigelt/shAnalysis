@@ -1,7 +1,7 @@
 function [files, st] = fetchFileSet(urls, names, destFolder, opts)
 %FETCHFILESET Robust file-set download - the shared fetch-family loop.
 %
-%   Shared private helper of fetchGAX, fetchSINEX and
+%   Shared private helper of fetchGAX, fetchITSGSINEX and
 %   fetchITSGBackground: skip-if-present, Update= safe re-download,
 %   MaxFiles/BudgetSec/MaxFailures caps, a polite inter-download
 %   pause, a single capped retry on HTTP 429 (the ICGEM lesson), and

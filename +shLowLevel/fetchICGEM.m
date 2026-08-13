@@ -10,7 +10,10 @@ function [file, info] = fetchICGEM(model, opts)
 %   the listing round-trip.
 %
 %   Options
-%     Dest (fullfile(shLowLevel.dataFolder(), "icgem")), Timeout (300),
+%     Dest ("")  "" = the v3.16 layout: static models under
+%                dataFolder/static, series under
+%                dataFolder/series/icgem/<group_center_series>
+%     Timeout (300),
 %     List (table()) ([])   pass a pre-fetched listICGEM table (avoids re-listing
 %                 in loops / enables the offline fixture in tests)
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
@@ -190,7 +193,13 @@ else
 end
 dest = opts.Dest;
 if strlength(dest) == 0
-    dest = string(fullfile(shLowLevel.dataFolder(), 'icgem'));
+    dest = string(fullfile(shLowLevel.dataFolder(), 'static'));      % v3.16 layout
+    legacy = fullfile(shLowLevel.dataFolder(), 'icgem');
+    if isfolder(legacy) && ~isfolder(dest)
+        warning('shLowLevel:fetchICGEM:legacyLayout', ...
+            'found pre-v3.16 data at %s - static models now live in %s; move them to avoid re-downloading.', ...
+            legacy, dest);
+    end
 end
 if ~isfolder(dest), mkdir(dest); end
 [~, base, ext] = fileparts(char(row.url));
@@ -280,7 +289,13 @@ dest = opts.Dest;
 if strlength(dest) == 0
     tag = regexprep(char(row.group + "_" + row.center + "_" + row.series), ...
         '[^\w\-.]', '_');
-    dest = string(fullfile(shLowLevel.dataFolder(), 'icgem', 'series', tag));
+    dest = string(fullfile(shLowLevel.dataFolder(), 'series', 'icgem', tag));  % v3.16 layout
+    legacy = fullfile(shLowLevel.dataFolder(), 'icgem', 'series', tag);
+    if isfolder(legacy) && ~isfolder(dest)
+        warning('shLowLevel:fetchICGEM:legacyLayout', ...
+            'found pre-v3.16 series at %s - the new layout is %s; move the folder to avoid re-downloading.', ...
+            legacy, dest);
+    end
 end
 if ~isfolder(dest), mkdir(dest); end
 info = struct('url', row.url, 'skipped', false, 'updated', false, ...

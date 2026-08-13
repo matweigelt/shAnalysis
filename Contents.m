@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.15.1 (R2026a-compatible) 13-Aug-2026
+% Version 3.16.0 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,22 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.16.0 (uniform fetch layout; fetchITSGSINEX)
+%   BREAKING: consistent on-disk layout and naming for the fetch
+%   family, decided with the author.
+%   - fetchSINEX is now fetchITSGSINEX (source-consistent with
+%     fetchITSG/fetchITSGBackground); error IDs moved accordingly.
+%   - Default targets: series/itsg/{monthly,daily,sinex,background},
+%     series/icgem/<group_center_series>, series/GAX/<product> for
+%     temporal products; static/ for static ICGEM models; DDK/, TN/
+%     unchanged. fetchGAX's dest argument is now optional.
+%   - Every fetcher warns LOUDLY (once) when it finds data in a
+%     pre-v3.16 location instead of silently re-downloading; move
+%     the old folders to the new layout to keep skip-if-present.
+%   - run_vdk_series: renamed call sites + fixed a latent
+%     shLowLevel.shxVersion() typo (first bridge run caught it;
+%     correct name is shLowLevel.version()).
 %
 % New in v3.15.1 (guide: complete theory edition)
 %   - Part I extended for readers without prior knowledge: new entry
