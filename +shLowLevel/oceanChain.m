@@ -83,6 +83,12 @@ function [out, rep] = oceanChain(folder, opts)
 %                        most of the effect for coast-adjacent
 %                        sources, 5 is converged (pre-validated)
 %     SeparateCirculation (false) split the pixel residuals (after the
+%                        North-multiplet + Marchenko-Pastur selection,
+%                        capped at 3 modes: the MP edge assumes i.i.d.
+%                        noise and turns liberal under the spatial
+%                        correlation of real GRACE residuals - the cap
+%                        is the honest guard; lamModes and the bulk
+%                        edge are reported for inspection) -
 %                        trend + seasonal fit) into coherent residual
 %                        circulation and noise via shLowLevel.eofSeparate
 %                        (North rule); sigMon is then the NOISE RMS and
@@ -256,7 +262,12 @@ residRMS = sqrt(mean((X(mk(:), :)' - A6*coef).^2, 1));
 sigMon = sqrt(median(residRMS.^2));                       % robust vs coasts
 if opts.SeparateCirculation
     Rpx = X(mk(:), :)' - A6 * coef;                       % T x Q residuals
-    [circ, nz, infE] = shLowLevel.eofSeparate(Rpx', wA);
+    % MaxModes=3 is a deliberate conservative cap: the Marchenko-Pastur
+    % edge assumes i.i.d. noise, but GRACE pixel residuals are spatially
+    % correlated, which makes the edge liberal (the uncapped chain kept
+    % 10 modes on the real 252-month residuals). Inspect out.lamModes
+    % against infE.bulkEdge before trusting more than the leading modes.
+    [circ, nz, infE] = shLowLevel.eofSeparate(Rpx', wA, MaxModes = 3);
     sigMon = infE.rmsNoise;                               % noise, de-circulated
     circulationRMS = sqrt(sum(wA .* mean(circ.^2, 2)) / sum(wA));
     steps(end+1) = sprintf(...
