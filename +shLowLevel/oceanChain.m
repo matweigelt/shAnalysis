@@ -56,6 +56,24 @@ function [out, rep] = oceanChain(folder, opts)
 %                        Willis 2010) - removes the atmospheric
 %                        land-ocean mass term that GRACE sees but that
 %                        is not water
+%     CoastBufferKm (0)  erode the ocean mask by this great-circle
+%                        distance from every coast [km]. Quantified
+%                        (Python, gauss445 point-source experiment):
+%                        300 km removes 54% of the coastal filter
+%                        leakage, 500 km 82%, at under 1% ocean-area
+%                        loss - 300 km is the Chambers-style standard;
+%                        the default stays 0 so published acceptance
+%                        numbers remain reproducible until the
+%                        machine run re-baselines them
+%     RemoveLandLeakage (false) one-step forward-modelling of ALL
+%                        sources outside the ocean mask: per epoch the
+%                        UNFILTERED field is synthesized, everything
+%                        outside the mask (land, polar caps) is kept
+%                        as a source field, analyzed back to
+%                        coefficients (exact on the ring grid) and
+%                        subtracted BEFORE the filter - so land ice
+%                        and hydrology stop smearing across the coast.
+%                        Costs about two extra syntheses per epoch
 %     SeparateCirculation (false) split the pixel residuals (after the
 %                        trend + seasonal fit) into coherent residual
 %                        circulation and noise via shLowLevel.eofSeparate
@@ -110,6 +128,8 @@ arguments
     opts.GADFolder (1,1) string = ""
     opts.GAAFolder (1,1) string = ""
     opts.SeparateCirculation (1,1) logical = false
+    opts.CoastBufferKm (1,1) double {mustBeNonnegative} = 0
+    opts.RemoveLandLeakage (1,1) logical = false
     opts.Quiet (1,1) logical = true
 end
 if isempty(opts.kn)
@@ -141,6 +161,34 @@ if strlength(opts.GADFolder) > 0            % optional GAD restore
     [Cs, Ss, nGad] = addGADFolder(Cs, Ss, ep, opts.GADFolder);
     steps(end+1) = sprintf("GAD restored for %d/%d epochs (folder %s)", ...
         nGad, T, opts.GADFolder);
+end
+if opts.RemoveLandLeakage
+    kn1 = opts.kn; if size(kn1, 2) > 1, kn1 = kn1(:, 2); end
+    nRem = 0; Pl0 = [];
+    for k = 1:T
+        if isempty(Pl0)
+            [E0, ~, ~, Pl0] = shLowLevel.shSynthesis(Cs(:,:,k), Ss(:,:,k), ...
+                GM, R, lat, lon, 'quantity','ewh', 'kn',kn1, 'nmin',0);
+        else
+            E0 = shLowLevel.shSynthesis(Cs(:,:,k), Ss(:,:,k), ...
+                GM, R, lat, lon, 'quantity','ewh', 'kn',kn1, 'nmin',0, 'P',Pl0);
+        end
+        E0(mk) = 0;                            % keep only outside-mask sources
+        gl = shCoefficients.analysis(E0, lat, lon, size(Cs, 1) - 1, ...
+            kn = kn1, quantity = "ewh");
+        Cs(:,:,k) = Cs(:,:,k) - gl.C;
+        Ss(:,:,k) = Ss(:,:,k) - gl.S;
+        nRem = nRem + 1;
+    end
+    steps(end+1) = sprintf(...
+        "one-step land-leakage removal for %d epochs (sources = outside mask)", nRem);
+end
+if opts.CoastBufferKm > 0
+    a0 = nnz(mk);
+    mk = shLowLevel.erodeMask(mk, lat, lon, opts.CoastBufferKm);
+    steps(end+1) = sprintf(...
+        "coast buffer %g km: mask %d -> %d pixels", ...
+        opts.CoastBufferKm, a0, nnz(mk));
 end
 if opts.Filter ~= "none"
     rkm = double(extractAfter(opts.Filter, "gauss"));

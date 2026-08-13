@@ -60,7 +60,9 @@ deficit for every cell or basin. And everything is offline by
 design: chains and filters consume local paths only (the GravIS
 correction tables ship frozen in `data/gravis`); the `fetch*` family
 provisions once with skip-if-present semantics, so a populated data
-folder never needs the network again.
+folder never needs the network again. The barystatic chain now
+carries quantified coastal-leakage controls (`CoastBufferKm`,
+`RemoveLandLeakage`) - measured before built, defaults conservative.
 
 ## Documentation
 

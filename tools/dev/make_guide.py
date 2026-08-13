@@ -1842,6 +1842,34 @@ story += [para("<b>Offline by design.</b> No chain ever fetches: "
                "even there the shipped freeze is the default, "
                "precisely so reproducibility never hangs on a "
                "server (the ISDC 503 episode was the confirmation).")]
+story += [para("<b>Coastal leakage, controlled twice.</b> The crude "
+               "ocean mask plus gauss445 lets land signal - Greenland "
+               "above all - smear across the coast into the ocean "
+               "mean. Two independent controls, both quantified "
+               "before implementation: <font face='Courier'>"
+               "CoastBufferKm</font> (the public helper <font "
+               "face='Courier'>shLowLevel.erodeMask</font>) erodes "
+               "the mask by a great-circle distance from every coast (the Python "
+               "point-source experiment for gauss445: 300 km removes "
+               "54%% of the leak, 500 km 82%%, at under 1%% "
+               "ocean-area loss - 300 km is the Chambers-style "
+               "standard), and <font face='Courier'>"
+               "RemoveLandLeakage</font> performs one-step forward "
+               "modelling: per epoch the unfiltered field is "
+               "synthesized, everything OUTSIDE the mask is analyzed "
+               "back to coefficients (exact on the ring grid) and "
+               "subtracted before the filter, so ice and hydrology "
+               "never reach the coast in the first place. The CI "
+               "test plants a land box beside a constant-signal "
+               "ocean: the removal cuts the leak bias by more than "
+               "60%% while preserving the true ocean mean to 5%%. "
+               "Defaults stay off until the machine acceptance "
+               "re-baselines the published +1.41 mm/yr - changing a "
+               "validated number silently is not how this toolbox "
+               "works.")]
+story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = gadF, GAAFolder = gaaF, ...
+    CoastBufferKm = 300, RemoveLandLeakage = true);""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

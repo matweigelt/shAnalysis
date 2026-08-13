@@ -2353,6 +2353,52 @@ verifyEqual(testCase, numel(info.nPerMonth), 365);   % auto chose DOY
 verifyEqual(testCase, numel(infM.nPerMonth), 12);
 end
 
+function testCoastalLeakageControls(testCase)
+%TESTCOASTALLEAKAGECONTROLS v3.15.0: the two ocean-chain leakage
+%   controls on a synthetic n30 world - a land box source beside a
+%   masked ocean carrying a constant true signal, gauss445-filtered.
+%   Frozen, geometry-free criteria: erodeMask loses pixels
+%   monotonically with the buffer and keeps the deep interior;
+%   one-step land-leakage removal (exactly the chain recipe) cuts the
+%   leak-induced ocean-mean bias by > 60% while preserving the true
+%   ocean mean to 5%. Python reference for the buffer alone
+%   (gauss445 point source): 54% leak reduction at 300 km, 82% at
+%   500 km, under 1% area loss.
+lat = (-89.5:1:89.5)'; lon = (0.5:1:359.5)';
+[LO, LA] = meshgrid(lon, lat);
+ocean = abs(LA) <= 60 & (LO > 60 & LO < 160);
+land  = (LA > 10 & LA < 40 & LO > 20 & LO < 55);
+mk300 = shLowLevel.erodeMask(ocean, lat, lon, 300);
+mk600 = shLowLevel.erodeMask(ocean, lat, lon, 600);
+verifyTrue(testCase, all(mk300(:) <= ocean(:)));
+verifyTrue(testCase, all(mk600(:) <= mk300(:)));
+verifyGreaterThan(testCase, nnz(ocean) - nnz(mk300), 0);
+[~, iLa] = min(abs(lat - 0)); [~, iLo] = min(abs(lon - 110));
+verifyTrue(testCase, mk600(iLa, iLo));
+nmax = 30; kn = zeros(nmax + 1, 1);
+GM = 3.986004415e14; R = 6378136.3;
+E = double(land) * 1.0 + double(ocean) * 0.10;
+g = shCoefficients.analysis(E, lat, lon, nmax, kn = kn, quantity = "ewh");
+wf = shLowLevel.shGaussianWeights(nmax, 445); wf = wf(:);
+w = cosd(LA);
+omRaw = localMaskMean(shLowLevel.shSynthesis(g.C .* wf, g.S .* wf, ...
+    GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, 'nmin', 0), w, ocean);
+E0 = shLowLevel.shSynthesis(g.C, g.S, GM, R, lat, lon, ...
+    'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+E0(ocean) = 0;
+gl = shCoefficients.analysis(E0, lat, lon, nmax, kn = kn, quantity = "ewh");
+omClean = localMaskMean(shLowLevel.shSynthesis((g.C - gl.C) .* wf, ...
+    (g.S - gl.S) .* wf, GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, ...
+    'nmin', 0), w, ocean);
+truth = 0.10;
+verifyLessThan(testCase, abs(omClean - truth), 0.4 * abs(omRaw - truth));
+verifyEqual(testCase, omClean, truth, RelTol = 0.05);
+end
+
+function m = localMaskMean(F, w, mk)
+m = sum(F(mk) .* w(mk)) / sum(w(mk));
+end
+
 function testHydroExtremeIndexDSI(testCase)
 %TESTHYDROEXTREMEINDEXDSI v3.14.0: DSI against the Python-frozen
 %   criteria - a planted -2.5-sigma month lands in D4 (<= -2.0) when

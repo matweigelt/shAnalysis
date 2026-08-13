@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.15.0] - 2026-08-13 - coastal-leakage controls
+
+oceanChain gains CoastBufferKm (great-circle mask erosion; 300 km
+cuts 54% of the gauss445 coastal leak, measured) and
+RemoveLandLeakage (one-step forward modelling of all outside-mask
+sources before the filter; >60% leak-bias reduction with 5%
+ocean-mean fidelity in the CI experiment). Defaults off until the
+machine acceptance re-baselines the published barystatic trend.
+
 ## [3.14.0] - 2026-08-13 - flood/drought indices
 
 hydroExtremeIndex: GRACE-DSI with USDM-style categories, WSDI, and
