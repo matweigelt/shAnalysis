@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.14.0)</h1>
+<h1>shAnalysis API reference (v3.15.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -35,6 +35,7 @@ code itself.</p>
 <a href="#shLowLevel.effectiveCorr">effectiveCorr</a>
 <a href="#shLowLevel.eofAnalysis">eofAnalysis</a>
 <a href="#shLowLevel.eofSeparate">eofSeparate</a>
+<a href="#shLowLevel.erodeMask">erodeMask</a>
 <a href="#shLowLevel.errorMap">errorMap</a>
 <a href="#shLowLevel.estimateDegree1">estimateDegree1</a>
 <a href="#shLowLevel.evalMask">evalMask</a>
@@ -337,6 +338,18 @@ code itself.</p>
     [circ, nz, inf1] = shLowLevel.eofSeparate(R, wA);
     inf1.nKeep              % modes the North rule accepts
     inf1.rmsNoise           % the de-circulated noise level</pre>
+</div>
+<div class="entry" id="shLowLevel.erodeMask">
+<h3><code>shLowLevel.erodeMask(mk, lat, lon, bufferKm)</code></h3>
+<p class="h1line">Erode a region mask by a great-circle boundary buffer.</p>
+<p>MK2 = shLowLevel.erodeMask(MK, LAT, LON, KM) keeps only mask pixels whose great-circle distance to the nearest OUTSIDE pixel exceeds BUFFERKM. Distances are computed against the boundary pixels of the complement only (coast), so the cost is nCoast x nGrid.</p>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>mk2</code></td><td>(nLat x nLon) logical  eroded mask</td></tr>
+<tr><td><code>dmin</code></td><td>(nLat x nLon) double   distance to the nearest outside coast pixel [km] (Inf where no outside pixel exists)</td></tr>
+</table>
+<b>Example</b><pre>    oc = abs(LA) &lt;= 66 &amp; ~landBoxes;              % crude ocean mask
+    oc300 = shLowLevel.erodeMask(oc, lat, lon, 300);
+    nnz(oc) - nnz(oc300)                          % coast pixels shed</pre>
 </div>
 <div class="entry" id="shLowLevel.errorMap">
 <h3><code>shLowLevel.errorMap(M, idx, latDeg, lonDeg, opts)</code></h3>
@@ -786,7 +799,7 @@ code itself.</p>
 <p class="h1line">Global-ocean mass chain: barystatic series from GSM + GravIS.</p>
 <p>[OUT, REP] = shLowLevel.oceanChain(FOLDER, kn = KN, OceanMask = OC) runs the ocean sibling of the validated chains (roadmap item 7): gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA rate ON by default - the ocean-floor GIA correction matters for barystatic trends) -&gt; global EWH synthesis on a GridStep graticule -&gt; area-weighted ocean-mean series [cm] -&gt; trend + annual fit. The residual after the per-pixel trend+seasonal fit is what remains for the noise proxy: this chain SEPARATES the real open-ocean signal (barystatic rise + seasonal circulation) from the residual that oceanRMS should see - the guide-V6 finding (&quot;the trend&#x27;s open-ocean RMS is mostly real barystatic signal, not error&quot;) as an API.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>SeparateCirculation</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>SeparateCirculation</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>CoastBufferKm</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>RemoveLandLeakage</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>LandLeakIter</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
 <tr><td><code>epochs</code></td><td>(T x 1) decimal years oceanMean (T x 1) area-weighted ocean-mean EWH [cm]</td></tr>
@@ -2133,4 +2146,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 13-Aug-2026 (v3.14.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 13-Aug-2026 (v3.15.0). Generated by tools - do not edit.</p></body></html>

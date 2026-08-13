@@ -2353,6 +2353,74 @@ verifyEqual(testCase, numel(info.nPerMonth), 365);   % auto chose DOY
 verifyEqual(testCase, numel(infM.nPerMonth), 12);
 end
 
+function testCoastalLeakageControls(testCase)
+%TESTCOASTALLEAKAGECONTROLS v3.15.0: leakage controls on a
+%   BAND-LIMITED synthetic world. The first version planted sharp
+%   boxes and compared against their nominal amplitude - CI caught
+%   the category error: at n30 the boxes ring, the "truth" does not
+%   exist band-limited, and the removal also subtracts the ocean's
+%   own ringing outside the mask. Correct experiment: land and ocean
+%   sources are band-limited SEPARATELY, the reference is the
+%   filtered OCEAN-ONLY mask mean, and the leak is the difference
+%   the land source adds to it. Criteria: erodeMask monotone with
+%   interior preserved; one-step removal cuts the land-induced leak
+%   by > 50% (ocean-ringing contamination is second order at a 10:1
+%   land:ocean amplitude ratio); the ocean reference itself stays
+%   within 15% of nominal (ringing + filter).
+lat = (-89.5:1:89.5)'; lon = (0.5:1:359.5)';
+[LO, LA] = meshgrid(lon, lat);
+ocean = abs(LA) <= 60 & (LO > 60 & LO < 160);
+land  = (LA > -30 & LA < 30 & LO >= 160 & LO < 200);   % coast-adjacent
+mk300 = shLowLevel.erodeMask(ocean, lat, lon, 300);
+mk600 = shLowLevel.erodeMask(ocean, lat, lon, 600);
+verifyTrue(testCase, all(mk300(:) <= ocean(:)));
+verifyTrue(testCase, all(mk600(:) <= mk300(:)));
+verifyGreaterThan(testCase, nnz(ocean) - nnz(mk300), 0);
+[~, iLa] = min(abs(lat - 0)); [~, iLo] = min(abs(lon - 110));
+verifyTrue(testCase, mk600(iLa, iLo));
+nmax = 30; kn = zeros(nmax + 1, 1);
+GM = 3.986004415e14; R = 6378136.3;
+gLand = shCoefficients.analysis(double(land) * 1.0, lat, lon, nmax, ...
+    kn = kn, quantity = "ewh");
+gOc = shCoefficients.analysis(double(ocean) * 0.10, lat, lon, nmax, ...
+    kn = kn, quantity = "ewh");
+wf = shLowLevel.shGaussianWeights(nmax, 445); wf = wf(:);
+w = cosd(LA);
+mm = @(C, S) localMaskMean(shLowLevel.shSynthesis(C .* wf, S .* wf, ...
+    GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, 'nmin', 0), w, ocean);
+ref = mm(gOc.C, gOc.S);                        % ocean-only reference
+verifyEqual(testCase, ref, 0.10, RelTol = 0.15);
+leakRaw = mm(gOc.C + gLand.C, gOc.S + gLand.S) - ref;
+verifyGreaterThan(testCase, abs(leakRaw), 1e-4);   % experiment not empty
+% iterative two-sided separation exactly as the chain does it
+% (pre-validated: one-step WORSENS the leak - interior ringing of the
+% outside reconstruction; two-sided POCS at 5 sweeps cuts an
+% adjacent-source leak by 94% in the 1D reference)
+Lc = zeros(nmax + 1); Ls = Lc; Oc = Lc; Os = Lc;
+for it = 1:5
+    EL = shLowLevel.shSynthesis(gOc.C + gLand.C - Oc, ...
+        gOc.S + gLand.S - Os, GM, R, lat, lon, ...
+        'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+    EL(ocean) = 0;
+    gLe = shCoefficients.analysis(EL, lat, lon, nmax, kn = kn, ...
+        quantity = "ewh");
+    Lc = gLe.C; Ls = gLe.S;
+    EO = shLowLevel.shSynthesis(gOc.C + gLand.C - Lc, ...
+        gOc.S + gLand.S - Ls, GM, R, lat, lon, ...
+        'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+    EO(~ocean) = 0;
+    gOe = shCoefficients.analysis(EO, lat, lon, nmax, kn = kn, ...
+        quantity = "ewh");
+    Oc = gOe.C; Os = gOe.S;
+end
+leakClean = mm(gOc.C + gLand.C - Lc, gOc.S + gLand.S - Ls) - ref;
+verifyLessThan(testCase, abs(leakClean), 0.5 * abs(leakRaw));
+end
+
+function m = localMaskMean(F, w, mk)
+m = sum(F(mk) .* w(mk)) / sum(w(mk));
+end
+
 function testHydroExtremeIndexDSI(testCase)
 %TESTHYDROEXTREMEINDEXDSI v3.14.0: DSI against the Python-frozen
 %   criteria - a planted -2.5-sigma month lands in D4 (<= -2.0) when

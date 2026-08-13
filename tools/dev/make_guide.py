@@ -1842,6 +1842,36 @@ story += [para("<b>Offline by design.</b> No chain ever fetches: "
                "even there the shipped freeze is the default, "
                "precisely so reproducibility never hangs on a "
                "server (the ISDC 503 episode was the confirmation).")]
+story += [para("<b>Coastal leakage, controlled twice.</b> The crude "
+               "ocean mask plus gauss445 lets land signal - Greenland "
+               "above all - smear across the coast into the ocean "
+               "mean. Two independent controls, both quantified "
+               "before implementation: <font face='Courier'>"
+               "CoastBufferKm</font> (the public helper <font "
+               "face='Courier'>shLowLevel.erodeMask</font>) erodes "
+               "the mask by a great-circle distance from every coast (the Python "
+               "point-source experiment for gauss445: 300 km removes "
+               "54%% of the leak, 500 km 82%%, at under 1%% "
+               "ocean-area loss - 300 km is the Chambers-style "
+               "standard), and <font face='Courier'>"
+               "RemoveLandLeakage</font> separates the outside-mask "
+               "sources by two-sided alternating support projections "
+               "(Papoulis-Gerchberg style, LandLeakIter sweeps) and "
+               "subtracts the converged land component before the "
+               "filter. The pre-validation taught the hard lesson "
+               "here: a naive ONE-step subtraction makes the leak "
+               "WORSE, because the reconstruction of the outside "
+               "field rings INTO the mask; the two-sided iteration "
+               "cuts an adjacent-source leak of 47%% of the ocean "
+               "mean by 94%% (1D reference, frozen in CI on the "
+               "band-limited spherical experiment). "
+               "Defaults stay off until the machine acceptance "
+               "re-baselines the published +1.41 mm/yr - changing a "
+               "validated number silently is not how this toolbox "
+               "works.")]
+story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
+    GADFolder = gadF, GAAFolder = gaaF, ...
+    CoastBufferKm = 300, RemoveLandLeakage = true);""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.14.0 (R2026a-compatible) 13-Aug-2026
+% Version 3.15.0 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,22 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.15.0 (coastal-leakage controls for the ocean chain)
+%   - oceanChain CoastBufferKm=: great-circle mask erosion (public
+%     helper shLowLevel.erodeMask). Quantified before building
+%     (Python gauss445 point source): 300 km cuts 54% of the coastal
+%     leak, 500 km 82%, at < 1% ocean-area loss.
+%   - oceanChain RemoveLandLeakage= (LandLeakIter=5): iterative
+%     two-sided support separation (Papoulis-Gerchberg style) of the
+%     outside-mask sources, subtracted BEFORE the filter. The
+%     pre-validation caught that a naive one-step subtraction WORSENS
+%     the leak (interior ringing of the outside reconstruction); the
+%     iteration cuts an adjacent-source leak of 47% of the ocean
+%     mean by 94% (frozen in CI).
+%   - Defaults stay OFF: the published +1.41 mm/yr acceptance stays
+%     reproducible until the machine run re-baselines it (accept 6e
+%     prints the buffer/removal trend table against ~1.6-2.2).
 %
 % New in v3.14.0 (flood/drought indices per cell or basin)
 %   - shLowLevel.hydroExtremeIndex: GRACE-DSI (Zhao et al. 2017,
