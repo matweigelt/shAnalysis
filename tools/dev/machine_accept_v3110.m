@@ -132,6 +132,19 @@ catch ME
     fprintf('FAIL  hydroIndex: %s\n', ME.identifier);
 end
 
+%% 6d - v3.14 stage 2: daily Kalman flood tracking (bounded live)
+try
+    fD = shLowLevel.fetchITSG("2019-07", Product = "daily", Quiet = true);
+    tsD = shSeries.read(fD);
+    fprintf('%s  daily Kalman: %d days read, epochs %.3f..%.3f\n', ...
+        ternary(numel(fD) >= 28, "PASS", "FAIL"), ...
+        numel(fD), tsD.epochs(1), tsD.epochs(end));
+    % full daily-DSI needs a multi-year daily archive - that fetch is a
+    % deliberate batch (365 files/yr); this section verifies the path.
+catch ME
+    fprintf('FAIL  daily path: %s\n', ME.identifier);
+end
+
 %% 6 - optional GravIS OBP cross-check (503-tolerant)
 try
     gvDir = fullfile(tempdir, 'gravis_obp');

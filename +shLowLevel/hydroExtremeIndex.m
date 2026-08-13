@@ -52,6 +52,21 @@ function [Z, info] = hydroExtremeIndex(X, epochs, opts)
 %                         quietly unstable sigma
 %     PrecipGrid ([])     same shape as X [same unit]: enables the
 %                         full FPI in StorageDeficit mode
+%     Climatology ("auto") "monthly" | "doy" | "auto" (daily data -
+%                         median epoch spacing < 20 days - selects
+%                         "doy"). The DOY mode is stage 2: daily
+%                         Kalman solutions (fetchITSG Product="daily")
+%                         track short-lived floods that monthly
+%                         solutions miss (Gouweleeuw et al. 2018,
+%                         Ganges-Brahmaputra). Two-stage construction,
+%                         Python-prevalidated: climatology per EXACT
+%                         day-of-year, sigma from the RESIDUALS in a
+%                         circular +-WindowDays/2 window (wraps
+%                         Dec-Jan) with the sqrt(n/(n-1)) correction
+%                         for the estimated-mean variance loss -
+%                         window sigma on raw values leaks seasonality
+%                         (measured: 1.99 instead of 1.5 at W=31)
+%     WindowDays (31)     (1 x 1) circular DOY window width [days]
 %
 %   Outputs
 %     Z    same shape as X  the index (DSI/WSDI z-scores; Sdef in the
@@ -87,6 +102,9 @@ arguments
         {mustBeMember(opts.Sigma, ["std", "robust"])} = "std"
     opts.MinYears (1,1) double {mustBePositive} = 5
     opts.PrecipGrid double = []
+    opts.Climatology (1,1) string ...
+        {mustBeMember(opts.Climatology, ["auto", "monthly", "doy"])} = "auto"
+    opts.WindowDays (1,1) double {mustBePositive} = 31
 end
 T = numel(epochs);
 sz = size(X);
@@ -111,31 +129,67 @@ if opts.Detrend == "linear"
     trendPerYr = co(2, :)';
 end
 mo = max(1, min(12, 1 + floor(mod(epochs, 1) * 12)));
+useDoy = opts.Climatology == "doy" || (opts.Climatology == "auto" ...
+    && median(diff(sort(epochs))) < 20 / 365.25);
 switch opts.Mode
     case {"DSI", "WSDI"}
-        clim = nan(Q, 12); sig = nan(Q, 12); nPerMonth = zeros(12, 1);
-        Za = nan(Q, T);
-        for j = 1:12
-            s = mo == j;
-            nPerMonth(j) = nnz(s);
-            if nnz(s) < opts.MinYears, continue, end
-            V = Xa(:, s);
-            clim(:, j) = mean(V, 2);
-            if opts.Sigma == "robust"
-                sig(:, j) = 1.4826 * median(abs(V - median(V, 2)), 2);
-            else
-                sig(:, j) = std(V, 0, 2);
+        if useDoy
+            % stage 2: per-DOY climatology, window sigma on RESIDUALS
+            doy = min(365, 1 + floor(mod(epochs, 1) * 365.25));
+            clim = nan(Q, 365); sig = nan(Q, 365);
+            nPerMonth = zeros(365, 1);
+            for d = 1:365
+                sD = doy == d;
+                nPerMonth(d) = nnz(sD);
+                if any(sD), clim(:, d) = mean(Xa(:, sD), 2); end
             end
-            Za(:, s) = (V - clim(:, j)) ./ sig(:, j);
+            resid = Xa - clim(:, doy);
+            half = floor(opts.WindowDays / 2);
+            for d = 1:365
+                dist = min(abs(doy - d), 365 - abs(doy - d));
+                sW = dist <= half;
+                n = max(2, nPerMonth(d));
+                corr = sqrt(n / (n - 1));       % estimated-mean loss
+                if nPerMonth(d) < opts.MinYears, continue, end
+                V = resid(:, sW);
+                if opts.Sigma == "robust"
+                    sig(:, d) = corr * 1.4826 * ...
+                        median(abs(V - median(V, 2)), 2);
+                else
+                    sig(:, d) = corr * std(V, 0, 2);
+                end
+            end
+            Za = resid ./ sig(:, doy);
+            grp = doy; %#ok<NASGU>
+        else
+            clim = nan(Q, 12); sig = nan(Q, 12); nPerMonth = zeros(12, 1);
+            Za = nan(Q, T);
+            for j = 1:12
+                s = mo == j;
+                nPerMonth(j) = nnz(s);
+                if nnz(s) < opts.MinYears, continue, end
+                V = Xa(:, s);
+                clim(:, j) = mean(V, 2);
+                if opts.Sigma == "robust"
+                    sig(:, j) = 1.4826 * median(abs(V - median(V, 2)), 2);
+                else
+                    sig(:, j) = std(V, 0, 2);
+                end
+                Za(:, s) = (V - clim(:, j)) ./ sig(:, j);
+            end
         end
         if any(nPerMonth < opts.MinYears)
             warning('shLowLevel:hydroExtremeIndex:shortMonths', ...
-                '%d calendar month(s) sampled by fewer than %d years - NaN there.', ...
+                '%d climatology group(s) sampled by fewer than %d years - NaN there.', ...
                 nnz(nPerMonth < opts.MinYears), opts.MinYears);
         end
         if opts.Mode == "WSDI"
             % Sinha: standardize the deficit series as one population
-            D = Xa - clim(:, mo);
+            if useDoy
+                D = Xa - clim(:, min(365, 1 + floor(mod(epochs, 1) * 365.25)));
+            else
+                D = Xa - clim(:, mo);
+            end
             Za = (D - mean(D, 2, 'omitnan')) ./ std(D, 0, 2, 'omitnan');
         end
         Z = reshape(Za, sz);

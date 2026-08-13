@@ -2325,6 +2325,34 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testHydroExtremeIndexDailyDOY(testCase)
+%TESTHYDROEXTREMEINDEXDAILYDOY v3.14.0 stage 2: daily DOY climatology
+%   against the Python-frozen criteria - the circular window wraps
+%   Dec-Jan (a planted +3-sigma Jan-2 flood scores z >= 2), the
+%   two-stage construction keeps sigma free of seasonality leak
+%   (median within 6% of truth incl. the sqrt(n/(n-1)) correction;
+%   raw-value window sigma measured 1.99 vs true 1.5), and "auto"
+%   selects DOY for daily spacing.
+rng(31, 'twister');
+nYr = 6; T = nYr * 365;
+t = (0:T-1)'; doy = mod(t, 365) + 1;
+ep = 2015 + t / 365 + 0.5 / 365;
+clim = 12 * sin(2*pi*(doy - 120)/365);
+sig = 1.5;
+x = clim + sig * randn(T, 1);
+iEv = 4*365 + 2;                               % Jan 2, year 5
+x(iEv) = clim(iEv) + 3.0 * sig;
+[z, info] = shLowLevel.hydroExtremeIndex(x, ep, Detrend = "none");
+verifyGreaterThanOrEqual(testCase, z(iEv), 2.0);
+verifyEqual(testCase, median(info.sigma(1, :), 'omitnan'), sig, ...
+    RelTol = 0.06);
+verifyEqual(testCase, numel(info.nPerMonth), 365);   % auto chose DOY
+% monthly override still works on the same data
+[~, infM] = shLowLevel.hydroExtremeIndex(x, ep, Detrend = "none", ...
+    Climatology = "monthly");
+verifyEqual(testCase, numel(infM.nPerMonth), 12);
+end
+
 function testHydroExtremeIndexDSI(testCase)
 %TESTHYDROEXTREMEINDEXDSI v3.14.0: DSI against the Python-frozen
 %   criteria - a planted -2.5-sigma month lands in D4 (<= -2.0) when

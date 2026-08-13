@@ -1796,7 +1796,21 @@ story += [para("<b>Flood and drought indices per cell or basin.</b> "
                "therefore the DSI/WSDI default, while StorageDeficit "
                "keeps the physical Reager convention (none). A robust "
                "sigma option (1.4826 MAD) survives single corrupt "
-               "months that inflate the classical sigma sixfold.")]
+               "months that inflate the classical sigma sixfold. "
+               "STAGE 2 is live too: on the ITSG daily Kalman "
+               "solutions (fetchITSG Product = daily, 365 files/yr, "
+               "n40) the index switches to a day-of-year climatology "
+               "- per-DOY means, sigma from the RESIDUALS in a "
+               "circular 31-day window that wraps December into "
+               "January, with the sqrt(n/(n-1)) estimated-mean "
+               "correction. The construction matters and was "
+               "measured: window sigma on RAW values leaks the "
+               "seasonal cycle (1.99 instead of 1.5), the two-stage "
+               "form does not (1.52). Daily solutions track "
+               "short-lived floods that monthly fields miss "
+               "(Gouweleeuw et al. 2018, Ganges-Brahmaputra) - a "
+               "planted +3-sigma January-2nd flood scores z = 2.9 "
+               "across the year wrap.")]
 story += code("""[tws, rep] = shLowLevel.twsChain(ser, kn = kn);
 [Z, inf1] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
 inf1.categoryNames(inf1.category(iLat, iLon, end) + 6)   % cell class

@@ -227,6 +227,12 @@
 %     default; StorageDeficit keeps the physical Reager convention.
 %   - Robust sigma option (1.4826*MAD): one corrupt month inflates
 %     the classical sigma sixfold, the MAD not at all (measured).
+%   - Stage 2, daily: on ITSG daily Kalman solutions the index
+%     switches (auto) to a day-of-year climatology - per-DOY means,
+%     sigma from residuals in a circular 31-day window (Dec-Jan wrap)
+%     with the sqrt(n/(n-1)) correction; raw-value window sigma leaks
+%     seasonality (1.99 vs 1.5, measured). Tracks short-lived floods
+%     monthly fields miss (Gouweleeuw et al. 2018).
 %
 % New in v3.13.0 (VDK/VADER decorrelation from monthly SINEX)
 %   - shLowLevel.vdkApply: the Horvath et al. (2018) filter
