@@ -53,7 +53,14 @@ series via `fetchITSG`/`fetchICGEM`, products via `fetchGAX`,
 `fetchSINEX` (ITSG monthly normals - the only public per-month SINEX,
 ~460 MB each) and `fetchITSGBackground`. Those normals feed `vdkApply` - the
 VDK/VADER decorrelation of Horvath et al. (2018) with true monthly
-covariance structure; `run_vdk_series.m` drives the full-series batch.
+covariance structure; `run_vdk_series.m` drives the full-series batch. And the hydrology story
+closes the loop from field to warning: `hydroExtremeIndex` delivers
+GRACE-DSI drought categories and the Reager flood-predisposition
+deficit for every cell or basin. And everything is offline by
+design: chains and filters consume local paths only (the GravIS
+correction tables ship frozen in `data/gravis`); the `fetch*` family
+provisions once with skip-if-present semantics, so a populated data
+folder never needs the network again.
 
 ## Documentation
 

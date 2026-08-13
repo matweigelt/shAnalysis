@@ -2325,6 +2325,90 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testHydroExtremeIndexDailyDOY(testCase)
+%TESTHYDROEXTREMEINDEXDAILYDOY v3.14.0 stage 2: daily DOY climatology
+%   against the Python-frozen criteria - the circular window wraps
+%   Dec-Jan (a planted +3-sigma Jan-2 flood scores z >= 2), the
+%   two-stage construction keeps sigma free of seasonality leak
+%   (median within 6% of truth incl. the sqrt(n/(n-1)) correction;
+%   raw-value window sigma measured 1.99 vs true 1.5), and "auto"
+%   selects DOY for daily spacing.
+rng(31, 'twister');
+nYr = 6; T = nYr * 365;
+t = (0:T-1)'; doy = mod(t, 365) + 1;
+ep = 2015 + t / 365 + 0.5 / 365;
+clim = 12 * sin(2*pi*(doy - 120)/365);
+sig = 1.5;
+x = clim + sig * randn(T, 1);
+iEv = 4*365 + 2;                               % Jan 2, year 5
+x(iEv) = clim(iEv) + 3.0 * sig;
+[z, info] = shLowLevel.hydroExtremeIndex(x, ep, Detrend = "none");
+verifyGreaterThanOrEqual(testCase, z(iEv), 2.0);
+verifyEqual(testCase, median(info.sigma(1, :), 'omitnan'), sig, ...
+    RelTol = 0.06);
+verifyEqual(testCase, numel(info.nPerMonth), 365);   % auto chose DOY
+% monthly override still works on the same data
+[~, infM] = shLowLevel.hydroExtremeIndex(x, ep, Detrend = "none", ...
+    Climatology = "monthly");
+verifyEqual(testCase, numel(infM.nPerMonth), 12);
+end
+
+function testHydroExtremeIndexDSI(testCase)
+%TESTHYDROEXTREMEINDEXDSI v3.14.0: DSI against the Python-frozen
+%   criteria - a planted -2.5-sigma month lands in D4 (<= -2.0) when
+%   detrended, LOSES its category without detrending (the 0.5 cm/yr
+%   trend weakened it to -1.44 in the reference run), the running
+%   category rate stays honest, and one 50-cm outlier corrupts the
+%   std-sigma sixfold while the robust MAD stays put.
+rng(21, 'twister');
+T = 240; t = (0:T-1)';
+ep = 2000 + t / 12 + 1 / 24;
+mo = mod(t, 12);
+clim = 10 * sin(2*pi*mo/12);
+sigj = 2.0 + 1.0 * cos(2*pi*mo/12);
+x = clim + 0.5 * (t/12) + sigj .* randn(T, 1);
+x(101) = clim(101) + 0.5*(100/12) - 2.5*sigj(101);
+x(201) = clim(201) + 0.5*(200/12) + 2.5*sigj(201);
+[zD, infD] = shLowLevel.hydroExtremeIndex(x, ep);
+[zN, ~] = shLowLevel.hydroExtremeIndex(x, ep, Detrend = "none");
+verifyLessThanOrEqual(testCase, zD(101), -2.0);
+verifyGreaterThanOrEqual(testCase, zD(201), 2.0);
+verifyGreaterThan(testCase, zN(101), zD(101) + 0.5);   % trend eats it
+verifyEqual(testCase, infD.category(101), int8(-5));   % D4
+verifyEqual(testCase, infD.categoryNames(1), "D4");
+% robust sigma vs one outlier
+x2 = x; x2(4) = x2(4) + 50;
+[~, iS] = shLowLevel.hydroExtremeIndex(x2, ep, Sigma = "std");
+[~, iR] = shLowLevel.hydroExtremeIndex(x2, ep, Sigma = "robust");
+j = mo(4) + 1;
+verifyGreaterThan(testCase, iS.sigma(1, j), 2 * iR.sigma(1, j));
+verifyEqual(testCase, iR.sigma(1, j), sigj(4), RelTol = 0.8);
+end
+
+function testHydroExtremeIndexDeficit(testCase)
+%TESTHYDROEXTREMEINDEXDEFICIT v3.14.0: the Reager storage deficit is
+%   causal, non-negative, exactly zero one step after a running
+%   maximum; with PrecipGrid the FPI normalizes to max 1.
+rng(22, 'twister');
+T = 120; ep = 2000 + (0:T-1)' / 12 + 1/24;
+x = cumsum(randn(T, 1));
+[Sd, inf1] = shLowLevel.hydroExtremeIndex(x, ep, Mode = "StorageDeficit");
+verifyTrue(testCase, isnan(Sd(1)));
+verifyGreaterThanOrEqual(testCase, min(Sd(2:end)), 0);
+[~, im] = max(x(1:end-1));
+verifyEqual(testCase, Sd(im + 1), 0, AbsTol = 1e-12);
+verifyEqual(testCase, string(inf1.mode), "StorageDeficit");
+P = max(0, 5 + 4 * randn(T, 1));
+[fpi, inf2] = shLowLevel.hydroExtremeIndex(x, ep, ...
+    Mode = "StorageDeficit", PrecipGrid = P);
+verifyEqual(testCase, max(fpi), 1, AbsTol = 1e-12);
+verifyEqual(testCase, string(inf2.mode), "FPI");
+% grid shape passthrough: 2 x 3 x T in, same out
+G = repmat(reshape(x, 1, 1, T), 2, 3, 1);
+Zg = shLowLevel.hydroExtremeIndex(G, ep);
+verifyEqual(testCase, size(Zg), [2, 3, T]);
+end
+
 function testVdkApplyCore(testCase)
 %TESTVDKAPPLYCORE v3.13.0: VDK/VADER solve against the Python-frozen
 %   identities - alpha=0 is the identity, M = c*N collapses to the
