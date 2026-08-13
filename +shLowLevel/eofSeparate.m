@@ -82,6 +82,20 @@ lam = s.^2 / T;
 % the single-mode rule silently dropped, nKeep 0.)
 dl = lam * sqrt(2 / T);
 nsep = lam(1:end-1) - lam(2:end) > dl(1:end-1);
+% Marchenko-Pastur bulk edge, median-calibrated: noise variance from
+% median(lam)/mpMedian(Q/T), edge sigma2*(1+sqrt(Q/T))^2. Separation
+% alone is NOT a signal criterion - the sampling gap dl shrinks with
+% lam, so random bulk gaps "separate" and the group chain would walk
+% deep into the noise (the first machine run kept 10 modes; with the
+% edge it keeps the physical doublet). Frozen in Python: noise-only 0,
+% degenerate pair 2, single mode 1.
+c = Q / T;
+lp = (1 + sqrt(c))^2; lm = (1 - sqrt(c))^2;
+xs = linspace(lm, lp, 4000); xs = xs(2:end-1);
+pdf = sqrt((lp - xs) .* (xs - lm)) ./ (2*pi*c*xs);
+cdf = cumsum(pdf) * (xs(2) - xs(1)); cdf = cdf / cdf(end);
+mpMed = xs(find(cdf >= 0.5, 1));
+edge = median(lam) / mpMed * lp;
 if isempty(opts.NKeep)
     n = 0; i = 1;
     while i < numel(lam)
@@ -89,10 +103,11 @@ if isempty(opts.NKeep)
         while j < numel(lam) - 1 && lam(j) - lam(j+1) <= dl(j)
             j = j + 1;                       % grow the multiplet
         end
-        if j < numel(lam) && lam(j) - lam(j+1) > dl(j)
-            n = j; i = j + 1;                % group separated: keep it
+        sep = j < numel(lam) && lam(j) - lam(j+1) > dl(j);
+        if sep && lam(j) > edge
+            n = j; i = j + 1;                % separated AND above bulk
         else
-            break                            % group merges into the bulk
+            break
         end
     end
 else
@@ -107,6 +122,7 @@ end
 noiseR = Rc - circ;
 wRep = repmat(w, 1, T);
 rmsNoise = sqrt(sum(wRep .* noiseR.^2, 'all') / sum(wRep, 'all'));
-info = struct('lam', lam, 'nKeep', n, 'northSeparated', nsep, ...
+info = struct('lam', lam, 'nKeep', n, 'bulkEdge', edge, ...
+    'northSeparated', nsep, ...
     'varExplained', sum(lam(1:n)) / sum(lam), 'rmsNoise', rmsNoise);
 end

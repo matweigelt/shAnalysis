@@ -2543,26 +2543,27 @@ verifyLessThan(testCase, max(abs(ab(:, 2)' - bTrue) ./ abs(bTrue)), 0.03);
 end
 
 function testEofSeparateNorthMultiplet(testCase)
-%TESTEOFSEPARATENORTHMULTIPLET v3.16.0: a leading DEGENERATE pair
-%   (mutual gap inside the North sampling uncertainty, pair edge far
-%   above the bulk) must be kept as a group - the single-mode rule
-%   drops it silently (the real 252-month ocean residuals did exactly
-%   this: gap 0.44e9 vs dl 0.53e9, nKeep 0). Python-frozen scenario:
-%   two equal-variance modes at SNR ~10, T = 250.
+%TESTEOFSEPARATENORTHMULTIPLET v3.16.0: North multiplet rule with the
+%   median-calibrated Marchenko-Pastur bulk edge, against the
+%   Python-frozen scenarios - noise-only keeps 0, a degenerate
+%   equal-variance pair keeps exactly 2 (the single-mode rule drops
+%   it; the unguarded group chain kept 10 on the first machine run),
+%   a single strong mode keeps exactly 1. Real trigger: the grown
+%   252-month ocean residuals (gap 0.44e9 vs dl 0.53e9, nKeep 0).
 rng(3, 'twister');
 Q = 400; T = 250;
 u1 = sin(linspace(0, 3*pi, Q))'; u1 = u1 / norm(u1);
 u2 = cos(linspace(0, 3*pi, Q))'; u2 = u2 / norm(u2);
-X = u1 * (10.0 * randn(1, T)) + u2 * (9.97 * randn(1, T)) + randn(Q, T);
 w = ones(Q, 1);
-[circ, ~, inf1] = shLowLevel.eofSeparate(X, w);
-verifyGreaterThanOrEqual(testCase, inf1.nKeep, 2);
-verifyLessThanOrEqual(testCase, inf1.nKeep, 3);
-% the kept group must carry the two-mode variance share
-verifyGreaterThan(testCase, inf1.varExplained, 0.5);
-% and the coherent part must correlate with the planted signal space
-S = u1 * (10.0 * 0) + circ;   %#ok<NASGU> % (circ used below)
-verifyGreaterThan(testCase, corr(std(circ, 0, 2), abs(u1) + abs(u2)), 0.5);
+[~, ~, i0] = shLowLevel.eofSeparate(randn(Q, T), w);
+verifyEqual(testCase, i0.nKeep, 0);
+Xp = u1 * (10.0 * randn(1, T)) + u2 * (9.97 * randn(1, T)) + randn(Q, T);
+[~, ~, i2] = shLowLevel.eofSeparate(Xp, w);
+verifyEqual(testCase, i2.nKeep, 2);
+verifyGreaterThan(testCase, i2.lam(2), i2.bulkEdge);
+X1 = u1 * (10.0 * randn(1, T)) + randn(Q, T);
+[~, ~, i1] = shLowLevel.eofSeparate(X1, w);
+verifyEqual(testCase, i1.nKeep, 1);
 end
 
 function testEofSeparateNorthRule(testCase)
