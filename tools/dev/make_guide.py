@@ -1816,6 +1816,32 @@ story += code("""[tws, rep] = shLowLevel.twsChain(ser, kn = kn);
 inf1.categoryNames(inf1.category(iLat, iLon, end) + 6)   % cell class
 [Sd, ~] = shLowLevel.hydroExtremeIndex(basinSeries, ep, ...
     Mode = "StorageDeficit");                 % flood predisposition""")
+story += [para("<b>Offline by design.</b> No chain ever fetches: "
+               "greenland/antarctica/tws/ocean/obp and every filter "
+               "consume LOCAL paths only. The GravIS correction "
+               "tables (C20/C30/C21/S21, degree 1, NFIL mean, GIA "
+               "rate, ice basins) ship frozen inside the toolbox "
+               "(data/gravis), so a fresh clone plus one local GSM "
+               "series folder runs the ice and TWS chains completely "
+               "offline; the ocean chains additionally need the "
+               "GAD/GAA folders on disk - however they got there "
+               "(fetchGAX, a browser, a copied drive: the chains "
+               "cannot tell and do not care). The fetch* functions "
+               "are one-time provisioners with skip-if-present "
+               "semantics - re-running them against a populated "
+               "folder is a no-op, and the VDK batch runs fully "
+               "offline once its SINEX archive exists. Path "
+               "resolution is three layers, explicit first: a "
+               "passed argument always wins; below it the "
+               "setup_shAnalysis preferences (SeriesFolder, "
+               "MasconFile, GravisFolder, DDKFolder - "
+               "setpref-persistent) and dataFolder() as the root for "
+               "fetch targets; at the bottom the shipped freezes. "
+               "The single deliberate exception is gravisL2B with an "
+               "explicit GravisFolder= requesting fresh tables - and "
+               "even there the shipped freeze is the default, "
+               "precisely so reproducibility never hangs on a "
+               "server (the ISDC 503 episode was the confirmation).")]
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

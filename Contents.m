@@ -233,6 +233,9 @@
 %     with the sqrt(n/(n-1)) correction; raw-value window sigma leaks
 %     seasonality (1.99 vs 1.5, measured). Tracks short-lived floods
 %     monthly fields miss (Gouweleeuw et al. 2018).
+%   - Guide: "Offline by design" - chains never fetch; local paths
+%     plus shipped data/gravis freezes suffice, fetch* provisions
+%     once (skip-if-present), three-layer path resolution documented.
 %
 % New in v3.13.0 (VDK/VADER decorrelation from monthly SINEX)
 %   - shLowLevel.vdkApply: the Horvath et al. (2018) filter
