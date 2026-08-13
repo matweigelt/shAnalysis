@@ -1774,6 +1774,34 @@ story += code("""idx = shLowLevel.shIndex(96, MinDegree = 2);
 snx = shLowLevel.readSINEX(f, Index = idx);        % N + x, idx order
 [ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
 xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(mo, :), Alpha = 1);""")
+story += [para("<b>Flood and drought indices per cell or basin.</b> "
+               "hydroExtremeIndex turns any TWS stack - twsChain grids "
+               "or basinAverage series - into published extreme "
+               "indices: the GRACE-DSI of Zhao et al. (2017), the "
+               "standardized anomaly per calendar month with the "
+               "11-class USDM-style categories (validated in the "
+               "literature against USDM, PDSI, SPEI, NDVI and in-situ "
+               "groundwater); the WSDI deficit standardization; and "
+               "the Reager &amp; Famiglietti (2009) storage deficit - "
+               "the CAUSAL flood predisposition (how much the store "
+               "can still take), which with a precipitation grid "
+               "becomes the full Flood Potential Index, the quantity "
+               "behind multi-month flood lead times (Reager et al. "
+               "2014, Nature Geoscience). One policy is quantified "
+               "rather than assumed: detrending. The pre-validation "
+               "planted an exceptional-drought month under a 0.5 "
+               "cm/yr trend - undetrended it weakens from -2.41 to "
+               "-1.44, OUT of its class, while 45%% of the late "
+               "decade turns spuriously wet; Detrend = linear is "
+               "therefore the DSI/WSDI default, while StorageDeficit "
+               "keeps the physical Reager convention (none). A robust "
+               "sigma option (1.4826 MAD) survives single corrupt "
+               "months that inflate the classical sigma sixfold.")]
+story += code("""[tws, rep] = shLowLevel.twsChain(ser, kn = kn);
+[Z, inf1] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
+inf1.categoryNames(inf1.category(iLat, iLon, end) + 6)   % cell class
+[Sd, ~] = shLowLevel.hydroExtremeIndex(basinSeries, ep, ...
+    Mode = "StorageDeficit");                 % flood predisposition""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

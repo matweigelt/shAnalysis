@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.13.0 (R2026a-compatible) 12-Aug-2026
+% Version 3.14.0 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,21 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.14.0 (flood/drought indices per cell or basin)
+%   - shLowLevel.hydroExtremeIndex: GRACE-DSI (Zhao et al. 2017,
+%     standardized anomaly per calendar month, 11 USDM-style
+%     categories), WSDI (Sinha et al. 2017), and the causal Reager &
+%     Famiglietti (2009) storage deficit - with PrecipGrid= the full
+%     Flood Potential Index (multi-month flood lead times, Reager et
+%     al. 2014). Works on twsChain grids, basin series, or any stack.
+%   - Detrend policy QUANTIFIED by the Python pre-validation: an
+%     exceptional-drought month under a 0.5 cm/yr trend weakens from
+%     -2.41 to -1.44 (out of class) undetrended, 45% of the late
+%     decade turns spuriously wet - Detrend="linear" is the DSI/WSDI
+%     default; StorageDeficit keeps the physical Reager convention.
+%   - Robust sigma option (1.4826*MAD): one corrupt month inflates
+%     the classical sigma sixfold, the MAD not at all (measured).
 %
 % New in v3.13.0 (VDK/VADER decorrelation from monthly SINEX)
 %   - shLowLevel.vdkApply: the Horvath et al. (2018) filter

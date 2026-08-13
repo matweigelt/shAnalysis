@@ -53,7 +53,10 @@ series via `fetchITSG`/`fetchICGEM`, products via `fetchGAX`,
 `fetchSINEX` (ITSG monthly normals - the only public per-month SINEX,
 ~460 MB each) and `fetchITSGBackground`. Those normals feed `vdkApply` - the
 VDK/VADER decorrelation of Horvath et al. (2018) with true monthly
-covariance structure; `run_vdk_series.m` drives the full-series batch.
+covariance structure; `run_vdk_series.m` drives the full-series batch. And the hydrology story
+closes the loop from field to warning: `hydroExtremeIndex` delivers
+GRACE-DSI drought categories and the Reager flood-predisposition
+deficit for every cell or basin.
 
 ## Documentation
 

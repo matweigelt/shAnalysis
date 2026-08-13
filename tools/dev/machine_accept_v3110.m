@@ -116,6 +116,22 @@ catch ME
     fprintf('FAIL  fetch family: %s\n', ME.identifier);
 end
 
+%% 6c - v3.14 hydro index on the real series (Amazon droughts visible)
+try
+    [tws, ~] = shLowLevel.twsChain(ser, kn = kn);
+    [Z, ih] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
+    % Amazon cell ~ (-5, 300): the 2005 and 2010 droughts are published
+    [~, iLa] = min(abs(tws.lat - (-5))); [~, iLo] = min(abs(tws.lon - 300));
+    z = squeeze(Z(iLa, iLo, :));
+    [zmin, imin] = min(z);
+    fprintf('%s  hydroIndex: Amazon min DSI %.2f at %.2f (published droughts 2005/2010)\n', ...
+        ternary(zmin <= -1.3 && (abs(tws.epochs(imin)-2005.7) < 1 ...
+            || abs(tws.epochs(imin)-2010.7) < 1), "PASS", "CHECK"), ...
+        zmin, tws.epochs(imin));
+catch ME
+    fprintf('FAIL  hydroIndex: %s\n', ME.identifier);
+end
+
 %% 6 - optional GravIS OBP cross-check (503-tolerant)
 try
     gvDir = fullfile(tempdir, 'gravis_obp');
