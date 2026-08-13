@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.11.0)</h1>
+<h1>shAnalysis API reference (v3.13.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -42,7 +42,9 @@ code itself.</p>
 <a href="#shLowLevel.fetchGAX">fetchGAX</a>
 <a href="#shLowLevel.fetchICGEM">fetchICGEM</a>
 <a href="#shLowLevel.fetchITSG">fetchITSG</a>
+<a href="#shLowLevel.fetchITSGBackground">fetchITSGBackground</a>
 <a href="#shLowLevel.fetchLoveNumbers">fetchLoveNumbers</a>
+<a href="#shLowLevel.fetchSINEX">fetchSINEX</a>
 <a href="#shLowLevel.fetchTN">fetchTN</a>
 <a href="#shLowLevel.fitDeterministicModel">fitDeterministicModel</a>
 <a href="#shLowLevel.gaussLegendre">gaussLegendre</a>
@@ -105,6 +107,7 @@ code itself.</p>
 <a href="#shLowLevel.shSynthesis">shSynthesis</a>
 <a href="#shLowLevel.shSynthesisDeformation">shSynthesisDeformation</a>
 <a href="#shLowLevel.shSynthesisGradientTensor">shSynthesisGradientTensor</a>
+<a href="#shLowLevel.signalVarianceKaula">signalVarianceKaula</a>
 <a href="#shLowLevel.slepianBasis">slepianBasis</a>
 <a href="#shLowLevel.slepianProject">slepianProject</a>
 <a href="#shLowLevel.spatialStats">spatialStats</a>
@@ -116,6 +119,7 @@ code itself.</p>
 <a href="#shLowLevel.tvANSFilter">tvANSFilter</a>
 <a href="#shLowLevel.twsChain">twsChain</a>
 <a href="#shLowLevel.vceRescale">vceRescale</a>
+<a href="#shLowLevel.vdkApply">vdkApply</a>
 <a href="#shLowLevel.vecFromCS">vecFromCS</a>
 <a href="#shLowLevel.version">version</a>
 <a href="#shLowLevel.writeAnimation">writeAnimation</a>
@@ -396,7 +400,11 @@ code itself.</p>
 <b>Example</b><pre>    f = shLowLevel.fetchGAX(&quot;E:/DATAPOOL/GravityField/GAX&quot;);
     [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
         GADFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAD&quot;, ...
-        GAAFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAA&quot;);</pre>
+        GAAFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAA&quot;);
+
+  See fetchSINEX and fetchITSGBackground for the ITSG-side products;
+  the ITSG background models are per-release means, NOT the AOD1B
+  GAX split.</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchICGEM">
 <h3><code>shLowLevel.fetchICGEM(model, opts)</code></h3>
@@ -412,13 +420,25 @@ code itself.</p>
 <div class="entry" id="shLowLevel.fetchITSG">
 <h3><code>shLowLevel.fetchITSG(months, opts)</code></h3>
 <p class="h1line">Download ITSG monthly OR daily solutions from TU Graz.</p>
-<p>FILES = shLowLevel.fetchITSG(2019:2020) downloads all available monthly GSM solutions for the given years into dataFolder/itsg_series (websave, base MATLAB). Already-present files are skipped unless Update (false)=true, which re-downloads them with a safe swap (the fresh file is parse-verified before it replaces the old one); months that do not exist on the server (mission gap 2017-07..2018-05, intra-mission dropouts) are reported in INFO.missing, not errors.</p>
+<p>The fetch family, one function per source and product: fetchITSG and fetchICGEM for solution series, fetchGAX for the AOD1B GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchSINEX for the ITSG monthly normal-equation SINEX, fetchITSGBackground for the ITSG monthly background models, plus fetchTN, fetchDDK, fetchLoveNumbers for auxiliaries.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x m</td><td>-</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Product</code></td><td>1 x 1</td><td>string</td><td>&quot;monthly&quot;</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>Proxy</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Catalog</code></td><td>1 x :</td><td>double</td><td>[]</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>files</code></td><td>(1,:) string   paths of all present files (new + existing)</td></tr>
 <tr><td><code>info</code></td><td>struct: fetched, updated, skipped, missing (string arrays), url</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.fetchITSGBackground">
+<h3><code>shLowLevel.fetchITSGBackground(months, opts)</code></h3>
+<p class="h1line">Download ITSG monthly-mean background models.</p>
+<p>FILES = shLowLevel.fetchITSGBackground(&quot;2018-06&quot;) downloads the monthly means of the background models the ITSG processing reduced from the observations, as .gfc (about 1 MB each): &quot;dealiasing&quot; (atmosphere + ocean - the ITSG counterpart of restoring AOD), &quot;oceanTide&quot;, &quot;earthTide&quot;, &quot;poleTide&quot; and &quot;oceanPoleTide&quot;. Release routing follows fetchITSG: months before 2017-07 from ITSG-Grace2018, from 2018-06 on from ITSG-Grace_operational.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x 1</td><td>-</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Products</code></td><td>1 x :</td><td>string</td><td>&quot;dealiasing&quot;</td></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>MaxFailures</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>PauseSec</code></td><td>1 x 1</td><td>double</td><td>1.5</td></tr><tr><td><code>RetryAfterCap</code></td><td>1 x 1</td><td>double</td><td>30</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  per-product nListed/nDownloaded/nSkipped/ nFailed/nRemaining, missing months, releases used</td></tr>
+</table>
+<b>Example</b><pre>    f = shLowLevel.fetchITSGBackground([&quot;2018-06&quot;, &quot;2018-07&quot;]);
+    g = shCoefficients.read(f(1));   % plain gfc, C(n+1, m+1)</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchLoveNumbers">
 <h3><code>shLowLevel.fetchLoveNumbers(names, opts)</code></h3>
@@ -432,6 +452,18 @@ code itself.</p>
 </table>
 <b>Example</b><pre>    [f, inf] = shLowLevel.fetchLoveNumbers();
     kn = inf.parsed(1).kn(1:61);        % degrees 0..60 for an n60 field</pre>
+</div>
+<div class="entry" id="shLowLevel.fetchSINEX">
+<h3><code>shLowLevel.fetchSINEX(months, opts)</code></h3>
+<p class="h1line">Download ITSG monthly normal-equation SINEX from TU Graz.</p>
+<p>FILES = shLowLevel.fetchSINEX(&quot;2018-06&quot;) downloads the monthly normal-equation/solution SINEX of the ITSG series - the only public per-month SINEX source (COST-G combines on the normal-equation level internally but does NOT distribute per-month SINEX or covariances). Release routing follows fetchITSG: months before 2017-07 come from ITSG-Grace2018, months from 2018-06 on from ITSG-Grace_operational. Feed the files to shLowLevel.readSINEX (verified against exactly this product).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x 1</td><td>-</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>96</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>MaxFailures</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>PauseSec</code></td><td>1 x 1</td><td>double</td><td>1.5</td></tr><tr><td><code>RetryAfterCap</code></td><td>1 x 1</td><td>double</td><td>30</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed, nRemaining, missing (requested months absent on the server), releases used</td></tr>
+</table>
+<b>Example</b><pre>    f = shLowLevel.fetchSINEX([&quot;2018-06&quot;, &quot;2018-07&quot;], Nmax = 96);
+    snx = shLowLevel.readSINEX(f(1), Only = &quot;estimate&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchTN">
 <h3><code>shLowLevel.fetchTN(opts)</code></h3>
@@ -1149,6 +1181,18 @@ code itself.</p>
 <tr><td><code>info</code></td><td>struct: maxTraceResidual (max |trace|/max|G| over the grid, excluding poles) - the built-in Laplace self-check</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.signalVarianceKaula">
+<h3><code>shLowLevel.signalVarianceKaula(Cs, Ss, epochs, opts)</code></h3>
+<p class="h1line">Cyclostationary Kaula signal variance (VDK input).</p>
+<p>[AB, INFO] = shLowLevel.signalVarianceKaula(CS, SS, EPOCHS) estimates the degree-dependent signal-variance approximation sigma_M(l) = a * l^b (Horvath et al. 2018, Eq. 2) per CALENDAR month from a coefficient series - the cyclostationary signal model of the VDK/VADER decorrelation filter. Feed a PRE-FILTERED series (e.g. DDK4, as in the paper): the estimator reads signal, so the input must not be stripe-dominated.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Cs</code></td><td>: x : x :</td><td>double</td><td>required</td></tr><tr><td><code>Ss</code></td><td>: x : x :</td><td>double</td><td>required</td></tr><tr><td><code>epochs</code></td><td>: x 1</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>LRange</code></td><td>1 x 2</td><td>double</td><td>[10, 60]</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>ab</code></td><td>(12 x 2) double  [a, b] per calendar month (Jan..Dec); evaluate as sigmaM = ab(mo, 1) * l.^ab(mo, 2) info (1 x 1) struct  nPerMonth (12 x 1 epochs used), LRange, abAll (T x 2 per-epoch fits, for inspection)</td></tr>
+</table>
+<b>Example</b><pre>    [ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
+    sigM = ab(4, 1) * (2:96)&#x27;.^ab(4, 2);   % April signal model</pre>
+</div>
 <div class="entry" id="shLowLevel.slepianBasis">
 <h3><code>shLowLevel.slepianBasis(idx, region, opts)</code></h3>
 <p class="h1line">Spatially concentrated (Slepian) basis for a region.</p>
@@ -1288,6 +1332,19 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>s</code></td><td>(T x 1) or (nBands x T) double   monthly (band-wise) VCE noise variance factors</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.vdkApply">
+<h3><code>shLowLevel.vdkApply(x, N, degOfPar, sigM, opts)</code></h3>
+<p class="h1line">Apply the VDK/VADER decorrelation filter to one solution.</p>
+<p>XF = shLowLevel.vdkApply(X, N, DEGOFPAR, SIGM) computes</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>x</code></td><td>: x 1</td><td>double</td><td>required</td></tr><tr><td><code>N</code></td><td>: x :</td><td>double</td><td>required</td></tr><tr><td><code>degOfPar</code></td><td>: x 1</td><td>double</td><td>required</td></tr><tr><td><code>sigM</code></td><td>n x m</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Alpha</code></td><td>1 x 1</td><td>double</td><td>1</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>xf</code></td><td>(P x 1) double  filtered coefficient vector info (1 x 1) struct  alpha, P, cholOK (true when (N + alpha M) factorized cleanly)</td></tr>
+</table>
+<b>Example</b><pre>    idx = shLowLevel.shIndex(96, MinDegree = 2);
+    snx = shLowLevel.readSINEX(f, Index = idx);
+    xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(mo, :), Alpha = 1);</pre>
 </div>
 <div class="entry" id="shLowLevel.vecFromCS">
 <h3><code>shLowLevel.vecFromCS(cnm, snm, idx)</code></h3>
@@ -2062,4 +2119,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.11.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 12-Aug-2026 (v3.13.0). Generated by tools - do not edit.</p></body></html>

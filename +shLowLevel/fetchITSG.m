@@ -1,6 +1,13 @@
 function [files, info] = fetchITSG(months, opts)
 %FETCHITSG Download ITSG monthly OR daily solutions from TU Graz.
 %
+%   The fetch family, one function per source and product: fetchITSG
+%   and fetchICGEM for solution series, fetchGAX for the AOD1B
+%   GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchSINEX for
+%   the ITSG monthly normal-equation SINEX, fetchITSGBackground for
+%   the ITSG monthly background models, plus fetchTN, fetchDDK,
+%   fetchLoveNumbers for auxiliaries.
+%
 %   FILES = shLowLevel.fetchITSG(2019:2020) downloads all available monthly
 %   GSM solutions for the given years into dataFolder/itsg_series
 %   (websave, base MATLAB). Already-present files are skipped unless

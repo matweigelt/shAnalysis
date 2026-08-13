@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.13.0] - 2026-08-12 - VDK/VADER decorrelation
+
+vdkApply implements Horvath et al. (2018) on the ITSG monthly SINEX
+normals (fetchSINEX/readSINEX), signalVarianceKaula estimates the
+cyclostationary signal model with an exact log-chi-square bias
+correction, and run_vdk_series.m is the resumable batch driver for
+the full-series run on another machine. tvANS relation documented:
+same Wiener family, different inputs - formal monthly N vs empirical
+stationary structure.
+
+## [3.12.0] - 2026-08-12 - fetch family: SINEX and ITSG background
+
+fetchSINEX (ITSG monthly normals, the only public per-month SINEX;
+months required, one month ~460 MB) and fetchITSGBackground (monthly
+background-model means, era-dependent palettes verified live; not the
+AOD1B GAX split). Consistent naming across the family; one shared
+robust download loop (fetchFileSet) and shared month validation.
+
 ## [3.11.0] - 2026-08-12 - obpChain, residual circulation separation, fetch fallback
 
 obpChain delivers GravIS-style bottom-pressure fields (GSM + GAD,

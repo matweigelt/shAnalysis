@@ -2325,6 +2325,71 @@ verifyEqual(testCase, g.variableTerms(1).type, 'trnd');   % synonym mapped
 verifyEqual(testCase, Ct(3, 1), -4.84e-04 + 2 * 1.00e-11, RelTol = 1e-9);
 end
 
+function testVdkApplyCore(testCase)
+%TESTVDKAPPLYCORE v3.13.0: VDK/VADER solve against the Python-frozen
+%   identities - alpha=0 is the identity, M = c*N collapses to the
+%   closed form x/(1+alpha*c) (1e-10), and the (N+aM)^-1 N form equals
+%   the Wiener form S(S+aN^-1)^-1 with S = M^-1 (1e-9).
+rng(7, 'twister');
+idx = shLowLevel.shIndex(10, MinDegree = 2);
+P = idx.P;
+A = randn(P, ceil(P/3));
+N = A*A' + P*eye(P);
+sig = 3.0 * double(idx.n).^(-1.8);
+x = randn(P, 1);
+% alpha = 0: identity
+x0 = shLowLevel.vdkApply(x, N, idx.n, sig, Alpha = 0);
+verifyEqual(testCase, x0, x, AbsTol = 1e-8);
+% M = c*N closed form - on a DIAGONAL N, where the diagonal-M API
+% represents c*N exactly (with full N it cannot, caught in CI: the
+% first version pressed c*diag(N) through the API and failed by 0.1)
+c = 2.5; al = 0.7;
+dN = 1 + rand(P, 1);
+Nd = diag(dN);
+sigC = 1 ./ sqrt(c * dN);
+xc = shLowLevel.vdkApply(x, Nd, idx.n, sigC, Alpha = al);
+verifyEqual(testCase, xc, x / (1 + al*c), AbsTol = 1e-10);
+% form equivalence vs Wiener S(S + a N^-1)^-1
+xf = shLowLevel.vdkApply(x, N, idx.n, sig, Alpha = al);
+S = diag(sig.^2);
+xw = S * ((S + al * inv(N)) \ x); %#ok<MINV>
+verifyEqual(testCase, xf, xw, AbsTol = 1e-9);
+% [a, b] row input evaluates a*l^b
+xab = shLowLevel.vdkApply(x, N, idx.n, [3.0, -1.8], Alpha = al);
+verifyEqual(testCase, xab, xf, AbsTol = 1e-12);
+end
+
+function testSignalVarianceKaula(testCase)
+%TESTSIGNALVARIANCEKAULA v3.13.0: cyclostationary a*l^b recovery with
+%   the exact log-chi2 bias correction, against the Python-frozen
+%   criteria: mean bias of a within 3%, per-month scatter <= 15%
+%   (10 years per calendar month), b within 3%.
+rng(11, 'twister');
+L = 60; nYr = 10;
+aTrue = 2.0 + 1.5*sin(2*pi*(0:11)/12);
+bTrue = -1.8 + 0.1*cos(2*pi*(0:11)/12);
+T = 12 * nYr;
+Cs = zeros(L+1, L+1, T); Ss = zeros(L+1, L+1, T);
+ep = zeros(T, 1);
+t = 0;
+for yr = 1:nYr
+    for mo = 1:12
+        t = t + 1;
+        ep(t) = 2000 + yr + (mo - 0.5) / 12;
+        for l = 2:L
+            s = aTrue(mo) * l^bTrue(mo) / sqrt(2*l + 1);
+            Cs(l+1, 1:l+1, t) = randn(1, l+1) * s;
+            Ss(l+1, 2:l+1, t) = randn(1, l) * s;
+        end
+    end
+end
+[ab, info] = shLowLevel.signalVarianceKaula(Cs, Ss, ep, LRange = [10, 60]);
+verifyEqual(testCase, info.nPerMonth, repmat(nYr, 12, 1));
+verifyEqual(testCase, mean(ab(:, 1)' ./ aTrue), 1, AbsTol = 0.03);
+verifyLessThan(testCase, max(abs(ab(:, 1)' - aTrue) ./ aTrue), 0.15);
+verifyLessThan(testCase, max(abs(ab(:, 2)' - bTrue) ./ abs(bTrue)), 0.03);
+end
+
 function testEofSeparateNorthRule(testCase)
 %TESTEOFSEPARATENORTHRULE v3.11.0: EOF/North separation against the
 %   frozen Python (numpy) reference: two planted modes ABOVE the
@@ -2361,6 +2426,28 @@ verifyError(testCase, @() shLowLevel.obpChain(tempdir), ...
 verifyError(testCase, ...
     @() shLowLevel.obpChain(tempdir, kn = (0:90)' * 0), ...
     'shLowLevel:obpChain:missingGAD');
+end
+
+function testFetchSINEXContract(testCase)
+%TESTFETCHSINEXCONTRACT v3.12.0: loud errors before any network use -
+%   bad Nmax, empty month set, malformed month strings.
+verifyError(testCase, @() shLowLevel.fetchSINEX("2018-06", Nmax = 90), ...
+    'shLowLevel:fetchSINEX:badNmax');
+verifyError(testCase, @() shLowLevel.fetchSINEX(strings(0, 1)), ...
+    'shLowLevel:fetchSINEX:noMonths');
+verifyError(testCase, @() shLowLevel.fetchSINEX("June 2018"), ...
+    'shLowLevel:fetchSINEX:badMonth');
+end
+
+function testFetchITSGBackgroundContract(testCase)
+%TESTFETCHITSGBACKGROUNDCONTRACT v3.12.0: unknown products and bad
+%   months fail loudly before any network use.
+verifyError(testCase, ...
+    @() shLowLevel.fetchITSGBackground("2018-06", Products = "GAD"), ...
+    'shLowLevel:fetchITSGBackground:badProduct');
+verifyError(testCase, ...
+    @() shLowLevel.fetchITSGBackground(1999), ...
+    'shLowLevel:fetchITSGBackground:badMonth');
 end
 
 function testFetchGAXContract(testCase)

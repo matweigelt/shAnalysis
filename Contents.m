@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.11.0 (R2026a-compatible) 12-Aug-2026
+% Version 3.13.0 (R2026a-compatible) 12-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,42 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.13.0 (VDK/VADER decorrelation from monthly SINEX)
+%   - shLowLevel.vdkApply: the Horvath et al. (2018) filter
+%     (N + alpha*M)^-1 * N * x with the formal monthly normal-equation
+%     matrix from the ITSG SINEX; never forms the filter matrix (one
+%     Cholesky per month). Python-prevalidated: form-equivalence to
+%     the tvANS Wiener family 1e-15, closed form for M = c*N, Wiener
+%     MSE optimality on synthetics.
+%   - shLowLevel.signalVarianceKaula: cyclostationary Kaula a*l^b per
+%     calendar month from a pre-filtered series, with the EXACT
+%     log-chi-square bias correction 0.5*(psi(k/2)-log(k/2)), k=2l+1
+%     (without it the intercept biases 6% low - found by the Python
+%     pre-validation).
+%   - tools/dev/run_vdk_series.m: resumable batch driver for the full
+%     series on another machine (~460 MB SINEX/month): skip-present
+%     downloads, skip-existing outputs, cached signal model,
+%     provenance log, built-in closed-form self-test and the paper's
+%     acceptance probes.
+%   - tvANSFilter help: the exact algebraic relation and the honest
+%     division of labour between tvANS and VDK.
+%
+% New in v3.12.0 (fetch family: SINEX and ITSG background models)
+%   - shLowLevel.fetchSINEX: ITSG monthly normal-equation SINEX from
+%     TU Graz (the only public per-month SINEX source; COST-G
+%     distributes none). Release routing as in fetchITSG; months are
+%     REQUIRED - one n96 month is ~460 MB gzipped (verified live),
+%     the full series ~120 GB, so no "all" convenience exists.
+%   - shLowLevel.fetchITSGBackground: ITSG monthly background-model
+%     means as .gfc (~1 MB); both eras carry dealiasing and the tide
+%     models, the GRACE era adds atmosphere/ocean splits, c20,
+%     degree-1, GIA, hydrology (palettes verified live). Explicitly
+%     NOT the AOD1B GAX split - dealiasing ~ GAC, no GAD substitute.
+%   - Naming now consistent: fetchITSG/fetchICGEM for series,
+%     fetchGAX/fetchSINEX/fetchITSGBackground for products; all on
+%     one shared robust loop (fetchFileSet: caps, pauses, 429 retry,
+%     websave fallback) with shared month validation.
 %
 % New in v3.11.0 (obpChain; residual circulation separation; fetch fallback)
 %   - shLowLevel.obpChain: GravIS-style ocean-bottom-pressure FIELDS

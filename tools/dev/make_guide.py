@@ -1727,6 +1727,53 @@ story += [para("<b>Residual circulation, separated instead of ignored.</b> "
 story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = gadF, GAAFolder = gaaF, SeparateCirculation = true);
 [out.nModes, out.circulationRMS, out.sigMon]   % modes, circ, noise""")
+story += [para("<b>The fetch family, one function per source and "
+               "product.</b> fetchITSG and fetchICGEM download solution "
+               "series; fetchGAX the AOD1B GAA/GAB/GAC/GAD monthly "
+               "means from the ICGEM/GFZ pages; fetchSINEX the ITSG "
+               "monthly normal-equation SINEX from TU Graz - the ONLY "
+               "public per-month SINEX source, and heavy: one n96 "
+               "month is about 460 MB gzipped (verified live), so "
+               "months are a required argument and there is no "
+               "convenience \"all\"; fetchITSGBackground the ITSG "
+               "monthly background models (dealiasing, tides, and in "
+               "the GRACE era also atmosphere/ocean splits, c20, "
+               "degree-1, GIA, hydrology). The ITSG background means "
+               "are NOT the AOD1B GAX split - dealiasing is the "
+               "closest GAC counterpart and no GAD substitute. All "
+               "fetchers share one robust download loop: "
+               "skip-if-present, MaxFiles/BudgetSec/MaxFailures caps, "
+               "polite pauses, a single capped 429 retry, and a "
+               "websave transport fallback.")]
+story += code("""f = shLowLevel.fetchITSGBackground(["2018-06", "2018-07"]);
+s = shLowLevel.fetchSINEX("2018-06", Nmax = 96);   % ~460 MB, deliberate
+snx = shLowLevel.readSINEX(s(1), Only = "estimate");""")
+story += [para("<b>VDK decorrelation - the reason the SINEX fetcher "
+               "exists.</b> With the monthly normal-equation matrices "
+               "the VDK/VADER filter of Horvath et al. (2018) becomes "
+               "buildable: x<sub>f</sub> = (N + &alpha;M)<sup>-1</sup>N x "
+               "with the FORMAL monthly N (structure changes with "
+               "orbit, repeat cycles and instrument state) and a "
+               "cyclostationary Kaula signal model sigma_M(l) = a l^b "
+               "estimated per calendar month from a pre-filtered "
+               "series (signalVarianceKaula, with the exact "
+               "log-chi-square bias correction - without it a biases "
+               "6%% low). Algebraically this is the SAME family as the "
+               "tvANS Wiener filter (S = M<sup>-1</sup>, "
+               "Python-verified to 1e-15); the difference is the "
+               "input, and it is worth 15%% median cumulative geoid "
+               "error - an order of magnitude in short-repeat-cycle "
+               "months (paper Table 2). tvANS remains the tool for "
+               "series without released covariances. The full series "
+               "is a deliberate batch (~460 MB SINEX per month): "
+               "tools/dev/run_vdk_series.m is the resumable driver - "
+               "downloads skip present files, months skip existing "
+               "output, the signal model is cached, and the paper's "
+               "closed-form identity runs as a built-in self-test.")]
+story += code("""idx = shLowLevel.shIndex(96, MinDegree = 2);
+snx = shLowLevel.readSINEX(f, Index = idx);        % N + x, idx order
+[ab, ~] = shLowLevel.signalVarianceKaula(ts.Cs, ts.Ss, ts.epochs);
+xf = shLowLevel.vdkApply(snx.x, snx.M, idx.n, ab(mo, :), Alpha = 1);""")
 story += code("""f = shLowLevel.fetchGAX("E:/DATAPOOL/GravityField/GAX");
 [out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...

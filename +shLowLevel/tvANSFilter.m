@@ -19,6 +19,18 @@ function [Xf, op, info] = tvANSFilter(X, tYears, idx, opts)
 %        an ocean-mass kernel): Ac'*xf = Ac'*x to machine precision
 %     7. deterministic model added back unfiltered
 %
+%   Relation to the VDK/VADER filter (shLowLevel.vdkApply): with
+%   S = M^-1 the tvANS Wiener form equals the VADER form
+%   (N + alpha M)^-1 N exactly - same family. The difference is the
+%   input: VDK uses the FORMAL monthly normal-equation matrix (ITSG
+%   SINEX, structure changes month to month), tvANS estimates ONE
+%   empirical structure from the series and scales it per month (VCE).
+%   Where monthly covariances exist, prefer VDK (Horvath et al. 2018:
+%   15%% median error reduction, outlier months an order of
+%   magnitude); tvANS covers every series without them - and its
+%   one-eigendecomposition efficiency requires exactly that
+%   stationary structure.
+%
 %   Inputs
 %     X            (P,T) double    coefficient vectors per epoch
 %     tYears       (T,1) double    decimal years
