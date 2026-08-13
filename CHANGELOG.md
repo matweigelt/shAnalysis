@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.14.0] - 2026-08-13 - flood/drought indices
+
+hydroExtremeIndex: GRACE-DSI with USDM-style categories, WSDI, and
+the causal Reager storage deficit (full FPI with a precipitation
+grid) - per grid cell or basin. Detrend policy and robust-sigma
+behaviour quantified by pre-validation, not assumed.
+
 ## [3.13.0] - 2026-08-12 - VDK/VADER decorrelation
 
 vdkApply implements Horvath et al. (2018) on the ITSG monthly SINEX

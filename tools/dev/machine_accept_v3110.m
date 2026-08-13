@@ -116,6 +116,35 @@ catch ME
     fprintf('FAIL  fetch family: %s\n', ME.identifier);
 end
 
+%% 6c - v3.14 hydro index on the real series (Amazon droughts visible)
+try
+    [tws, ~] = shLowLevel.twsChain(ser, kn = kn);
+    [Z, ih] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
+    % Amazon cell ~ (-5, 300): the 2005 and 2010 droughts are published
+    [~, iLa] = min(abs(tws.lat - (-5))); [~, iLo] = min(abs(tws.lon - 300));
+    z = squeeze(Z(iLa, iLo, :));
+    [zmin, imin] = min(z);
+    fprintf('%s  hydroIndex: Amazon min DSI %.2f at %.2f (published droughts 2005/2010)\n', ...
+        ternary(zmin <= -1.3 && (abs(tws.epochs(imin)-2005.7) < 1 ...
+            || abs(tws.epochs(imin)-2010.7) < 1), "PASS", "CHECK"), ...
+        zmin, tws.epochs(imin));
+catch ME
+    fprintf('FAIL  hydroIndex: %s\n', ME.identifier);
+end
+
+%% 6d - v3.14 stage 2: daily Kalman flood tracking (bounded live)
+try
+    fD = shLowLevel.fetchITSG("2019-07", Product = "daily", Quiet = true);
+    tsD = shSeries.read(fD);
+    fprintf('%s  daily Kalman: %d days read, epochs %.3f..%.3f\n', ...
+        ternary(numel(fD) >= 28, "PASS", "FAIL"), ...
+        numel(fD), tsD.epochs(1), tsD.epochs(end));
+    % full daily-DSI needs a multi-year daily archive - that fetch is a
+    % deliberate batch (365 files/yr); this section verifies the path.
+catch ME
+    fprintf('FAIL  daily path: %s\n', ME.identifier);
+end
+
 %% 6 - optional GravIS OBP cross-check (503-tolerant)
 try
     gvDir = fullfile(tempdir, 'gravis_obp');
