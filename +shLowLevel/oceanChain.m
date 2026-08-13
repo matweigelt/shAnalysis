@@ -81,9 +81,15 @@ function [out, rep] = oceanChain(folder, opts)
 %                        adjacent-source leak of 47% of the ocean
 %                        mean by 94%. Costs 2 syntheses + 2 analyses
 %                        per iteration per epoch
-%     LandLeakIter (5)   (1 x 1) separation sweeps; 1 already carries
-%                        most of the effect for coast-adjacent
-%                        sources, 5 is converged (pre-validated)
+%     LandLeakIter (1)   (1 x 1) separation sweeps. Machine-measured
+%                        trend ladder with the 300 km buffer: 0
+%                        sweeps +1.557, 1 sweep +1.524, 5 sweeps
+%                        +1.321 mm/yr - deeper iteration attributes
+%                        coast-ringing OCEAN signal to land (support
+%                        ambiguity at the band-limited edge, larger
+%                        on the real globe than in the 1D
+%                        reference). Default 1 = the validated
+%                        point; treat deeper sweeps as aggressive
 %     SeparateCirculation (false) split the pixel residuals (after the
 %                        North-multiplet + Marchenko-Pastur selection,
 %                        capped at 3 modes: the MP edge assumes i.i.d.
@@ -146,7 +152,7 @@ arguments
     opts.SeparateCirculation (1,1) logical = false
     opts.CoastBufferKm (1,1) double {mustBeNonnegative} = 300
     opts.RemoveLandLeakage (1,1) logical = false
-    opts.LandLeakIter (1,1) double {mustBePositive} = 5
+    opts.LandLeakIter (1,1) double {mustBePositive} = 1
     opts.Quiet (1,1) logical = true
 end
 if isempty(opts.kn)
