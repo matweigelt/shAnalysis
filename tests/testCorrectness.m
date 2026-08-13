@@ -2542,6 +2542,29 @@ verifyLessThan(testCase, max(abs(ab(:, 1)' - aTrue) ./ aTrue), 0.15);
 verifyLessThan(testCase, max(abs(ab(:, 2)' - bTrue) ./ abs(bTrue)), 0.03);
 end
 
+function testEofSeparateNorthMultiplet(testCase)
+%TESTEOFSEPARATENORTHMULTIPLET v3.16.0: a leading DEGENERATE pair
+%   (mutual gap inside the North sampling uncertainty, pair edge far
+%   above the bulk) must be kept as a group - the single-mode rule
+%   drops it silently (the real 252-month ocean residuals did exactly
+%   this: gap 0.44e9 vs dl 0.53e9, nKeep 0). Python-frozen scenario:
+%   two equal-variance modes at SNR ~10, T = 250.
+rng(3, 'twister');
+Q = 400; T = 250;
+u1 = sin(linspace(0, 3*pi, Q))'; u1 = u1 / norm(u1);
+u2 = cos(linspace(0, 3*pi, Q))'; u2 = u2 / norm(u2);
+X = u1 * (10.0 * randn(1, T)) + u2 * (9.97 * randn(1, T)) + randn(Q, T);
+w = ones(Q, 1);
+[circ, ~, inf1] = shLowLevel.eofSeparate(X, w);
+verifyGreaterThanOrEqual(testCase, inf1.nKeep, 2);
+verifyLessThanOrEqual(testCase, inf1.nKeep, 3);
+% the kept group must carry the two-mode variance share
+verifyGreaterThan(testCase, inf1.varExplained, 0.5);
+% and the coherent part must correlate with the planted signal space
+S = u1 * (10.0 * 0) + circ;   %#ok<NASGU> % (circ used below)
+verifyGreaterThan(testCase, corr(std(circ, 0, 2), abs(u1) + abs(u2)), 0.5);
+end
+
 function testEofSeparateNorthRule(testCase)
 %TESTEOFSEPARATENORTHRULE v3.11.0: EOF/North separation against the
 %   frozen Python (numpy) reference: two planted modes ABOVE the

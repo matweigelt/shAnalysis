@@ -8,7 +8,11 @@ function [circ, noiseR, info] = eofSeparate(R, w, opts)
 %   an area-weighted EOF decomposition with the North et al. (1982)
 %   rule: leading modes are kept while their eigenvalue is separated
 %   from the next one by more than its sampling uncertainty
-%   lambda * sqrt(2/T).
+%   lambda * sqrt(2/T), extended by the North multiplet rule:
+%   effectively degenerate leading modes (mutual gaps inside the
+%   sampling uncertainty) are kept or dropped as a GROUP judged by
+%   the group's lower edge - a leading degenerate pair is physics
+%   (two circulation patterns of similar variance), not noise.
 %
 %   Physical limitation, stated up front: modes whose variance lies at
 %   or below the noise floor (the Marchenko-Pastur bulk edge, roughly
@@ -69,14 +73,27 @@ W = sqrt(w);
 [U, S, V] = svd(W .* Rc, 'econ');
 s = diag(S);
 lam = s.^2 / T;
-% North et al. (1982): separated while the eigenvalue gap exceeds the
-% sampling uncertainty of the leading eigenvalue
+% North et al. (1982) with the multiplet extension North himself
+% prescribes: modes whose mutual gaps fall inside the sampling
+% uncertainty dl = lam*sqrt(2/T) are EFFECTIVELY DEGENERATE and must
+% be kept or dropped as a group, judged by the group's LOWER edge.
+% (Real trigger, 2026-08-13: the 252-month COST-G ocean residuals
+% carry a leading degenerate pair - gap 0.44e9 vs dl 0.53e9 - that
+% the single-mode rule silently dropped, nKeep 0.)
 dl = lam * sqrt(2 / T);
 nsep = lam(1:end-1) - lam(2:end) > dl(1:end-1);
 if isempty(opts.NKeep)
-    n = 0;
-    while n < numel(nsep) && nsep(n + 1)
-        n = n + 1;
+    n = 0; i = 1;
+    while i < numel(lam)
+        j = i;
+        while j < numel(lam) - 1 && lam(j) - lam(j+1) <= dl(j)
+            j = j + 1;                       % grow the multiplet
+        end
+        if j < numel(lam) && lam(j) - lam(j+1) > dl(j)
+            n = j; i = j + 1;                % group separated: keep it
+        else
+            break                            % group merges into the bulk
+        end
     end
 else
     n = opts.NKeep;
