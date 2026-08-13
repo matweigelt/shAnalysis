@@ -2370,7 +2370,7 @@ function testCoastalLeakageControls(testCase)
 lat = (-89.5:1:89.5)'; lon = (0.5:1:359.5)';
 [LO, LA] = meshgrid(lon, lat);
 ocean = abs(LA) <= 60 & (LO > 60 & LO < 160);
-land  = (LA > 10 & LA < 40 & LO > 20 & LO < 55);
+land  = (LA > -30 & LA < 30 & LO >= 160 & LO < 200);   % coast-adjacent
 mk300 = shLowLevel.erodeMask(ocean, lat, lon, 300);
 mk600 = shLowLevel.erodeMask(ocean, lat, lon, 600);
 verifyTrue(testCase, all(mk300(:) <= ocean(:)));
@@ -2392,12 +2392,28 @@ ref = mm(gOc.C, gOc.S);                        % ocean-only reference
 verifyEqual(testCase, ref, 0.10, RelTol = 0.15);
 leakRaw = mm(gOc.C + gLand.C, gOc.S + gLand.S) - ref;
 verifyGreaterThan(testCase, abs(leakRaw), 1e-4);   % experiment not empty
-% one-step removal exactly as the chain does it
-E0 = shLowLevel.shSynthesis(gOc.C + gLand.C, gOc.S + gLand.S, ...
-    GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, 'nmin', 0);
-E0(ocean) = 0;
-gl = shCoefficients.analysis(E0, lat, lon, nmax, kn = kn, quantity = "ewh");
-leakClean = mm(gOc.C + gLand.C - gl.C, gOc.S + gLand.S - gl.S) - ref;
+% iterative two-sided separation exactly as the chain does it
+% (pre-validated: one-step WORSENS the leak - interior ringing of the
+% outside reconstruction; two-sided POCS at 5 sweeps cuts an
+% adjacent-source leak by 94% in the 1D reference)
+Lc = zeros(nmax + 1); Ls = Lc; Oc = Lc; Os = Lc;
+for it = 1:5
+    EL = shLowLevel.shSynthesis(gOc.C + gLand.C - Oc, ...
+        gOc.S + gLand.S - Os, GM, R, lat, lon, ...
+        'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+    EL(ocean) = 0;
+    gLe = shCoefficients.analysis(EL, lat, lon, nmax, kn = kn, ...
+        quantity = "ewh");
+    Lc = gLe.C; Ls = gLe.S;
+    EO = shLowLevel.shSynthesis(gOc.C + gLand.C - Lc, ...
+        gOc.S + gLand.S - Ls, GM, R, lat, lon, ...
+        'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+    EO(~ocean) = 0;
+    gOe = shCoefficients.analysis(EO, lat, lon, nmax, kn = kn, ...
+        quantity = "ewh");
+    Oc = gOe.C; Os = gOe.S;
+end
+leakClean = mm(gOc.C + gLand.C - Lc, gOc.S + gLand.S - Ls) - ref;
 verifyLessThan(testCase, abs(leakClean), 0.5 * abs(leakRaw));
 end
 

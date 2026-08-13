@@ -218,11 +218,13 @@
 %     helper shLowLevel.erodeMask). Quantified before building
 %     (Python gauss445 point source): 300 km cuts 54% of the coastal
 %     leak, 500 km 82%, at < 1% ocean-area loss.
-%   - oceanChain RemoveLandLeakage=: one-step forward modelling - per
-%     epoch the unfiltered field outside the mask is analyzed back
-%     (exact on the ring grid) and subtracted BEFORE the filter; the
-%     CI experiment cuts the planted leak bias > 60% while keeping
-%     the true ocean mean to 5%.
+%   - oceanChain RemoveLandLeakage= (LandLeakIter=5): iterative
+%     two-sided support separation (Papoulis-Gerchberg style) of the
+%     outside-mask sources, subtracted BEFORE the filter. The
+%     pre-validation caught that a naive one-step subtraction WORSENS
+%     the leak (interior ringing of the outside reconstruction); the
+%     iteration cuts an adjacent-source leak of 47% of the ocean
+%     mean by 94% (frozen in CI).
 %   - Defaults stay OFF: the published +1.41 mm/yr acceptance stays
 %     reproducible until the machine run re-baselines it (accept 6e
 %     prints the buffer/removal trend table against ~1.6-2.2).

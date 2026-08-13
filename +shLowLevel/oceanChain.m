@@ -65,15 +65,23 @@ function [out, rep] = oceanChain(folder, opts)
 %                        the default stays 0 so published acceptance
 %                        numbers remain reproducible until the
 %                        machine run re-baselines them
-%     RemoveLandLeakage (false) one-step forward-modelling of ALL
-%                        sources outside the ocean mask: per epoch the
-%                        UNFILTERED field is synthesized, everything
-%                        outside the mask (land, polar caps) is kept
-%                        as a source field, analyzed back to
-%                        coefficients (exact on the ring grid) and
-%                        subtracted BEFORE the filter - so land ice
-%                        and hydrology stop smearing across the coast.
-%                        Costs about two extra syntheses per epoch
+%     RemoveLandLeakage (false) iterative support separation of ALL
+%                        sources outside the ocean mask (two-sided
+%                        alternating projections, Papoulis-Gerchberg
+%                        style): land and ocean components are
+%                        band-limited-projected onto their supports in
+%                        turn, and the converged land component is
+%                        subtracted BEFORE the filter. Quantified in
+%                        the 1D pre-validation: a naive ONE-step
+%                        subtraction makes the leak WORSE (interior
+%                        ringing of the outside-field reconstruction);
+%                        the two-sided iteration cuts an
+%                        adjacent-source leak of 47% of the ocean
+%                        mean by 94%. Costs 2 syntheses + 2 analyses
+%                        per iteration per epoch
+%     LandLeakIter (5)   (1 x 1) separation sweeps; 1 already carries
+%                        most of the effect for coast-adjacent
+%                        sources, 5 is converged (pre-validated)
 %     SeparateCirculation (false) split the pixel residuals (after the
 %                        trend + seasonal fit) into coherent residual
 %                        circulation and noise via shLowLevel.eofSeparate
@@ -130,6 +138,7 @@ arguments
     opts.SeparateCirculation (1,1) logical = false
     opts.CoastBufferKm (1,1) double {mustBeNonnegative} = 0
     opts.RemoveLandLeakage (1,1) logical = false
+    opts.LandLeakIter (1,1) double {mustBePositive} = 5
     opts.Quiet (1,1) logical = true
 end
 if isempty(opts.kn)
@@ -164,24 +173,29 @@ if strlength(opts.GADFolder) > 0            % optional GAD restore
 end
 if opts.RemoveLandLeakage
     kn1 = opts.kn; if size(kn1, 2) > 1, kn1 = kn1(:, 2); end
-    nRem = 0; Pl0 = [];
+    nmaxC = size(Cs, 1) - 1;
     for k = 1:T
-        if isempty(Pl0)
-            [E0, ~, ~, Pl0] = shLowLevel.shSynthesis(Cs(:,:,k), Ss(:,:,k), ...
+        Lc = zeros(size(Cs, 1)); Ls = Lc; Oc = Lc; Os = Lc;
+        for it = 1:opts.LandLeakIter
+            EL = shLowLevel.shSynthesis(Cs(:,:,k) - Oc, Ss(:,:,k) - Os, ...
                 GM, R, lat, lon, 'quantity','ewh', 'kn',kn1, 'nmin',0);
-        else
-            E0 = shLowLevel.shSynthesis(Cs(:,:,k), Ss(:,:,k), ...
-                GM, R, lat, lon, 'quantity','ewh', 'kn',kn1, 'nmin',0, 'P',Pl0);
+            EL(mk) = 0;
+            gL = shCoefficients.analysis(EL, lat, lon, nmaxC, ...
+                kn = kn1, quantity = "ewh");
+            Lc = gL.C; Ls = gL.S;
+            EO = shLowLevel.shSynthesis(Cs(:,:,k) - Lc, Ss(:,:,k) - Ls, ...
+                GM, R, lat, lon, 'quantity','ewh', 'kn',kn1, 'nmin',0);
+            EO(~mk) = 0;
+            gO = shCoefficients.analysis(EO, lat, lon, nmaxC, ...
+                kn = kn1, quantity = "ewh");
+            Oc = gO.C; Os = gO.S;
         end
-        E0(mk) = 0;                            % keep only outside-mask sources
-        gl = shCoefficients.analysis(E0, lat, lon, size(Cs, 1) - 1, ...
-            kn = kn1, quantity = "ewh");
-        Cs(:,:,k) = Cs(:,:,k) - gl.C;
-        Ss(:,:,k) = Ss(:,:,k) - gl.S;
-        nRem = nRem + 1;
+        Cs(:,:,k) = Cs(:,:,k) - Lc;
+        Ss(:,:,k) = Ss(:,:,k) - Ls;
     end
     steps(end+1) = sprintf(...
-        "one-step land-leakage removal for %d epochs (sources = outside mask)", nRem);
+        "iterative land-leakage separation (%d sweeps) for %d epochs", ...
+        opts.LandLeakIter, T);
 end
 if opts.CoastBufferKm > 0
     a0 = nnz(mk);
