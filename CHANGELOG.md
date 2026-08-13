@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.15.1] - 2026-08-13 - guide: complete theory edition
+
+Part I now starts from zero (chapter 0: mission, products, vocabulary)
+and covers everything through v3.15 (chapters 21-26: VDK theory,
+SINEX/normal equations, ocean chains, coastal leakage incl. the
+one-step warning, hydro indices, daily NRT), plus a full reference
+list and four computed theory figures from the validated experiments.
+
 ## [3.15.0] - 2026-08-13 - coastal-leakage controls
 
 oceanChain gains CoastBufferKm (great-circle mask erosion; 300 km
