@@ -2350,16 +2350,20 @@ def api_entry(e, qual):
         typ = a["cls"] or "&mdash;"
         if a.get("allowed"):
             typ += " &isin; " + _esc(a["allowed"])
+        de = (a.get("desc") or "").strip()
+        if len(de) > 160:
+            de = de[:157] + "..."
         rows.append([a["name"], a["size"] or "&mdash;", typ,
                      _esc(a["default"]) if a["default"] else "required",
-                     "name-value" if a["nv"] else "positional"])
+                     _esc(de) or "&mdash;"])
     if not rows:
-        rows = [[i, "&mdash;", "&mdash;", "required", "positional"]
+        rows = [[i, "&mdash;", "&mdash;", "required", "&mdash;"]
                 for i in ins if i != "Name=Value"]
     if rows:
-        out += tbl(["input", "size", "type", "default", "kind"], rows,
-                   [0.16 * TEXT_W, 0.11 * TEXT_W, 0.33 * TEXT_W,
-                    0.24 * TEXT_W, 0.16 * TEXT_W])
+        out += tbl(["input", "size", "type", "default", "description"],
+                   rows,
+                   [0.14 * TEXT_W, 0.09 * TEXT_W, 0.2 * TEXT_W,
+                    0.15 * TEXT_W, 0.42 * TEXT_W])
     # outputs
     orow = e.get("outdocs") or [[o, ""] for o in outs]
     if orow:

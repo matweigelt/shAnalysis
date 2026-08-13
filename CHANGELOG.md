@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.16.2] - 2026-08-13 - final documentation audit
+
+Guide Part IV input tables gain a description column (881 arguments,
+100% coverage after completing demo_shAnalysis).
+
 ## [3.16.1] - 2026-08-13 - CoastBufferKm default 300
 
 Author decision on the live 6e table: the 300 km Chambers-style
