@@ -118,16 +118,24 @@ end
 
 %% 6c - v3.14 hydro index on the real series (Amazon droughts visible)
 try
-    [tws, ~] = shLowLevel.twsChain(ser, kn = kn);
-    [Z, ih] = shLowLevel.hydroExtremeIndex(tws.grid, tws.epochs);
-    % Amazon cell ~ (-5, 300): the 2005 and 2010 droughts are published
-    [~, iLa] = min(abs(tws.lat - (-5))); [~, iLo] = min(abs(tws.lon - 300));
-    z = squeeze(Z(iLa, iLo, :));
+    fl = ser.dropNaN.destripe.gaussian(350); fl = fl.minus(fl.mean);
+    T = numel(fl.epochs); zA = zeros(T, 1);
+    for k = 1:T
+        zA(k) = shLowLevel.shSynthesis(fl.Cs(:,:,k), fl.Ss(:,:,k), ...
+            3.986004415e14, 6378136.3, -5, 300, ...
+            'quantity', 'ewh', 'kn', kn, 'nmin', 2);
+    end
+    z = shLowLevel.hydroExtremeIndex(zA, fl.epochs);
+    % published Amazon droughts: 2005, 2010, and 2015/16 (El Nino) -
+    % the LAST is the strongest in TWS (verified live 2026-08-13:
+    % -3.05 / -1.43 / -1.18); all three must appear as dry local
+    % minima, the global minimum in one of them
+    mins = zeros(1, 3); yrs = [2005.7, 2010.7, 2016.0];
+    for q = 1:3, mins(q) = min(z(abs(fl.epochs - yrs(q)) < 0.6)); end
     [zmin, imin] = min(z);
-    fprintf('%s  hydroIndex: Amazon min DSI %.2f at %.2f (published droughts 2005/2010)\n', ...
-        ternary(zmin <= -1.3 && (abs(tws.epochs(imin)-2005.7) < 1 ...
-            || abs(tws.epochs(imin)-2010.7) < 1), "PASS", "CHECK"), ...
-        zmin, tws.epochs(imin));
+    ok = all(mins <= -0.8) && any(abs(fl.epochs(imin) - yrs) < 0.6);
+    fprintf('%s  hydroIndex Amazon: 2005 %.2f | 2010 %.2f | 2015/16 %.2f | global min %.2f at %.2f\n', ...
+        ternary(ok, "PASS", "CHECK"), mins(1), mins(2), mins(3), zmin, fl.epochs(imin));
 catch ME
     fprintf('FAIL  hydroIndex: %s\n', ME.identifier);
 end
