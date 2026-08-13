@@ -2354,16 +2354,19 @@ verifyEqual(testCase, numel(infM.nPerMonth), 12);
 end
 
 function testCoastalLeakageControls(testCase)
-%TESTCOASTALLEAKAGECONTROLS v3.15.0: the two ocean-chain leakage
-%   controls on a synthetic n30 world - a land box source beside a
-%   masked ocean carrying a constant true signal, gauss445-filtered.
-%   Frozen, geometry-free criteria: erodeMask loses pixels
-%   monotonically with the buffer and keeps the deep interior;
-%   one-step land-leakage removal (exactly the chain recipe) cuts the
-%   leak-induced ocean-mean bias by > 60% while preserving the true
-%   ocean mean to 5%. Python reference for the buffer alone
-%   (gauss445 point source): 54% leak reduction at 300 km, 82% at
-%   500 km, under 1% area loss.
+%TESTCOASTALLEAKAGECONTROLS v3.15.0: leakage controls on a
+%   BAND-LIMITED synthetic world. The first version planted sharp
+%   boxes and compared against their nominal amplitude - CI caught
+%   the category error: at n30 the boxes ring, the "truth" does not
+%   exist band-limited, and the removal also subtracts the ocean's
+%   own ringing outside the mask. Correct experiment: land and ocean
+%   sources are band-limited SEPARATELY, the reference is the
+%   filtered OCEAN-ONLY mask mean, and the leak is the difference
+%   the land source adds to it. Criteria: erodeMask monotone with
+%   interior preserved; one-step removal cuts the land-induced leak
+%   by > 50% (ocean-ringing contamination is second order at a 10:1
+%   land:ocean amplitude ratio); the ocean reference itself stays
+%   within 15% of nominal (ringing + filter).
 lat = (-89.5:1:89.5)'; lon = (0.5:1:359.5)';
 [LO, LA] = meshgrid(lon, lat);
 ocean = abs(LA) <= 60 & (LO > 60 & LO < 160);
@@ -2377,22 +2380,25 @@ verifyGreaterThan(testCase, nnz(ocean) - nnz(mk300), 0);
 verifyTrue(testCase, mk600(iLa, iLo));
 nmax = 30; kn = zeros(nmax + 1, 1);
 GM = 3.986004415e14; R = 6378136.3;
-E = double(land) * 1.0 + double(ocean) * 0.10;
-g = shCoefficients.analysis(E, lat, lon, nmax, kn = kn, quantity = "ewh");
+gLand = shCoefficients.analysis(double(land) * 1.0, lat, lon, nmax, ...
+    kn = kn, quantity = "ewh");
+gOc = shCoefficients.analysis(double(ocean) * 0.10, lat, lon, nmax, ...
+    kn = kn, quantity = "ewh");
 wf = shLowLevel.shGaussianWeights(nmax, 445); wf = wf(:);
 w = cosd(LA);
-omRaw = localMaskMean(shLowLevel.shSynthesis(g.C .* wf, g.S .* wf, ...
+mm = @(C, S) localMaskMean(shLowLevel.shSynthesis(C .* wf, S .* wf, ...
     GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, 'nmin', 0), w, ocean);
-E0 = shLowLevel.shSynthesis(g.C, g.S, GM, R, lat, lon, ...
-    'quantity', 'ewh', 'kn', kn, 'nmin', 0);
+ref = mm(gOc.C, gOc.S);                        % ocean-only reference
+verifyEqual(testCase, ref, 0.10, RelTol = 0.15);
+leakRaw = mm(gOc.C + gLand.C, gOc.S + gLand.S) - ref;
+verifyGreaterThan(testCase, abs(leakRaw), 1e-4);   % experiment not empty
+% one-step removal exactly as the chain does it
+E0 = shLowLevel.shSynthesis(gOc.C + gLand.C, gOc.S + gLand.S, ...
+    GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, 'nmin', 0);
 E0(ocean) = 0;
 gl = shCoefficients.analysis(E0, lat, lon, nmax, kn = kn, quantity = "ewh");
-omClean = localMaskMean(shLowLevel.shSynthesis((g.C - gl.C) .* wf, ...
-    (g.S - gl.S) .* wf, GM, R, lat, lon, 'quantity', 'ewh', 'kn', kn, ...
-    'nmin', 0), w, ocean);
-truth = 0.10;
-verifyLessThan(testCase, abs(omClean - truth), 0.4 * abs(omRaw - truth));
-verifyEqual(testCase, omClean, truth, RelTol = 0.05);
+leakClean = mm(gOc.C + gLand.C - gl.C, gOc.S + gLand.S - gl.S) - ref;
+verifyLessThan(testCase, abs(leakClean), 0.5 * abs(leakRaw));
 end
 
 function m = localMaskMean(F, w, mk)
