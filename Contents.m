@@ -228,6 +228,19 @@
 %   - run_vdk_series: renamed call sites + fixed a latent
 %     shLowLevel.shxVersion() typo (first bridge run caught it;
 %     correct name is shLowLevel.version()).
+%%   - eofSeparate: North MULTIPLET rule (degenerate leading modes kept
+%     as a group) guarded by a median-calibrated Marchenko-Pastur bulk
+%     edge; oceanChain caps SeparateCirculation at 3 modes (the MP
+%     edge is liberal under correlated GRACE residuals - the uncapped
+%     chain kept 10). Real trigger: the grown 252-month series
+%     degenerated the leading pair (gap 0.44e9 vs dl 0.53e9, nKeep 0).
+%   - Machine acceptance (bridge restored): suite 225 tests green,
+%     section 5 PASS (3 modes, sigMon 0.0148, trend +1.407), 6c PASS
+%     (Amazon droughts 2015/16 > 2010 > 2005: -3.05/-1.43/-1.18),
+%     6d PASS (daily path), 6e live-baselined: buffer 300/500 km
+%     moves the barystatic trend +1.407 -> +1.557/+1.647 mm/yr INTO
+%     the published band; removal(1)+300 km +1.524 (polar-cap
+%     leakage correctly removed).
 %
 % New in v3.15.1 (guide: complete theory edition)
 %   - Part I extended for readers without prior knowledge: new entry
