@@ -2153,10 +2153,13 @@ story += [para("<b>Coastal leakage, controlled twice.</b> The crude "
                "cuts an adjacent-source leak of 47%% of the ocean "
                "mean by 94%% (1D reference, frozen in CI on the "
                "band-limited spherical experiment). "
-               "Defaults stay off until the machine acceptance "
-               "re-baselines the published +1.41 mm/yr - changing a "
-               "validated number silently is not how this toolbox "
-               "works.")]
+               "Since v3.16.1 the 300 km buffer IS the default - the "
+               "machine re-baseline moved the barystatic trend "
+               "+1.407 to +1.557 mm/yr (500 km: +1.647), into the "
+               "published ~1.6-2.2 band; CoastBufferKm = 0 "
+               "reproduces the pre-v3.16.1 numbers. Changing a "
+               "validated number happened here the only allowed "
+               "way: measured first, then decided, then frozen.")]
 story += code("""[out, rep] = shLowLevel.oceanChain(ser, kn = kn, OceanMask = oc, ...
     GADFolder = gadF, GAAFolder = gaaF, ...
     CoastBufferKm = 300, RemoveLandLeakage = true);""")

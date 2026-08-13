@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.16.0 (R2026a-compatible) 13-Aug-2026
+% Version 3.16.1 (R2026a-compatible) 13-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,12 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.16.1 (CoastBufferKm default 300; iter5 acceptance)
+%   - oceanChain CoastBufferKm defaults to 300 km (author decision on
+%     the live 6e table): the barystatic baseline moves +1.407 ->
+%     +1.557 mm/yr, into the published ~1.6-2.2 band; pass 0 for the
+%     pre-v3.16.1 numbers. Acceptance criteria rebaselined.
 %
 % New in v3.16.0 (uniform fetch layout; fetchITSGSINEX)
 %   BREAKING: consistent on-disk layout and naming for the fetch
