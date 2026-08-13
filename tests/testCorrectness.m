@@ -2542,6 +2542,30 @@ verifyLessThan(testCase, max(abs(ab(:, 1)' - aTrue) ./ aTrue), 0.15);
 verifyLessThan(testCase, max(abs(ab(:, 2)' - bTrue) ./ abs(bTrue)), 0.03);
 end
 
+function testEofSeparateNorthMultiplet(testCase)
+%TESTEOFSEPARATENORTHMULTIPLET v3.16.0: North multiplet rule with the
+%   median-calibrated Marchenko-Pastur bulk edge, against the
+%   Python-frozen scenarios - noise-only keeps 0, a degenerate
+%   equal-variance pair keeps exactly 2 (the single-mode rule drops
+%   it; the unguarded group chain kept 10 on the first machine run),
+%   a single strong mode keeps exactly 1. Real trigger: the grown
+%   252-month ocean residuals (gap 0.44e9 vs dl 0.53e9, nKeep 0).
+rng(3, 'twister');
+Q = 400; T = 250;
+u1 = sin(linspace(0, 3*pi, Q))'; u1 = u1 / norm(u1);
+u2 = cos(linspace(0, 3*pi, Q))'; u2 = u2 / norm(u2);
+w = ones(Q, 1);
+[~, ~, i0] = shLowLevel.eofSeparate(randn(Q, T), w);
+verifyEqual(testCase, i0.nKeep, 0);
+Xp = u1 * (10.0 * randn(1, T)) + u2 * (9.97 * randn(1, T)) + randn(Q, T);
+[~, ~, i2] = shLowLevel.eofSeparate(Xp, w);
+verifyEqual(testCase, i2.nKeep, 2);
+verifyGreaterThan(testCase, i2.lam(2), i2.bulkEdge);
+X1 = u1 * (10.0 * randn(1, T)) + randn(Q, T);
+[~, ~, i1] = shLowLevel.eofSeparate(X1, w);
+verifyEqual(testCase, i1.nKeep, 1);
+end
+
 function testEofSeparateNorthRule(testCase)
 %TESTEOFSEPARATENORTHRULE v3.11.0: EOF/North separation against the
 %   frozen Python (numpy) reference: two planted modes ABOVE the
@@ -2580,15 +2604,15 @@ verifyError(testCase, ...
     'shLowLevel:obpChain:missingGAD');
 end
 
-function testFetchSINEXContract(testCase)
-%TESTFETCHSINEXCONTRACT v3.12.0: loud errors before any network use -
+function testFetchITSGSINEXContract(testCase)
+%TESTFETCHITSGSINEXCONTRACT v3.12.0: loud errors before any network use -
 %   bad Nmax, empty month set, malformed month strings.
-verifyError(testCase, @() shLowLevel.fetchSINEX("2018-06", Nmax = 90), ...
-    'shLowLevel:fetchSINEX:badNmax');
-verifyError(testCase, @() shLowLevel.fetchSINEX(strings(0, 1)), ...
-    'shLowLevel:fetchSINEX:noMonths');
-verifyError(testCase, @() shLowLevel.fetchSINEX("June 2018"), ...
-    'shLowLevel:fetchSINEX:badMonth');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX("2018-06", Nmax = 90), ...
+    'shLowLevel:fetchITSGSINEX:badNmax');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX(strings(0, 1)), ...
+    'shLowLevel:fetchITSGSINEX:noMonths');
+verifyError(testCase, @() shLowLevel.fetchITSGSINEX("June 2018"), ...
+    'shLowLevel:fetchITSGSINEX:badMonth');
 end
 
 function testFetchITSGBackgroundContract(testCase)

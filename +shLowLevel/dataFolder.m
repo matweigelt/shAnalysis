@@ -9,7 +9,11 @@ function folder = dataFolder(newFolder)
 %                                 setpref('shAnalysis','dataFolder')).
 %   F = shLowLevel.dataFolder("reset")   back to the default.
 %
-%   Consumers: shLowLevel.fetchITSG (itsg_series/), shLowLevel.fetchDDK (DDK/),
+%   Layout since v3.16: series/itsg/{monthly,daily,sinex,background},
+%   series/<icgem-name>, series/GAX/<product> for temporal products;
+%   static/ for static models; DDK/ and TN/ for auxiliaries. The
+%   fetchers warn once when they find data in a pre-v3.16 location.
+%   Consumers: shLowLevel.fetchITSG (series/itsg/), shLowLevel.fetchDDK (DDK/),
 %   shLowLevel.fetchICGEM (icgem/), shLowLevel.readDDK("DDK<n>") name resolution, and
 %   the demo's real-data discovery. Point this at a shared network
 %   location to reuse downloads across machines.

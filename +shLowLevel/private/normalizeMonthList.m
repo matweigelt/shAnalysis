@@ -1,13 +1,13 @@
 function mm = normalizeMonthList(months, errId)
 %NORMALIZEMONTHLIST "YYYY-MM" strings or numeric years -> unique list.
-%   Shared private helper of the fetch family (fetchSINEX,
+%   Shared private helper of the fetch family (fetchITSGSINEX,
 %   fetchITSGBackground); mirrors the fetchITSG validation exactly:
 %   numeric years must lie in 2002..2100, strings must match
 %   ^\d{4}-\d{2}$. ERRID is the caller's error-identifier prefix.
 %
 %   Inputs
 %     months  (1 x k string | numeric)  months or years
-%     errId   (1 x 1) string  e.g. "shLowLevel:fetchSINEX"
+%     errId   (1 x 1) string  e.g. "shLowLevel:fetchITSGSINEX"
 %
 %   Outputs
 %     mm  (n x 1) string  unique "YYYY-MM" list

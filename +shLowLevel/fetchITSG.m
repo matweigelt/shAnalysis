@@ -3,13 +3,13 @@ function [files, info] = fetchITSG(months, opts)
 %
 %   The fetch family, one function per source and product: fetchITSG
 %   and fetchICGEM for solution series, fetchGAX for the AOD1B
-%   GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchSINEX for
+%   GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchITSGSINEX for
 %   the ITSG monthly normal-equation SINEX, fetchITSGBackground for
 %   the ITSG monthly background models, plus fetchTN, fetchDDK,
 %   fetchLoveNumbers for auxiliaries.
 %
 %   FILES = shLowLevel.fetchITSG(2019:2020) downloads all available monthly
-%   GSM solutions for the given years into dataFolder/itsg_series
+%   GSM solutions for the given years into dataFolder/series/itsg/monthly (v3.16 layout)
 %   (websave, base MATLAB). Already-present files are skipped unless
 %   Update (false)=true, which re-downloads them with a safe swap (the fresh
 %   file is parse-verified before it replaces the old one); months
@@ -23,7 +23,7 @@ function [files, info] = fetchITSG(months, opts)
 %   ICGEM format with formal errors, zero_tide), n40 ONLY - Nmax (NaN)
 %   resolves to 40 automatically; requesting another Nmax errors. The
 %   months/years spec expands to all days (a full year is ~365 files);
-%   target dataFolder/itsg_daily (kept separate from the monthly
+%   target dataFolder/series/itsg/daily (kept separate from the monthly
 %   series so shSeries.fromFolder never mixes samplings).
 %
 %   Release routing (automatic): epochs before 2017-07 come from
@@ -33,7 +33,7 @@ function [files, info] = fetchITSG(months, opts)
 %     months   numeric years (each expands to 12 months) OR string
 %              array "YYYY-MM"
 %   Options
-%     Dest (fullfile(shLowLevel.dataFolder(), "itsg_series"))  target folder
+%     Dest (fullfile(shLowLevel.dataFolder(), "series", "itsg", "monthly"))  target folder
 %              (set a shared location once via shLowLevel.dataFolder(path))
 %     Nmax (NaN)     monthly: 60 | 96 | 120 (server folder monthly_nXX;
 %                    NaN resolves to 96). Daily solutions are n40 only
@@ -167,9 +167,15 @@ else
 end
 dest = opts.Dest;
 if strlength(dest) == 0
-    sub = 'itsg_series';
-    if daily, sub = 'itsg_daily'; end
-    dest = string(fullfile(shLowLevel.dataFolder(), sub));             % v2.4.1
+    sub = 'monthly';
+    if daily, sub = 'daily'; end
+    dest = string(fullfile(shLowLevel.dataFolder(), 'series', 'itsg', sub));  % v3.16 layout
+    legacy = fullfile(shLowLevel.dataFolder(), ternary(daily, "itsg_daily", "itsg_series"));
+    if isfolder(legacy) && ~isfolder(dest)
+        warning('shLowLevel:fetchITSG:legacyLayout', ...
+            'found pre-v3.16 data at %s - the new layout is %s; move the folder to avoid re-downloading.', ...
+            legacy, dest);
+    end
 end
 if ~isfolder(dest), mkdir(dest); end
 

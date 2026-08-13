@@ -9,7 +9,7 @@
 %   log is written next to the output.
 %
 %   Pipeline per month (Horvath et al. 2018):
-%     fetchSINEX -> readSINEX(NEQ, Index = idx) -> N ->
+%     fetchITSGSINEX -> readSINEX(NEQ, Index = idx) -> N ->
 %     vdkApply(x, N, idx.n, ab(calendar month), Alpha) -> writeGFC
 %
 %   The signal model ab (cyclostationary Kaula a*l^b) is estimated ONCE
@@ -29,7 +29,7 @@
 cfg.Months    = ["2003-01"];                 % e.g. compose("%d-%02d", ...) spans
 cfg.Nmax      = 96;                          % 96 | 120 (SINEX variants)
 cfg.Alpha     = 1;                           % filter strength (paper Tab. 1)
-cfg.SinexDir  = fullfile(shLowLevel.dataFolder(), "itsg_sinex");
+cfg.SinexDir  = fullfile(shLowLevel.dataFolder(), "series", "itsg", "sinex");
 cfg.OutDir    = fullfile(shLowLevel.dataFolder(), "itsg_vdk");
 cfg.SignalSeriesFolder = "";                 % REQUIRED: pre-filtered (DDK4) series
 cfg.LRange    = [10, 60];                    % Kaula fit range
@@ -72,7 +72,7 @@ for mm = cfg.Months
     end
     try
         t0 = tic;
-        f = shLowLevel.fetchSINEX(mm, Dest = cfg.SinexDir, ...
+        f = shLowLevel.fetchITSGSINEX(mm, Dest = cfg.SinexDir, ...
             Nmax = cfg.Nmax, Quiet = true);
         if isempty(f)
             fprintf(fid, '%s MISSING on server\n', mm);
@@ -90,7 +90,7 @@ for mm = cfg.Months
                 '2018) of ITSG %s: monthly SINEX N, cyclostationary ' ...
                 'Kaula signal (a %.3g, b %.3g), alpha %g. shAnalysis %s.'], ...
                 mm, ab(mo, 1), ab(mo, 2), cfg.Alpha, ...
-                shLowLevel.shxVersion()));
+                shLowLevel.version()));
         if ~cfg.KeepSinex, delete(f(1)); end
         nOK = nOK + 1;
         fprintf(fid, '%s OK %.0f s\n', mm, toc(t0));

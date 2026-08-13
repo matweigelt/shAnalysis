@@ -8,7 +8,11 @@ function [circ, noiseR, info] = eofSeparate(R, w, opts)
 %   an area-weighted EOF decomposition with the North et al. (1982)
 %   rule: leading modes are kept while their eigenvalue is separated
 %   from the next one by more than its sampling uncertainty
-%   lambda * sqrt(2/T).
+%   lambda * sqrt(2/T), extended by the North multiplet rule:
+%   effectively degenerate leading modes (mutual gaps inside the
+%   sampling uncertainty) are kept or dropped as a GROUP judged by
+%   the group's lower edge - a leading degenerate pair is physics
+%   (two circulation patterns of similar variance), not noise.
 %
 %   Physical limitation, stated up front: modes whose variance lies at
 %   or below the noise floor (the Marchenko-Pastur bulk edge, roughly
@@ -69,14 +73,42 @@ W = sqrt(w);
 [U, S, V] = svd(W .* Rc, 'econ');
 s = diag(S);
 lam = s.^2 / T;
-% North et al. (1982): separated while the eigenvalue gap exceeds the
-% sampling uncertainty of the leading eigenvalue
+% North et al. (1982) with the multiplet extension North himself
+% prescribes: modes whose mutual gaps fall inside the sampling
+% uncertainty dl = lam*sqrt(2/T) are EFFECTIVELY DEGENERATE and must
+% be kept or dropped as a group, judged by the group's LOWER edge.
+% (Real trigger, 2026-08-13: the 252-month COST-G ocean residuals
+% carry a leading degenerate pair - gap 0.44e9 vs dl 0.53e9 - that
+% the single-mode rule silently dropped, nKeep 0.)
 dl = lam * sqrt(2 / T);
 nsep = lam(1:end-1) - lam(2:end) > dl(1:end-1);
+% Marchenko-Pastur bulk edge, median-calibrated: noise variance from
+% median(lam)/mpMedian(Q/T), edge sigma2*(1+sqrt(Q/T))^2. Separation
+% alone is NOT a signal criterion - the sampling gap dl shrinks with
+% lam, so random bulk gaps "separate" and the group chain would walk
+% deep into the noise (the first machine run kept 10 modes; with the
+% edge it keeps the physical doublet). Frozen in Python: noise-only 0,
+% degenerate pair 2, single mode 1.
+c = Q / T;
+lp = (1 + sqrt(c))^2; lm = (1 - sqrt(c))^2;
+xs = linspace(lm, lp, 4000); xs = xs(2:end-1);
+pdf = sqrt((lp - xs) .* (xs - lm)) ./ (2*pi*c*xs);
+cdf = cumsum(pdf) * (xs(2) - xs(1)); cdf = cdf / cdf(end);
+mpMed = xs(find(cdf >= 0.5, 1));
+edge = median(lam) / mpMed * lp;
 if isempty(opts.NKeep)
-    n = 0;
-    while n < numel(nsep) && nsep(n + 1)
-        n = n + 1;
+    n = 0; i = 1;
+    while i < numel(lam)
+        j = i;
+        while j < numel(lam) - 1 && lam(j) - lam(j+1) <= dl(j)
+            j = j + 1;                       % grow the multiplet
+        end
+        sep = j < numel(lam) && lam(j) - lam(j+1) > dl(j);
+        if sep && lam(j) > edge
+            n = j; i = j + 1;                % separated AND above bulk
+        else
+            break
+        end
     end
 else
     n = opts.NKeep;
@@ -90,6 +122,7 @@ end
 noiseR = Rc - circ;
 wRep = repmat(w, 1, T);
 rmsNoise = sqrt(sum(wRep .* noiseR.^2, 'all') / sum(wRep, 'all'));
-info = struct('lam', lam, 'nKeep', n, 'northSeparated', nsep, ...
+info = struct('lam', lam, 'nKeep', n, 'bulkEdge', edge, ...
+    'northSeparated', nsep, ...
     'varExplained', sum(lam(1:n)) / sum(lam), 'rmsNoise', rmsNoise);
 end

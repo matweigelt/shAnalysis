@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.16.0] - 2026-08-13 - uniform fetch layout (BREAKING)
+
+fetchSINEX -> fetchITSGSINEX; uniform on-disk layout: temporal
+products under series/ (series/itsg/*, series/icgem/*, series/GAX/*),
+static models under static/. fetchGAX dest now optional. Fetchers
+warn once on pre-v3.16 data locations instead of re-downloading
+silently - move old folders (itsg_series, itsg_daily, itsg_sinex,
+itsg_background, icgem/) into the new layout. run_vdk_series fixed
+(fetch rename + a latent version-helper typo caught by the first
+bridge run).
+
 ## [3.15.1] - 2026-08-13 - guide: complete theory edition
 
 Part I now starts from zero (chapter 0: mission, products, vocabulary)

@@ -34,7 +34,7 @@ function [files, info] = fetchITSGBackground(months, opts)
 %                        and lands in info.missing - loudly, never
 %                        silently
 %     Dest ("")          destination folder; "" =
-%                        dataFolder/itsg_background
+%                        dataFolder/series/itsg/background (v3.16)
 %     Release ("")       "" routes by month; a release name pins it
 %     Update (false)     re-download files that already exist
 %     MaxFiles (Inf)     downloads cap per product
@@ -96,7 +96,7 @@ if isempty(mm)
 end
 dest = opts.Dest;
 if strlength(dest) == 0
-    dest = fullfile(shLowLevel.dataFolder(), "itsg_background");
+    dest = fullfile(shLowLevel.dataFolder(), "series", "itsg", "background");
 end
 rel = strings(numel(mm), 1);
 for k = 1:numel(mm)

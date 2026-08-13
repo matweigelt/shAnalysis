@@ -11,7 +11,8 @@ function [files, info] = fetchGAX(dest, opts)
 %   files already present are skipped unless Update = true.
 %
 %   Inputs
-%     dest    (1 x 1) string  destination folder; product subfolders
+%     dest    (1 x 1) string  destination folder ("" = the v3.16
+%             default dataFolder/series/GAX); product subfolders
 %             are created as needed
 %
 %   Options
@@ -54,7 +55,7 @@ function [files, info] = fetchGAX(dest, opts)
 %         GADFolder = "E:/DATAPOOL/GravityField/GAX/GAD", ...
 %         GAAFolder = "E:/DATAPOOL/GravityField/GAX/GAA");
 %
-%   See fetchSINEX and fetchITSGBackground for the ITSG-side products;
+%   See fetchITSGSINEX and fetchITSGBackground for the ITSG-side products;
 %   the ITSG background models are per-release means, NOT the AOD1B
 %   GAX split.
 %
@@ -66,7 +67,7 @@ function [files, info] = fetchGAX(dest, opts)
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
 %   2026-08-12 (v3.10.0).
 arguments
-    dest (1,1) string
+    dest (1,1) string = ""
     opts.Products (1,:) string = ["GAD", "GAA"]
     opts.Series (1,:) string = ["01_GRACE/GFZ/GFZ Release 06", ...
         "01_GRACE/GFZ/GFZ Release 06.3 (GFO)"]
@@ -79,6 +80,9 @@ arguments
     opts.PauseSec (1,1) double {mustBeNonnegative} = 1.5
     opts.RetryAfterCap (1,1) double {mustBePositive} = 30
     opts.Quiet (1,1) logical = false
+end
+if strlength(dest) == 0
+    dest = string(fullfile(shLowLevel.dataFolder(), 'series', 'GAX'));   % v3.16 layout
 end
 bad = setdiff(upper(opts.Products), ["GAA","GAB","GAC","GAD"]);
 if ~isempty(bad)

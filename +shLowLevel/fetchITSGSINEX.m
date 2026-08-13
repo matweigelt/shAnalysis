@@ -1,7 +1,7 @@
-function [files, info] = fetchSINEX(months, opts)
-%FETCHSINEX Download ITSG monthly normal-equation SINEX from TU Graz.
+function [files, info] = fetchITSGSINEX(months, opts)
+%FETCHITSGSINEX Download ITSG monthly normal-equation SINEX from TU Graz.
 %
-%   FILES = shLowLevel.fetchSINEX("2018-06") downloads the monthly
+%   FILES = shLowLevel.fetchITSGSINEX("2018-06") downloads the monthly
 %   normal-equation/solution SINEX of the ITSG series - the only
 %   public per-month SINEX source (COST-G combines on the
 %   normal-equation level internally but does NOT distribute per-month
@@ -14,14 +14,17 @@ function [files, info] = fetchSINEX(months, opts)
 %   460 MB gzipped (verified live 2026-08-12); the full 257-month
 %   series is on the order of 120 GB. MONTHS is therefore a required
 %   argument - there is deliberately no "all" convenience here, unlike
-%   fetchITSG where a month is 1 MB.
+%   fetchITSG where a month is 1 MB. To exercise the plumbing WITHOUT
+%   transferring anything, pass MaxFiles = 0 (BudgetSec cannot cut the
+%   first file - it only checks between downloads).
 %
 %   Inputs
 %     months  (1 x k string | numeric years) "YYYY-MM" strings or
 %             year vectors, as in fetchITSG
 %
 %   Options
-%     Dest ("")          destination folder; "" = dataFolder/itsg_sinex
+%     Dest ("")          destination folder; "" =
+%                        dataFolder/series/itsg/sinex (v3.16 layout)
 %     Nmax (96)          (1 x 1) 96 or 120 - the two server variants
 %     Release ("")       "" routes by month (fetchITSG rule);
 %                        "ITSG-Grace2018" or "ITSG-Grace_operational"
@@ -44,12 +47,12 @@ function [files, info] = fetchSINEX(months, opts)
 %           server), releases used
 %
 %   Example
-%     f = shLowLevel.fetchSINEX(["2018-06", "2018-07"], Nmax = 96);
+%     f = shLowLevel.fetchITSGSINEX(["2018-06", "2018-07"], Nmax = 96);
 %     snx = shLowLevel.readSINEX(f(1), Only = "estimate");
 %
 %   Error identifiers
-%     shLowLevel:fetchSINEX:badNmax    Nmax not 96 or 120
-%     shLowLevel:fetchSINEX:noMonths   months resolves to empty
+%     shLowLevel:fetchITSGSINEX:badNmax    Nmax not 96 or 120
+%     shLowLevel:fetchITSGSINEX:noMonths   months resolves to empty
 %
 %   Data courtesy of TU Graz, ftp.tugraz.at/pub/ITSG/GRACE
 %   (Mayer-Guerr et al.); cite the ITSG series when publishing.
@@ -73,18 +76,18 @@ arguments
     opts.Quiet (1,1) logical = false
 end
 if ~any(opts.Nmax == [96, 120])
-    error('shLowLevel:fetchSINEX:badNmax', ...
+    error('shLowLevel:fetchITSGSINEX:badNmax', ...
         'Nmax must be 96 or 120 (the two server variants), got %g.', ...
         opts.Nmax);
 end
-mm = normalizeMonthList(months, "shLowLevel:fetchSINEX");
+mm = normalizeMonthList(months, "shLowLevel:fetchITSGSINEX");
 if isempty(mm)
-    error('shLowLevel:fetchSINEX:noMonths', ...
+    error('shLowLevel:fetchITSGSINEX:noMonths', ...
         'months resolves to an empty set - one 460 MB file per month is fetched deliberately, never "all".');
 end
 dest = opts.Dest;
 if strlength(dest) == 0
-    dest = fullfile(shLowLevel.dataFolder(), "itsg_sinex");
+    dest = fullfile(shLowLevel.dataFolder(), "series", "itsg", "sinex");
 end
 % release routing (the fetchITSG rule)
 rel = strings(numel(mm), 1);
