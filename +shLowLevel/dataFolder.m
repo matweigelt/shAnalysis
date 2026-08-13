@@ -10,7 +10,7 @@ function folder = dataFolder(newFolder)
 %   F = shLowLevel.dataFolder("reset")   back to the default.
 %
 %   Layout since v3.16: series/itsg/{monthly,daily,sinex,background},
-%   series/icgem/<name>, series/GAX/<product> for temporal products;
+%   series/<icgem-name>, series/GAX/<product> for temporal products;
 %   static/ for static models; DDK/ and TN/ for auxiliaries. The
 %   fetchers warn once when they find data in a pre-v3.16 location.
 %   Consumers: shLowLevel.fetchITSG (series/itsg/), shLowLevel.fetchDDK (DDK/),

@@ -12,7 +12,7 @@ function [file, info] = fetchICGEM(model, opts)
 %   Options
 %     Dest ("")  "" = the v3.16 layout: static models under
 %                dataFolder/static, series under
-%                dataFolder/series/icgem/<group_center_series>
+%                dataFolder/series/<group_center_series>
 %     Timeout (300),
 %     List (table()) ([])   pass a pre-fetched listICGEM table (avoids re-listing
 %                 in loops / enables the offline fixture in tests)
@@ -289,7 +289,7 @@ dest = opts.Dest;
 if strlength(dest) == 0
     tag = regexprep(char(row.group + "_" + row.center + "_" + row.series), ...
         '[^\w\-.]', '_');
-    dest = string(fullfile(shLowLevel.dataFolder(), 'series', 'icgem', tag));  % v3.16 layout
+    dest = string(fullfile(shLowLevel.dataFolder(), 'series', tag));  % v3.16 layout (flat under series/)
     legacy = fullfile(shLowLevel.dataFolder(), 'icgem', 'series', tag);
     if isfolder(legacy) && ~isfolder(dest)
         warning('shLowLevel:fetchICGEM:legacyLayout', ...

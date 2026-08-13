@@ -219,7 +219,7 @@
 %   - fetchSINEX is now fetchITSGSINEX (source-consistent with
 %     fetchITSG/fetchITSGBackground); error IDs moved accordingly.
 %   - Default targets: series/itsg/{monthly,daily,sinex,background},
-%     series/icgem/<group_center_series>, series/GAX/<product> for
+%     series/<group_center_series>, series/GAX/<product> for
 %     temporal products; static/ for static ICGEM models; DDK/, TN/
 %     unchanged. fetchGAX's dest argument is now optional.
 %   - Every fetcher warns LOUDLY (once) when it finds data in a
