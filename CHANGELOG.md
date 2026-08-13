@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.16.1] - 2026-08-13 - CoastBufferKm default 300
+
+Author decision on the live 6e table: the 300 km Chambers-style
+coastal buffer becomes the oceanChain default (baseline +1.557 mm/yr,
+in the published band); CoastBufferKm=0 reproduces the old numbers.
+
 ## [3.16.0] - 2026-08-13 - uniform fetch layout (BREAKING)
 
 fetchSINEX -> fetchITSGSINEX; uniform on-disk layout: temporal

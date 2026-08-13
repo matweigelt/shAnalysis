@@ -56,15 +56,17 @@ function [out, rep] = oceanChain(folder, opts)
 %                        Willis 2010) - removes the atmospheric
 %                        land-ocean mass term that GRACE sees but that
 %                        is not water
-%     CoastBufferKm (0)  erode the ocean mask by this great-circle
+%     CoastBufferKm (300) erode the ocean mask by this great-circle
 %                        distance from every coast [km]. Quantified
 %                        (Python, gauss445 point-source experiment):
 %                        300 km removes 54% of the coastal filter
-%                        leakage, 500 km 82%, at under 1% ocean-area
-%                        loss - 300 km is the Chambers-style standard;
-%                        the default stays 0 so published acceptance
-%                        numbers remain reproducible until the
-%                        machine run re-baselines them
+%                        leakage, 500 km 82% - 300 km is the
+%                        Chambers-style standard and the DEFAULT
+%                        since v3.16.1: the machine re-baseline moved
+%                        the barystatic trend +1.407 -> +1.557 mm/yr
+%                        (500 km: +1.647), INTO the published
+%                        ~1.6-2.2 band. Pass 0 for pre-v3.16.1
+%                        numbers
 %     RemoveLandLeakage (false) iterative support separation of ALL
 %                        sources outside the ocean mask (two-sided
 %                        alternating projections, Papoulis-Gerchberg
@@ -79,9 +81,15 @@ function [out, rep] = oceanChain(folder, opts)
 %                        adjacent-source leak of 47% of the ocean
 %                        mean by 94%. Costs 2 syntheses + 2 analyses
 %                        per iteration per epoch
-%     LandLeakIter (5)   (1 x 1) separation sweeps; 1 already carries
-%                        most of the effect for coast-adjacent
-%                        sources, 5 is converged (pre-validated)
+%     LandLeakIter (1)   (1 x 1) separation sweeps. Machine-measured
+%                        trend ladder with the 300 km buffer: 0
+%                        sweeps +1.557, 1 sweep +1.524, 5 sweeps
+%                        +1.321 mm/yr - deeper iteration attributes
+%                        coast-ringing OCEAN signal to land (support
+%                        ambiguity at the band-limited edge, larger
+%                        on the real globe than in the 1D
+%                        reference). Default 1 = the validated
+%                        point; treat deeper sweeps as aggressive
 %     SeparateCirculation (false) split the pixel residuals (after the
 %                        North-multiplet + Marchenko-Pastur selection,
 %                        capped at 3 modes: the MP edge assumes i.i.d.
@@ -142,9 +150,9 @@ arguments
     opts.GADFolder (1,1) string = ""
     opts.GAAFolder (1,1) string = ""
     opts.SeparateCirculation (1,1) logical = false
-    opts.CoastBufferKm (1,1) double {mustBeNonnegative} = 0
+    opts.CoastBufferKm (1,1) double {mustBeNonnegative} = 300
     opts.RemoveLandLeakage (1,1) logical = false
-    opts.LandLeakIter (1,1) double {mustBePositive} = 5
+    opts.LandLeakIter (1,1) double {mustBePositive} = 1
     opts.Quiet (1,1) logical = true
 end
 if isempty(opts.kn)
