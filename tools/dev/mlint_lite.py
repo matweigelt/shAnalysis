@@ -10,10 +10,15 @@ Rules, per the shAnalysis handoff spec:
       (legal); otherwise the paren wraps an expression (illegal to dot)
   R4  "shx.fun(...).field"   -> parses, fails at runtime (dot on a package
       function result; package functions are never variables)
+  R5  name-value struct declared in an arguments block (opts.Field) but
+      missing as the LAST input of the function declaration line ->
+      MATLAB:functionValidation:MismatchBetweenBlockAndLine at call time.
+      Added 2026-08-18 after exactly this escaped to CI (rtsSmoother
+      Lag option, PR #66): mlint_lite was green, every call red.
 Tokenizes away comments (%, %{..%}), char/string literals (transpose-aware),
 and folds ... line continuations. A tripwire, not a parser.
 Usage: python3 mlint_lite.py file1.m [file2.m ...]   (also reads .txt snippets)
-Claude (Fable 5), 2026-08-07.
+Claude (Fable 5), 2026-08-07; R5 added 2026-08-18.
 """
 import re
 import sys
@@ -215,9 +220,69 @@ def check_dot_rules(name, txt):
     return bad
 
 
+def check_arguments_blocks(name, txt):
+    """R5 on tokenized, continuation-folded text: every struct used for
+    name-value entries in an (input) arguments block must be the last
+    input in the function declaration it belongs to."""
+    bad = []
+    lines = txt.split("\n")
+    # function declarations: line no -> ordered input list
+    funcs = []                                    # (lineno, [inputs])
+    for i, ln in enumerate(lines):
+        m = re.match(r"\s*function\b(.*)$", ln)
+        if not m:
+            continue
+        rest = m.group(1)
+        rest = rest.split("=", 1)[1] if "=" in rest else rest
+        pm = re.search(r"\(([^)]*)\)", rest)
+        args = ([a.strip() for a in pm.group(1).split(",") if a.strip()]
+                if pm else [])
+        funcs.append((i, args))
+    if not funcs:
+        return bad
+    # arguments blocks: attach each to the nearest function above
+    i = 0
+    while i < len(lines):
+        m = re.match(r"\s*arguments\b\s*(\(([^)]*)\))?", lines[i])
+        if not m:
+            i += 1
+            continue
+        attrs = (m.group(2) or "").lower()
+        start = i
+        depth = 0                                 # nested block openers
+        structs = []
+        i += 1
+        while i < len(lines):
+            ln = lines[i].strip()
+            if re.match(r"\bend\b", ln) and depth == 0:
+                break
+            sm = re.match(r"([A-Za-z_]\w*)\.[A-Za-z_]\w*", ln)
+            if sm:
+                structs.append(sm.group(1))
+            i += 1
+        if "output" not in attrs:
+            owner = max((f for f in funcs if f[0] < start),
+                        key=lambda f: f[0], default=None)
+            if owner:
+                for sname in dict.fromkeys(structs):
+                    if sname not in owner[1]:
+                        bad.append((name, start + 1,
+                                    f"arguments block declares name-value "
+                                    f"struct '{sname}' but the function "
+                                    f"line lacks it (Mismatch"
+                                    f"BetweenBlockAndLine at call time)"))
+                    elif owner[1] and owner[1][-1] != sname:
+                        bad.append((name, start + 1,
+                                    f"name-value struct '{sname}' must be "
+                                    f"the LAST input of the function line"))
+        i += 1
+    return bad
+
+
 def lint_text(name, src):
     txt = fold_continuations(strip_tokens(src))
-    return check_balance(name, txt) + check_dot_rules(name, txt)
+    return (check_balance(name, txt) + check_dot_rules(name, txt)
+            + check_arguments_blocks(name, txt))
 
 
 def main(paths):
