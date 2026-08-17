@@ -106,6 +106,12 @@ required and user-supplied:
 <pre>kn = shLowLevel.readLoveNumbers(lovePath);
 cf = shLowLevel.buildCondFun(idx, kn=kn, Psi0Km=1100, Regions=@(la,lo) double(isLand(la,lo)));
 model = shLowLevel.estimateVAR(X, Order=1, CondFun=cf);</pre></li>
+<li><b>Quality control (v3.21).</b> <code class="inline">QC="reject"</code> runs the
+chi-square innovation test of Kvas Sec. 3.3 per epoch (solution and NEQ form) and turns failing
+epochs into prediction-only ones &mdash; essential in a <em>recursive</em> estimator, where an
+accepted blunder propagates into every later state. <code class="inline">QC="flag"</code>
+records the statistic without acting; thresholds come from the base-MATLAB
+<code class="inline">shLowLevel.chi2Quantile</code>.</li>
 <li><b>Contribution.</b> <code class="inline">rep.meanContribution</code> is the average share of
 the estimate coming from the <em>data</em> rather than the process model &mdash; near 0 the
 output is the prior wearing your product name.</li>

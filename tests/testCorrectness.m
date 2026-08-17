@@ -3119,3 +3119,70 @@ verifyTrue(testCase, out.converged);
 verifyEqual(testCase, out.sigma2(1), out.sigma2(2), RelTol = 1e-9);
 verifyEqual(testCase, x, snx2.x, AbsTol = 1e-9);
 end
+
+% -------------------------------------------------- kalman QC (v3.21)
+function testChi2QuantilePinnedValues(testCase)
+%TESTCHI2QUANTILEPINNEDVALUES Wilson-Hilferty against scipy chi2.ppf
+%   reference values (computed once, tools/dev/validate_kalman_qc.py):
+%   the tolerances ARE the measured accuracy map, not hopes.
+verifyEqual(testCase, shLowLevel.chi2Quantile(0.999, 1677), ...
+    1861.68, RelTol = 1e-4);          % scipy: 1861.6807
+verifyEqual(testCase, shLowLevel.chi2Quantile(0.999, 50), ...
+    86.661, RelTol = 2e-3);           % scipy: 86.6608
+verifyEqual(testCase, shLowLevel.chi2Quantile(0.99, 10), ...
+    23.209, RelTol = 5e-2);           % scipy: 23.2093
+end
+
+function testKalmanQCStatisticNeqEqualsSolution(testCase)
+%TESTKALMANQCSTATISTICNEQEQUALSSOLUTION the NEQ-form innovation
+%   statistic u'(N Pm N + N)^+ u must equal d' S^-1 d when N = R^-1
+%   (Python check Q3, here through the real filter path with QC="flag").
+rng(41);
+P = 5; T = 6;
+[model, ~] = localStableModel(P);
+obsS = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+obsN = obsS;
+for t = 1:T
+    l = randn(P, 1); R = diag(0.3 + rand(P, 1));
+    obsS(t).l = l; obsS(t).R = R;
+    N = inv(R);
+    obsN(t).N = N; obsN(t).b = N * l;
+end
+fS = shLowLevel.kalmanFilter(model, obsS, QC = "flag");
+fN = shLowLevel.kalmanFilter(model, obsN, QC = "flag");
+verifyEqual(testCase, fN.qcStat, fS.qcStat, RelTol = 1e-7);
+verifyEqual(testCase, fS.qcDof, P * ones(1, T));
+verifyEqual(testCase, fN.qcDof, P * ones(1, T));
+verifyFalse(testCase, any(fS.qcReject));         % flag never rejects
+verifyEqual(testCase, fS.xf, ...                 % flag never alters states
+    shLowLevel.kalmanFilter(model, obsS).xf);
+end
+
+function testKalmanQCRejectsBlunder(testCase)
+%TESTKALMANQCREJECTSBLUNDER a 50-sigma blunder epoch must be rejected
+%   (prediction-only) and the downstream states must beat the
+%   unprotected filter against the truth - the reason QC exists in a
+%   RECURSIVE estimator (Python check Q4 through the MATLAB path).
+rng(43);
+P = 6; T = 30;
+[model, S0] = localStableModel(P);
+L = chol(S0, 'lower');
+xT = zeros(P, T); xT(:, 1) = L * randn(P, 1);
+Lq = chol(model.Q + 1e-14 * eye(P), 'lower');
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+sig = 0.1;
+for t = 1:T
+    if t > 1, xT(:, t) = model.Phi{1} * xT(:, t-1) + Lq * randn(P, 1); end
+    obs(t).l = xT(:, t) + sig * randn(P, 1);
+    obs(t).R = sig^2 * eye(P);
+end
+obs(15).l = obs(15).l + 50 * sig;                 % the blunder
+fQC = shLowLevel.kalmanFilter(model, obs, QC = "reject");
+fNo = shLowLevel.kalmanFilter(model, obs);
+verifyTrue(testCase, fQC.qcReject(15));
+verifyEqual(testCase, nnz(fQC.qcReject), 1);
+post = 15:T;
+eQC = norm(fQC.xf(1:P, post) - xT(:, post), 'fro');
+eNo = norm(fNo.xf(1:P, post) - xT(:, post), 'fro');
+verifyTrue(testCase, eQC < 0.8 * eNo);
+end

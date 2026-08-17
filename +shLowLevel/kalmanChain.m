@@ -64,6 +64,12 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %     Smoother (true)   run the RTS pass (false: filter only, e.g. for
 %            NRT-style one-way runs a la Kvas Ch. 3; then the internal
 %            filter stores only diagonals and memory stays flat)
+%     QC ("none")       "none" | "flag" | "reject": innovation-based
+%            per-epoch quality control (Kvas Sec. 3.3; see
+%            kalmanFilter). "reject" keeps blunder epochs out of the
+%            recursion - they become prediction-only and are counted
+%            in REP.nRejected
+%     QCAlpha (1e-3)    false-alarm level of the test
 %     StoreCov ("auto") where the filter keeps the full covariances the
 %            smoother needs: "auto" = "full" (RAM) with the smoother,
 %            "diag" without; "matfile" streams them through a v7.3 MAT
@@ -77,6 +83,7 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %     ts   (1 x 1) shSeries  smoothed series on the epoch grid, formal
 %          1-sigma stacks filled, every step in the history
 %     rep  (1 x 1) struct  report: mode, order, nEpochs, nGaps,
+%          qcStat (1 x K double, NaN when QC="none"), nRejected,
 %          specRadius, meanContribution (mean data share per epoch,
 %          Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical),
 %          model (the estimateVAR struct, for reuse), memGB (covariance
@@ -108,6 +115,8 @@ arguments
     opts.NoiseCov double = []
     opts.Climatology (1,1) logical = true
     opts.Smoother (1,1) logical = true
+    opts.QC (1,1) string {mustBeMember(opts.QC, ["none","flag","reject"])} = "none"
+    opts.QCAlpha (1,1) double {mustBeInRange(opts.QCAlpha, 0, 1, "exclusive")} = 1e-3
     opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["auto","full","matfile"])} = "auto"
     opts.Pattern (1,1) string = "*.snx*"
 end
@@ -190,7 +199,8 @@ if opts.StoreCov == "auto"
 else
     store = opts.StoreCov;
 end
-filt = shLowLevel.kalmanFilter(model, obs, StoreCov=store);
+filt = shLowLevel.kalmanFilter(model, obs, StoreCov=store, ...
+    QC=opts.QC, QCAlpha=opts.QCAlpha);
 if opts.Smoother
     smo = shLowLevel.rtsSmoother(filt);
     xs = smo.xs; sig = smo.sig;
@@ -226,6 +236,7 @@ ts = shSeries(Cs, Ss=Ss, Epochs=epGrid, SigmaCs=sC, SigmaSs=sS, ...
 memGB = 8 * numel(epGrid) * (model.order * P)^2 * 2 * double(opts.Smoother) / 1e9;
 rep = struct('mode', tern(solMode, "solution", "neq"), ...
     'order', opts.Order, 'nEpochs', T, 'nGaps', nnz(filt.gap), ...
+    'qcStat', filt.qcStat, 'nRejected', nnz(filt.qcReject), ...
     'specRadius', model.specRadius, ...
     'meanContribution', mean(filt.contrib, 1), ...
     'epochs', epGrid, 'gap', filt.gap, 'model', model, 'memGB', memGB);

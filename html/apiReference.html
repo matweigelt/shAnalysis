@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.20.0)</h1>
+<h1>shAnalysis API reference (v3.21.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -25,6 +25,7 @@ code itself.</p>
 <a href="#shLowLevel.buildCondFun">buildCondFun</a>
 <a href="#shLowLevel.buildNoiseCov">buildNoiseCov</a>
 <a href="#shLowLevel.buildSignalCov">buildSignalCov</a>
+<a href="#shLowLevel.chi2Quantile">chi2Quantile</a>
 <a href="#shLowLevel.combineCenters">combineCenters</a>
 <a href="#shLowLevel.compareSeries">compareSeries</a>
 <a href="#shLowLevel.compareSolutions">compareSolutions</a>
@@ -237,6 +238,18 @@ code itself.</p>
 <tr><td><code>S</code></td><td>(P x P) double   signal covariance in idx ordering</td></tr>
 <tr><td><code>info</code></td><td>struct: mode, iterations, degree-variance model</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.chi2Quantile">
+<h3><code>shLowLevel.chi2Quantile(p, k)</code></h3>
+<p class="h1line">Chi-square quantile without toolboxes (Wilson-Hilferty).</p>
+<p>X = shLowLevel.chi2Quantile(P, K) approximates the chi-square quantile chi2inv(P, K) using the Wilson-Hilferty cube transform x = k * (1 - 2/(9k) + z * sqrt(2/(9k)))^3, z = sqrt(2) * erfinv(2p - 1) in base MATLAB (erfinv is core; chi2inv is Statistics Toolbox - same reason shLowLevel.pctile exists instead of prctile).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>p</code></td><td>any size</td><td>double</td><td>required</td></tr><tr><td><code>k</code></td><td>1 x 1</td><td>double</td><td>required</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>x</code></td><td>(size of p) double  approximate chi-square quantile(s)</td></tr>
+</table>
+<b>Example</b><pre>    thr = shLowLevel.chi2Quantile(1 - 1e-3, 1677);   % QC threshold
+
+  Reference: Wilson &amp; Hilferty (1931), PNAS 17.</pre>
 </div>
 <div class="entry" id="shLowLevel.combineCenters">
 <h3><code>shLowLevel.combineCenters(tsCell, opts)</code></h3>
@@ -711,10 +724,10 @@ code itself.</p>
 <p class="h1line">Kalman-smoothed SH series in one call (Kurtenbach/Kvas).</p>
 <p>[TS, REP] = shLowLevel.kalmanChain(OBSIN, ModelSeries=TSM) is the single point of access to the Kalman/VAR module: it turns noisy per-epoch gravity information plus a geophysical model series into a temporally smoothed shSeries, encoding the correctly ordered chain of Kurtenbach (2012) and Kvas (2019): 1. reduce the model series TSM by its own climatology (mean, trend, annual, semi-annual) - the residual approximates the short-term process (Kurtenbach eq. 3.81) 2. estimate the VAR(Order) process model from the residuals (shLowLevel.estimateVAR; Order=1 is Kurtenbach&#x27;s B/Q) 3. build one observation record per requested epoch: a solution with noise covariance, a SINEX normal equation, or a gap 4. forward Kalman filter with stationary initialization (shLowLevel.kalmanFilter) 5. RTS smoother (shLowLevel.rtsSmoother) - with step 4 exactly the joint adjustment over all epochs (Kvas Sec. 2.3) 6. repack into an shSeries with formal sigmas; in solution mode the observation climatology removed in step 3 is restored, so TS is directly comparable to the input series</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obsIn</code></td><td>1 x 1</td><td>-</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>ModelSeries</code></td><td>1 x 1</td><td>shSeries</td><td>-</td></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>Epochs</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.5/365.25</td></tr><tr><td><code>NoiseCov</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>Climatology</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Smoother</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.snx*&quot;</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>ModelSeries</code></td><td>1 x 1</td><td>shSeries</td><td>-</td></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>Epochs</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.5/365.25</td></tr><tr><td><code>NoiseCov</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>Climatology</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Smoother</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>QC</code></td><td>1 x 1</td><td>string</td><td>&quot;none&quot;</td></tr><tr><td><code>QCAlpha</code></td><td>1 x 1</td><td>double</td><td>1e-3</td></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;auto&quot;</td></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.snx*&quot;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>ts</code></td><td>(1 x 1) shSeries  smoothed series on the epoch grid, formal 1-sigma stacks filled, every step in the history</td></tr>
-<tr><td><code>rep</code></td><td>(1 x 1) struct  report: mode, order, nEpochs, nGaps, specRadius, meanContribution (mean data share per epoch, Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical), model (the estimateVAR struct, for reuse), memGB (covariance storage actually used)</td></tr>
+<tr><td><code>rep</code></td><td>(1 x 1) struct  report: mode, order, nEpochs, nGaps, qcStat (1 x K double, NaN when QC=&quot;none&quot;), nRejected, specRadius, meanContribution (mean data share per epoch, Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical), model (the estimateVAR struct, for reuse), memGB (covariance storage actually used)</td></tr>
 </table>
 <b>Example</b><pre>    tsm = shSeries.fromFolder(gaxFolder).truncate(40);
     [ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries=tsm, Order=1);
@@ -732,9 +745,9 @@ code itself.</p>
 <p class="h1line">Forward Kalman filter for SH series (Kurtenbach/Kvas).</p>
 <p>FILT = shLowLevel.kalmanFilter(MODEL, OBS) runs the forward Kalman filter of Kurtenbach (2012, Sec. 3.3) with the VAR(p) process model from shLowLevel.estimateVAR and one observation record per epoch. Two observation modes, decided per epoch by the fields present: solution  l = x + v, v ~ N(0, R): a (noisy) coefficient-vector solution with its error covariance - e.g. a GFC series with formal sigmas, or a SINEX COVA solution neq       N x = b: an unreduced normal equation - the SINEX NEQ blocks shLowLevel.readSINEX returns (kind = &#x27;NEQ&#x27;); applied as information-form update, no R needed An empty record is a data gap: prediction only, the state relaxes toward the process prior (zero mean, covariance -&gt; Sigma0).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr><tr><td><code>obs</code></td><td>1 x :</td><td>struct</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;full&quot;</td></tr><tr><td><code>Contribution</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;full&quot;</td></tr><tr><td><code>Contribution</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>QC</code></td><td>1 x 1</td><td>string</td><td>&quot;none&quot;</td></tr><tr><td><code>QCAlpha</code></td><td>1 x 1</td><td>double</td><td>1e-3</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>filt</code></td><td>(1 x 1) struct  companion-space filter results: xf, xp (pP x T double) filtered / predicted states, Pf, Pp (pP x pP x T double, StoreCov=&quot;full&quot;) or dPf, dPp (pP x T double, StoreCov=&quot;diag&quot;|&quot;matfile&quot;) covariances, covFile (1 x 1) string path of the v7.3 MAT holding Pf/Pp (StoreCov=&quot;matfile&quot; only, else &quot;&quot; - delete it when done), contrib (P x T double) data share per coefficient (NaN in gaps), gap (1 x T logical), P (1 x 1) block size, order (1 x 1), storeCov (1 x 1) string. The physical state is the first block: xf(1:P, :).</td></tr>
+<tr><td><code>filt</code></td><td>(1 x 1) struct  companion-space filter results: xf, xp (pP x T double) filtered / predicted states, Pf, Pp (pP x pP x T double, StoreCov=&quot;full&quot;) or dPf, dPp (pP x T double, StoreCov=&quot;diag&quot;|&quot;matfile&quot;) covariances, covFile (1 x 1) string path of the v7.3 MAT holding Pf/Pp (StoreCov=&quot;matfile&quot; only, else &quot;&quot; - delete it when done), contrib (P x T double) data share per coefficient (NaN in gaps), gap (1 x T logical), qcStat (1 x T double) innovation statistic (NaN when QC=&quot;none&quot; or in gaps), qcDof (1 x T double), qcReject (1 x T logical) epochs rejected (always all-false unless QC=&quot;reject&quot;), P (1 x 1) block size, order (1 x 1), storeCov (1 x 1) string. The physical state is the first block: xf(1:P, :).</td></tr>
 </table>
 <b>Example</b><pre>    model = shLowLevel.estimateVAR(X, Order=1);
     obs = repmat(struct(&#x27;l&#x27;,[],&#x27;R&#x27;,[],&#x27;N&#x27;,[],&#x27;b&#x27;,[]), 1, numel(ep));
@@ -2278,4 +2291,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.20.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 18-Aug-2026 (v3.21.0). Generated by tools - do not edit.</p></body></html>

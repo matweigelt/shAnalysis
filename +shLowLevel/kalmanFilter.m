@@ -46,6 +46,22 @@ function filt = kalmanFilter(model, obs, opts)
 %     Contribution (true)  record diag(K) (solution) / diag(P+ N)
 %            (neq): the share of the estimate coming from the DATA
 %            rather than the process model - Kurtenbach Sec. 3.3.2
+%     QC ("none")  innovation-based quality control per epoch (Kvas
+%            2019, Sec. 3.3): the statistic
+%              solution  T = d' S^-1 d, d = l - x-, S = P-(1:P,1:P) + R,
+%                        dof = P
+%              neq       T = u' (N P- N + N)^+ u, u = b - N x-,
+%                        dof = rank(N)   (identical to the solution
+%                        statistic when N = R^-1; Python-validated)
+%            is chi-square(dof) under the null. "flag" records the
+%            test only; "reject" additionally treats a failing epoch
+%            as a gap (prediction only) so a blunder never enters the
+%            state - the recursive filter would otherwise drag it
+%            through all later epochs. Off by default: rank(N) costs
+%            an SVD per neq epoch
+%     QCAlpha (1e-3)  false-alarm level; threshold from
+%            shLowLevel.chi2Quantile(1-QCAlpha, dof) (Wilson-Hilferty,
+%            essentially exact at dof = P; see its accuracy note)
 %
 %   Outputs
 %     filt  (1 x 1) struct  companion-space filter results:
@@ -56,9 +72,12 @@ function filt = kalmanFilter(model, obs, opts)
 %           holding Pf/Pp (StoreCov="matfile" only, else "" - delete
 %           it when done),
 %           contrib (P x T double) data share per coefficient (NaN in
-%           gaps), gap (1 x T logical), P (1 x 1) block size, order
-%           (1 x 1), storeCov (1 x 1) string. The physical state is
-%           the first block: xf(1:P, :).
+%           gaps), gap (1 x T logical), qcStat (1 x T double)
+%           innovation statistic (NaN when QC="none" or in gaps),
+%           qcDof (1 x T double), qcReject (1 x T logical) epochs
+%           rejected (always all-false unless QC="reject"), P (1 x 1)
+%           block size, order (1 x 1), storeCov (1 x 1) string. The
+%           physical state is the first block: xf(1:P, :).
 %
 %   Example
 %     model = shLowLevel.estimateVAR(X, Order=1);
@@ -80,6 +99,8 @@ arguments
     obs (1,:) struct
     opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["full","diag","matfile"])} = "full"
     opts.Contribution (1,1) logical = true
+    opts.QC (1,1) string {mustBeMember(opts.QC, ["none","flag","reject"])} = "none"
+    opts.QCAlpha (1,1) double {mustBeInRange(opts.QCAlpha, 0, 1, "exclusive")} = 1e-3
 end
 
 P = model.P;
@@ -117,6 +138,8 @@ else
 end
 contrib = NaN(P, T);
 gap = false(1, T);
+qcStat = NaN(1, T); qcDof = NaN(1, T); qcReject = false(1, T);
+doQC = opts.QC ~= "none";
 
 xPrev = zeros(Pc, 1);
 PPrev = S0;
@@ -149,6 +172,21 @@ for t = 1:T
             error('shLowLevel:kalmanFilter:sizeMismatch', ...
                 'Epoch %d: l must be P x 1 and R P x P (or P x 1), P = %d.', t, P);
         end
+        if doQC
+            d = l - xm(1:P);
+            S = Pm(1:P, 1:P) + R;
+            qcStat(t) = d.' * (S \ d);
+            qcDof(t) = P;
+            if opts.QC == "reject" && ...
+                    qcStat(t) > shLowLevel.chi2Quantile(1 - opts.QCAlpha, P)
+                qcReject(t) = true;
+                xf(:, t) = xm;
+                if full, Pf(:, :, t) = Pm; else, dPf(:, t) = diag(Pm); end
+                if useFile, mf.Pf(:, :, t) = Pm; end
+                xPrev = xm; PPrev = Pm;
+                continue
+            end
+        end
         % observation touches the first block only: H = [I 0 ... 0]
         PmH = Pm(:, 1:P);                              % Pm * H'
         K = PmH / ((Pm(1:P, 1:P) + R).');              % gain, no inverse
@@ -161,6 +199,21 @@ for t = 1:T
         if ~isequal(size(o.N), [P P]) || numel(o.b) ~= P
             error('shLowLevel:kalmanFilter:sizeMismatch', ...
                 'Epoch %d: N must be P x P and b P x 1, P = %d.', t, P);
+        end
+        if doQC
+            u = o.b(:) - o.N * xm(1:P);
+            W = o.N * Pm(1:P, 1:P) * o.N + o.N;
+            qcStat(t) = u.' * lsqminnorm((W + W.') / 2, u);
+            qcDof(t) = rank(o.N);
+            if opts.QC == "reject" && ...
+                    qcStat(t) > shLowLevel.chi2Quantile(1 - opts.QCAlpha, qcDof(t))
+                qcReject(t) = true;
+                xf(:, t) = xm;
+                if full, Pf(:, :, t) = Pm; else, dPf(:, t) = diag(Pm); end
+                if useFile, mf.Pf(:, :, t) = Pm; end
+                xPrev = xm; PPrev = Pm;
+                continue
+            end
         end
         Nc = zeros(Pc); Nc(1:P, 1:P) = o.N;            % embed in companion space
         bc = zeros(Pc, 1); bc(1:P) = o.b(:);
@@ -186,6 +239,7 @@ for t = 1:T
 end
 
 filt = struct('xf', xf, 'xp', xp, 'contrib', contrib, 'gap', gap, ...
+    'qcStat', qcStat, 'qcDof', qcDof, 'qcReject', qcReject, ...
     'P', P, 'order', p, 'storeCov', opts.StoreCov, 'B', B, ...
     'covFile', covFile);
 if full
