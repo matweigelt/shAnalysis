@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.17.0)</h1>
+<h1>shAnalysis API reference (v3.18.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -22,6 +22,7 @@ code itself.</p>
 <a href="#shLowLevel.basinDeconvolve">basinDeconvolve</a>
 <a href="#shLowLevel.basinKernel">basinKernel</a>
 <a href="#shLowLevel.basinScaling">basinScaling</a>
+<a href="#shLowLevel.buildCondFun">buildCondFun</a>
 <a href="#shLowLevel.buildNoiseCov">buildNoiseCov</a>
 <a href="#shLowLevel.buildSignalCov">buildSignalCov</a>
 <a href="#shLowLevel.combineCenters">combineCenters</a>
@@ -189,6 +190,30 @@ code itself.</p>
 <tr><td><code>k</code></td><td>(1,1) double  regression scaling factor</td></tr>
 <tr><td><code>info</code></td><td>struct: sigmaK (regression 1-sigma), kMonthly (T x 1, if PerMonth), matched (T x 1 logical), aTrue, aFilt</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.buildCondFun">
+<h3><code>shLowLevel.buildCondFun(idx, opts)</code></h3>
+<p class="h1line">Covariance conditioner in the EWH domain (Kvas 2019, 2.4).</p>
+<p>[F, INFO] = shLowLevel.buildCondFun(IDX, kn=KN) builds the CondFun handle for shLowLevel.estimateVAR that implements the covariance conditioning of Kvas (2019), Sec. 2.4: the spectral covariance is propagated to equivalent-water-height values on an exact Gauss-Legendre grid, conditioned there, and propagated back: Sigma~ = Fq * ( Z .* T .* (G Sigma G&#x27;) ) * Fq&#x27; with G  = Y * D          spectral -&gt; EWH grid (D the per-degree EWH kernel from shLowLevel.kernelFactors) Fq = D^-1 * A       the EXACT inverse quadrature (A*Y = I is the synthesisMatrix contract), so Fq*G = I and with Z = 1, T = 1 the conditioner is the identity to machine precision (unit-tested) Z  = region-block indicator, Z_ij = 1 iff points i, j share a region (his eq. 2.117: e.g. land/ocean - ocean-model errors are not correlated with continental hydrology) T  = exp(-psi/psi0) distance-dependent correlation taper (his eq. 2.120), psi the spherical distance Both Z (a Gram matrix of indicators) and T (an exponential kernel, positive definite on the sphere) are PSD, so by the Schur product theorem the conditioned covariance stays PSD; a singular empirical Sigma(0) from a short series even becomes strictly positive definite (the Hadamard product with a PD kernel is PD when the diagonal is positive) - this is exactly why Kvas conditions: the Yule-Walker solve stabilizes by orders of magnitude (his Fig. 2.5).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>idx</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>required</td><td>double</td><td>-</td></tr><tr><td><code>Psi0Km</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>Regions</code></td><td>n x 1</td><td>-</td><td>[]</td></tr><tr><td><code>GM</code></td><td>1 x 1</td><td>double</td><td>3.986004415e14</td></tr><tr><td><code>R</code></td><td>1 x 1</td><td>double</td><td>6378136.3</td></tr><tr><td><code>NLat</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>NLon</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>f</code></td><td>function handle  Sigma~ = f(Sigma) for (P x P) covariances in IDX ordering - pass as estimateVAR(..., CondFun=f)</td></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  grid (synthesisMatrix grid struct), M (1 x 1) number of grid points, region (M x 1 double or []), W (M x M double) the elementwise spatial weight Z .* T, memGB (1 x 1) storage of the precomputed operators</td></tr>
+</table>
+<b>Example</b><pre>    kn  = shLowLevel.readLoveNumbers(lovePath);
+    idx = shLowLevel.shIndex(40);
+    land = @(la, lo) double(landMaskFun(la, lo));   % your land/ocean rule
+    cf  = shLowLevel.buildCondFun(idx, kn=kn, Psi0Km=1100, Regions=land);
+    model = shLowLevel.estimateVAR(X, Order=1, CondFun=cf);
+
+  Memory/cost: precomputes G, Fq (M x P each) and W (M x M); Lmax 40
+  gives M = 3362, ~180 MB total; every f(Sigma) costs two M x P x P
+  products. Numerics pre-validated in Python
+  (tools/dev/validate_condfun.py).
+
+  Reference: Kvas, TU Graz PhD thesis (2019), Sec. 2.4, eqs.
+  (2.117)-(2.120); Schur product theorem e.g. Horn &amp; Johnson.</pre>
 </div>
 <div class="entry" id="shLowLevel.buildNoiseCov">
 <h3><code>shLowLevel.buildNoiseCov(Xres, idx, opts)</code></h3>
@@ -2229,4 +2254,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.17.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.18.0). Generated by tools - do not edit.</p></body></html>

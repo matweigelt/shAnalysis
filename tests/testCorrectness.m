@@ -2920,3 +2920,63 @@ for t = 1:T
 end
 xb = reshape(N \ rhs, P, T);
 end
+
+% ------------------------------------------------ buildCondFun (v3.18)
+function testCondFunIdentityAtInf(testCase)
+%TESTCONDFUNIDENTITYATINF with Psi0Km=Inf and no regions the conditioner
+%   must be the identity to machine precision - the F*G = I contract of
+%   synthesisMatrix carried through the EWH kernel and back.
+rng(13);
+idx = shLowLevel.shIndex(8);
+kn = -0.3 * ones(idx.Lmax + 1, 1);            % synthetic Love numbers
+cf = shLowLevel.buildCondFun(idx, kn = kn);
+A = randn(idx.P, 2 * idx.P);
+C = A * A.' / (2 * idx.P);
+verifyEqual(testCase, cf(C), (C + C.') / 2, AbsTol = 1e-10 * max(abs(C(:))));
+end
+
+function testCondFunKeepsPSDAndZeroesCrossRegion(testCase)
+%TESTCONDFUNKEEPSPSDANDZEROESCROSSREGION taper + hemisphere mask: the
+%   conditioned covariance stays PSD (Schur product theorem) and the
+%   spatial weight really zeroes cross-region entries.
+rng(17);
+idx = shLowLevel.shIndex(6);
+kn = -0.3 * ones(idx.Lmax + 1, 1);
+[cf, info] = shLowLevel.buildCondFun(idx, kn = kn, Psi0Km = 2000, ...
+    Regions = @(la, lo) double(la >= 0));
+A = randn(idx.P, 2 * idx.P);
+C = A * A.' / (2 * idx.P);
+Ct = cf(C);
+ev = eig((Ct + Ct.') / 2);
+verifyTrue(testCase, min(ev) > -1e-8 * max(ev));
+iN = find(info.region == 1, 1);
+iS = find(info.region == 0, 1);
+verifyEqual(testCase, info.W(iN, iS), 0);
+verifyTrue(testCase, info.W(iN, iN) == 1);
+end
+
+function testCondFunRegularizesSingularCov(testCase)
+%TESTCONDFUNREGULARIZESSINGULARCOV a rank-deficient empirical Sigma(0)
+%   (T < P samples) must become strictly positive definite after
+%   tapering - the stabilization Kvas conditions for (his Fig. 2.5) -
+%   and estimateVAR with the CondFun must run without the unstable-model
+%   warning path producing NaNs.
+rng(19);
+idx = shLowLevel.shIndex(6);
+P = idx.P;
+kn = -0.3 * ones(idx.Lmax + 1, 1);
+cf = shLowLevel.buildCondFun(idx, kn = kn, Psi0Km = 1500);
+T = round(P / 2);                             % deliberately singular
+X = randn(P, T);
+Sig = X * X.' / T;
+evRaw = eig(Sig);
+Ct = cf(Sig);
+evC = eig(Ct);
+verifyTrue(testCase, min(evRaw) < 1e-10 * max(evRaw));   % singular in
+verifyTrue(testCase, min(evC) > 1e-10 * max(evC));       % PD out
+cleanup = onCleanup(@() warning('on', 'shLowLevel:estimateVAR:shortSeries'));
+warning('off', 'shLowLevel:estimateVAR:shortSeries');   % cleanup FIRST
+model = shLowLevel.estimateVAR(X, Order = 1, CondFun = cf);
+verifyTrue(testCase, all(isfinite(model.Phi{1}(:))));
+verifyTrue(testCase, all(isfinite(model.Q(:))));
+end

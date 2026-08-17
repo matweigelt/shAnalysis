@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.17.0 (R2026a-compatible) 17-Aug-2026
+% Version 3.18.0 (R2026a-compatible) 17-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,20 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.18.0 (buildCondFun: Kvas EWH-domain covariance conditioning)
+%   - shLowLevel.buildCondFun - builds the CondFun handle for estimateVAR
+%     implementing Kvas (2019) Sec. 2.4: spectral covariance -> EWH grid
+%     (exact Gauss-Legendre quadrature pair, F*G = I), region-block
+%     masking (eq. 2.117, e.g. land/ocean) and the distance taper
+%     exp(-psi/psi0) (eq. 2.120), back to the spectral domain. Both
+%     weights are PSD kernels, so the conditioned covariance stays PSD
+%     (Schur product theorem); a singular empirical Sigma(0) from a
+%     short series becomes strictly positive definite - the Yule-Walker
+%     stabilization Kvas conditions for. Love numbers user-supplied.
+%   - Numerics pre-validated in Python (tools/dev/validate_condfun.py,
+%     4 checks: identity at psi0=Inf, PSD chain, rcond rescue of a
+%     singular covariance, cross-region zeroing).
 %
 % New in v3.17.0 (Kalman/VAR module: Kurtenbach/Kvas temporal smoothing)
 %   - shLowLevel.estimateVAR - empirical VAR(p) process model from an SH

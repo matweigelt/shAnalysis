@@ -19,7 +19,7 @@ th { background: #f5f7fa; }
 </style>
 </head>
 <body><div class="content">
-<span class="tag">Package function</span><span class="tag">v3.17.0</span>
+<span class="tag">Package function</span><span class="tag">v3.17.0 / v3.18.0</span>
 <h1>Kalman/VAR module &mdash; temporally smoothed SH series</h1>
 <p>The classic chains treat every epoch independently: even the tvANS Wiener filter uses a
 <em>spatial</em> signal covariance only. The Kalman/VAR module adds the <em>temporal</em> prior of
@@ -89,9 +89,21 @@ T=365 &asymp; 16&nbsp;GB. Run in windows, lower nmax, or set
 <code class="inline">rep.memGB</code> reports the footprint.</li>
 <li><b>Stationarity.</b> <code class="inline">estimateVAR</code> warns when the companion spectral
 radius reaches 1; an unstable model diverges across long gaps. Shrinkage
-(<code class="inline">Shrink</code>) or covariance conditioning
-(<code class="inline">CondFun</code>, the land/ocean masking and distance taper of Kvas Sec. 2.4)
-restore stability.</li>
+(<code class="inline">Shrink</code>) or covariance conditioning restore stability.</li>
+<li><b>Conditioning (v3.18).</b> <code class="inline">shLowLevel.buildCondFun</code> builds the
+<code class="inline">CondFun</code> handle implementing the full EWH-domain conditioning of Kvas
+Sec. 2.4: the covariance is propagated to equivalent water heights on the exact Gauss&ndash;Legendre
+quadrature grid (round trip is the identity at <code class="inline">Psi0Km=Inf</code>,
+unit-tested), cross-region correlations are zeroed by a block mask (his eq. 2.117, e.g. land vs.
+ocean &mdash; ocean-model errors are not correlated with continental hydrology), correlations decay
+with <code class="inline">exp(&minus;&psi;/&psi;&#8320;)</code> (eq. 2.120), and the result returns
+to the spectral domain. Both weights are PSD kernels, so the conditioned covariance stays PSD; a
+rank-deficient empirical &Sigma;(0) from a short model series even becomes strictly positive
+definite &mdash; the Yule&ndash;Walker stabilization of his Fig. 2.5. Load Love numbers are
+required and user-supplied:
+<pre>kn = shLowLevel.readLoveNumbers(lovePath);
+cf = shLowLevel.buildCondFun(idx, kn=kn, Psi0Km=1100, Regions=@(la,lo) double(isLand(la,lo)));
+model = shLowLevel.estimateVAR(X, Order=1, CondFun=cf);</pre></li>
 <li><b>Contribution.</b> <code class="inline">rep.meanContribution</code> is the average share of
 the estimate coming from the <em>data</em> rather than the process model &mdash; near 0 the
 output is the prior wearing your product name.</li>
