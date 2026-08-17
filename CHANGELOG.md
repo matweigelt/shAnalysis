@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.18.0] - 2026-08-17 - buildCondFun (Kvas covariance conditioning)
+
+shLowLevel.buildCondFun builds the estimateVAR CondFun after Kvas
+(2019) Sec. 2.4: exact spectral<->EWH round trip on the Gauss-Legendre
+grid (identity at psi0=Inf, unit-tested to 1e-10), land/ocean-style
+region-block masking (eq. 2.117) and the exp(-psi/psi0) distance taper
+(eq. 2.120). PSD preserved by the Schur product theorem; a
+rank-deficient empirical Sigma(0) becomes strictly PD (the Yule-Walker
+stabilization of his Fig. 2.5). Python pre-validation in
+tools/dev/validate_condfun.py (4 checks). Three new MATLAB tests.
+
 ## [3.17.0] - 2026-08-17 - Kalman/VAR module (Kurtenbach/Kvas)
 
 Temporal smoothing of SH series after Kurtenbach (DGK C-683, 2012) and
