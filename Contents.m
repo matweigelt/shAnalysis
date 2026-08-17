@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.22.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.23.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,16 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.23.0 (multi-center Kalman: neqCombine inside kalmanChain)
+%   - kalmanChain accepts a string ARRAY of SINEX folders (one per
+%     center): files are clustered into epoch groups within Tolerance
+%     and each group is combined on the normal-equation level by
+%     neqCombine BEFORE the filter update - per-epoch VCE weights when
+%     every file carries the STATISTICS block, or fixed NeqWeights.
+%     rep.centers and rep.sigma2 (F x K per-epoch variance factors)
+%     report the combination. Same-background contract across ALL
+%     centers (neqCombine). Single-folder behaviour unchanged.
 %
 % New in v3.22.0 (Joseph-stabilized solution update)
 %   - kalmanFilter solution mode uses the Joseph form

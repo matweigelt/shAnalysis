@@ -28,6 +28,14 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %                   noise covariance comes from NoiseCov or, if empty,
 %                   from the series' formal sigmas (errors loudly if
 %                   neither exists - no silent noise assumptions).
+%     string array  neq mode, MULTI-CENTER (v3.23): several folders,
+%                   one per center. Files are grouped by epoch (within
+%                   Tolerance) and each group is combined on the
+%                   normal-equation level by shLowLevel.neqCombine
+%                   BEFORE the filter update - VCE weights per epoch
+%                   when every file carries the SINEX STATISTICS block,
+%                   or fixed NeqWeights. Same-background contract of
+%                   neqCombine applies across ALL centers.
 %     string/char   neq mode: a folder of SINEX files carrying
 %                   +SOLUTION/NORMAL_EQUATION_MATRIX blocks (e.g. ITSG,
 %                   shLowLevel.fetchITSGSINEX). Each file contributes
@@ -77,13 +85,20 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %            results identical to the last bit. The file is deleted
 %            after smoothing (it is chain-internal); REP.memGB then
 %            reports the DISK footprint
-%     Pattern ("*.snx*")  neq mode: file pattern inside the folder
+%     Pattern ("*.snx*")  neq mode: file pattern inside the folder(s)
+%     NeqWeights ([])   multi-center neq mode: (F x 1) double fixed
+%            weights per center (skips per-epoch VCE); [] runs VCE,
+%            which requires STATISTICS on every file and errors loudly
+%            otherwise (neqCombine contract)
 %
 %   Outputs
 %     ts   (1 x 1) shSeries  smoothed series on the epoch grid, formal
 %          1-sigma stacks filled, every step in the history
 %     rep  (1 x 1) struct  report: mode, order, nEpochs, nGaps,
 %          qcStat (1 x K double, NaN when QC="none"), nRejected,
+%          centers (F x 1 string, neq mode) and sigma2 (F x K double,
+%          multi-center: per-epoch VCE variance factors, NaN where a
+%          center has no file or in fixed-weight mode),
 %          specRadius, meanContribution (mean data share per epoch,
 %          Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical),
 %          model (the estimateVAR struct, for reuse), memGB (covariance
@@ -119,6 +134,7 @@ arguments
     opts.QCAlpha (1,1) double {mustBeInRange(opts.QCAlpha, 0, 1, "exclusive")} = 1e-3
     opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["auto","full","matfile"])} = "auto"
     opts.Pattern (1,1) string = "*.snx*"
+    opts.NeqWeights (:,1) double = []
 end
 
 tsm = opts.ModelSeries;
@@ -152,28 +168,56 @@ if solMode
     end
     obsEpochs = tsObs.epochs(:);
     getObs = @(k) solutionRecord(tsObs, k, idx, opts.NoiseCov);
+    sigma2Ep = [];
 elseif isstring(obsIn) || ischar(obsIn)
-    files = dir(fullfile(char(obsIn), char(opts.Pattern)));
-    if isempty(files)
-        error('shLowLevel:kalmanChain:noFiles', ...
-            'No files matching %s in %s.', opts.Pattern, obsIn);
-    end
-    snx = cell(1, numel(files));
-    obsEpochs = zeros(numel(files), 1);
-    for k = 1:numel(files)
-        snx{k} = shLowLevel.readSINEX( ...
-            fullfile(files(k).folder, files(k).name), Index=idx);
-        if ~strcmp(snx{k}.kind, 'NEQ')
-            error('shLowLevel:kalmanChain:notNEQ', ...
-                '%s carries no normal-equation block (kind = ''%s'').', ...
-                files(k).name, snx{k}.kind);
+    folders = string(obsIn); folders = folders(:).';
+    F = numel(folders);
+    snxAll = {}; epAll = []; ctrAll = [];
+    for c = 1:F
+        files = dir(fullfile(char(folders(c)), char(opts.Pattern)));
+        if isempty(files)
+            error('shLowLevel:kalmanChain:noFiles', ...
+                'No files matching %s in %s.', opts.Pattern, folders(c));
         end
-        obsEpochs(k) = snx{k}.epoch;
+        for k = 1:numel(files)
+            s = shLowLevel.readSINEX( ...
+                fullfile(files(k).folder, files(k).name), Index=idx);
+            if ~strcmp(s.kind, 'NEQ')
+                error('shLowLevel:kalmanChain:notNEQ', ...
+                    '%s carries no normal-equation block (kind = ''%s'').', ...
+                    files(k).name, s.kind);
+            end
+            snxAll{end+1} = s; %#ok<AGROW>
+            epAll(end+1, 1) = s.epoch; %#ok<AGROW>
+            ctrAll(end+1, 1) = c; %#ok<AGROW>
+        end
     end
-    [obsEpochs, ord] = sort(obsEpochs);
-    snx = snx(ord);
+    if F > 1 && ~isempty(opts.NeqWeights) && numel(opts.NeqWeights) ~= F
+        error('shLowLevel:kalmanChain:badNeqWeights', ...
+            'NeqWeights has %d entries for %d centers.', ...
+            numel(opts.NeqWeights), F);
+    end
+    % ---- cluster files into epoch groups within Tolerance
+    [epS, ordS] = sort(epAll);
+    snxAll = snxAll(ordS); ctrAll = ctrAll(ordS);
+    grpOf = zeros(numel(epS), 1); g = 0;
+    for k = 1:numel(epS)
+        if k == 1 || epS(k) - epS(k-1) > opts.Tolerance
+            g = g + 1;
+        end
+        grpOf(k) = g;
+    end
+    nGrp = g;
+    obsEpochs = zeros(nGrp, 1);
+    groups = cell(1, nGrp); groupCtr = cell(1, nGrp);
+    for g = 1:nGrp
+        mem = find(grpOf == g);
+        obsEpochs(g) = mean(epS(mem));
+        groups{g} = snxAll(mem); groupCtr{g} = ctrAll(mem);
+    end
+    sigma2Ep = NaN(F, nGrp);
     climObs = [];
-    getObs = @(k) neqRecord(snx{k});
+    getObs = @(g) neqGroupRecord(groups{g}, opts.NeqWeights, groupCtr{g});
 else
     error('shLowLevel:kalmanChain:badInput', ...
         'OBSIN must be an shSeries or a SINEX folder path.');
@@ -189,7 +233,10 @@ obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
 for t = 1:T
     [d, k] = min(abs(obsEpochs - epGrid(t)));
     if d <= opts.Tolerance
-        obs(t) = getObs(k);
+        [obs(t), s2k, ck] = getObs(k);
+        if ~solMode && ~isempty(s2k)
+            sigma2Ep(ck, k) = s2k;
+        end
     end
 end
 
@@ -240,10 +287,15 @@ rep = struct('mode', tern(solMode, "solution", "neq"), ...
     'specRadius', model.specRadius, ...
     'meanContribution', mean(filt.contrib, 1), ...
     'epochs', epGrid, 'gap', filt.gap, 'model', model, 'memGB', memGB);
+if ~solMode
+    rep.centers = folders(:);
+    rep.sigma2 = sigma2Ep;
+end
 end
 
 % ---------------------------------------------------------------- local
-function o = solutionRecord(tsObs, k, idx, noiseCov)
+function [o, s2, ctr] = solutionRecord(tsObs, k, idx, noiseCov)
+s2 = []; ctr = []; %#ok<NASGU> % uniform 3-output record contract
 g = tsObs.at(k);
 o = struct('l', shLowLevel.vecFromCS(g.C, g.S, idx), 'R', [], 'N', [], 'b', []);
 if isempty(noiseCov)
@@ -262,8 +314,23 @@ else
 end
 end
 
-function o = neqRecord(s)
-o = struct('l', [], 'R', [], 'N', s.M, 'b', s.M * s.x);
+function [o, s2, ctr] = neqGroupRecord(grp, wFixed, ctr)
+%NEQGROUPRECORD one epoch group -> combined N/b via neqCombine.
+if numel(grp) == 1
+    s = grp{1};
+    o = struct('l', [], 'R', [], 'N', s.M, 'b', s.M * s.x);
+    s2 = NaN;
+    return
+end
+neqs = [grp{:}];
+if isempty(wFixed)
+    [xc, out] = shLowLevel.neqCombine(neqs);            % per-epoch VCE
+    s2 = out.sigma2;
+else
+    [xc, out] = shLowLevel.neqCombine(neqs, Weights=wFixed(ctr));
+    s2 = NaN(numel(grp), 1);
+end
+o = struct('l', [], 'R', [], 'N', out.N, 'b', out.N * xc);
 end
 
 function out = tern(c, a, b)

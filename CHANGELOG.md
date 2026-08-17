@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.23.0] - 2026-08-18 - multi-center Kalman chain
+
+kalmanChain neq mode accepts several SINEX folders (one per center),
+clusters files into epoch groups and combines each group with
+neqCombine (per-epoch VCE, or fixed NeqWeights) before the Kalman
+update; rep.sigma2 reports the per-epoch variance factors. New test
+with two synthetic centers (identical files -> equal factors) plus a
+single-folder run pinning the v3.20 snx.epoch wiring end to end.
+
 ## [3.22.0] - 2026-08-18 - Joseph-stabilized solution update
 
 kalmanFilter's solution-mode covariance update moves to the Joseph

@@ -62,6 +62,10 @@ block-tridiagonal joint system, never an approximation to it.</div>
 <tr><th>Mode</th><th>Input</th><th>Update</th></tr>
 <tr><td>solution</td><td>an <code class="inline">shSeries</code> with formal sigmas (or explicit
 <code class="inline">NoiseCov</code>)</td><td>l = x + v, gain form</td></tr>
+<tr><td>neq, multi-center (v3.23)</td><td>a string array of SINEX folders, one per center:
+per-epoch <code class="inline">neqCombine</code> (VCE or fixed
+<code class="inline">NeqWeights</code>) before the update; <code class="inline">rep.sigma2</code>
+carries the per-epoch factors</td><td>combined N x = b, information form</td></tr>
 <tr><td>neq</td><td>a folder of SINEX files with
 <code class="inline">NORMAL_EQUATION_MATRIX</code> blocks
 (<a href="fetchITSG.html">fetchITSGSINEX</a>)</td><td>N x = b, information form &mdash; no
