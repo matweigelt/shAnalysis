@@ -3186,3 +3186,33 @@ eQC = norm(fQC.xf(1:P, post) - xT(:, post), 'fro');
 eNo = norm(fNo.xf(1:P, post) - xT(:, post), 'fro');
 verifyTrue(testCase, eQC < 0.8 * eNo);
 end
+
+% ----------------------------------------------- Joseph update (v3.22)
+function testKalmanJosephSurvivesHarshR(testCase)
+%TESTKALMANJOSEPHSURVIVESHARSHR with a wide-spectrum prior (1e0..1e-8)
+%   and R eight orders below it, the solution-mode covariance must
+%   agree with the NEQ information form (the numerically clean path)
+%   to 1e-9 relative - the standard (I-K)Pm update fails this at
+%   ~1e-6 (measured against a 50-digit reference in
+%   tools/dev/validate_kalman_qc.py J2). Also: the Wiener-limit and
+%   batch-LSA equivalence tests above pin that Joseph changes nothing
+%   in exact arithmetic.
+rng(47);
+P = 20;
+[V, ~] = qr(randn(P));
+S0 = V * diag(logspace(0, -8, P)) * V.';
+S0 = (S0 + S0.') / 2;
+model = struct('Phi', {{zeros(P)}}, 'Q', S0, 'Sigma0', S0, ...
+    'order', 1, 'P', P, 'specRadius', 0);
+R = diag(10.^(-14 + 4 * rand(P, 1)));
+l = randn(P, 1);
+obsS = struct('l', l, 'R', R, 'N', [], 'b', []);
+N = diag(1 ./ diag(R));
+obsN = struct('l', [], 'R', [], 'N', N, 'b', N * l);
+fS = shLowLevel.kalmanFilter(model, obsS);
+fN = shLowLevel.kalmanFilter(model, obsN);
+sc = max(abs(fN.Pf(:)));
+verifyTrue(testCase, max(abs(fS.Pf(:) - fN.Pf(:))) / sc < 1e-9);
+ev = eig((fS.Pf(:, :, 1) + fS.Pf(:, :, 1).') / 2);
+verifyTrue(testCase, min(ev) > -1e-12 * max(ev));
+end

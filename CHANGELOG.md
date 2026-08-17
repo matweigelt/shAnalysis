@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.22.0] - 2026-08-18 - Joseph-stabilized solution update
+
+kalmanFilter's solution-mode covariance update moves to the Joseph
+form: exact-arithmetic identical (all equivalence tests unchanged),
+six orders of magnitude more accurate when R is small against the
+prior (measured against a 50-digit mpmath reference; the decision was
+made on that A/B, not on textbook habit). New discriminating MATLAB
+test: wide-spectrum prior vs harsh R must match the NEQ information
+form to 1e-9 - the old update fails at ~1e-6.
+
 ## [3.21.0] - 2026-08-18 - innovation-based quality control (Kvas 3.3)
 
 kalmanFilter/kalmanChain gain QC="flag"|"reject": per-epoch chi-square
