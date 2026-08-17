@@ -1,4 +1,4 @@
-function smo = rtsSmoother(filt)
+function smo = rtsSmoother(filt, opts)
 %RTSSMOOTHER Rauch-Tung-Striebel backward pass for kalmanFilter output.
 %
 %   SMO = shLowLevel.rtsSmoother(FILT) runs the fixed-interval RTS
