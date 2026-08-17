@@ -32,7 +32,14 @@ function snx = readSINEX(filename, opts)
 %          IDX order), x and sig (Q x 1 double) estimates and formal
 %          sigmas (NaN if absent), M (Q x Q double) covariance or
 %          normal-equation matrix per Output= ([] if absent), kind
-%          ('COVA' | 'NEQ' | ''), epoch (1 x 1 double) and header meta
+%          ('COVA' | 'NEQ' | ''), stats (v3.20: parsed
+%          +SOLUTION/STATISTICS - keys/values verbatim plus nobs,
+%          nunk, dof, wsos (l'Pl; also matched from "SQUARE SUM OF
+%          RESIDUALS") and vfactor where present; struct([]) when the
+%          block is absent, and always struct([]) on the streaming
+%          Only="estimate" path, which stops before it - neqCombine's
+%          VCE feeds on nobs and wsos), epoch (1 x 1 double) and
+%          header meta
 %
 %   Format handling (VERIFIED against a real ITSG-Grace2018 n96 SINEX from
 %   TU Graz): parameter type tokens are CN/SN; the degree is the first
@@ -71,7 +78,9 @@ end
 lines = readlines(filename);
 
 % ---- locate blocks
-inEst = false; inMat = false; kind = ''; %#ok<NASGU>
+inEst = false; inMat = false; inStat = false; kind = ''; %#ok<NASGU>
+statKeys = strings(0, 1); statVals = zeros(0, 1);
+refEpoch = NaN;
 n = []; m = []; cs = []; x = []; sig = [];
 ijvC = {};                                    % chunks, vertcat once
 kind = '';
@@ -79,7 +88,7 @@ for k = 1:numel(lines)
     L = strtrim(lines(k));
     if L == "" || startsWith(L, "*"), continue; end
     if startsWith(L, "+SOLUTION/ESTIMATE")
-        inEst = true; inMat = false; continue;
+        inEst = true; inMat = false; inStat = false; continue;
     elseif startsWith(L, "+SOLUTION/MATRIX_ESTIMATE")
         inMat = true; inEst = false;
         if ~contains(L, "COVA")
@@ -88,11 +97,22 @@ for k = 1:numel(lines)
         end
         kind = 'COVA'; continue;
     elseif startsWith(L, "+SOLUTION/NORMAL_EQUATION_MATRIX")
-        inMat = true; inEst = false; kind = 'NEQ'; continue;
+        inMat = true; inEst = false; inStat = false; kind = 'NEQ'; continue;
+    elseif startsWith(L, "+SOLUTION/STATISTICS")
+        inStat = true; inEst = false; inMat = false; continue;
     elseif startsWith(L, "+")
-        inEst = false; inMat = false; continue;
+        inEst = false; inMat = false; inStat = false; continue;
     elseif startsWith(L, "-")
-        inEst = false; inMat = false; continue;
+        inEst = false; inMat = false; inStat = false; continue;
+    end
+    if inStat
+        tok = split(L);
+        v = str2double(tok(end));
+        if ~isnan(v) && numel(tok) >= 2
+            statKeys(end+1, 1) = upper(strtrim(join(tok(1:end-1), " "))); %#ok<AGROW>
+            statVals(end+1, 1) = v; %#ok<AGROW>
+        end
+        continue
     end
     if inEst
         tok = split(L);
@@ -122,6 +142,11 @@ for k = 1:numel(lines)
         if numel(vi) < 2 || isnan(nn) || isnan(mm)
             error('shLowLevel:readSINEX:badEstimateLine', ...
                 'Unparseable SOLUTION/ESTIMATE line: %s', L);
+        end
+        et = tok(~cellfun('isempty', regexp(cellstr(tok), ...
+            '^\d{2}:\d{3}:\d{5}$', 'once')));
+        if ~isempty(et) && isnan(refEpoch)
+            refEpoch = sinexEpoch2Year(et(1));
         end
         n(end+1,1)  = nn; %#ok<AGROW>
         m(end+1,1)  = mm; %#ok<AGROW>
@@ -159,7 +184,22 @@ if ~isempty(ijvC)
     M = M + M' - diag(diag(M));                 % symmetrize L/U storage
 end
 
-snx = struct('n', n, 'm', m, 'cs', cs, 'x', x, 'sig', sig, 'M', M, 'kind', kind);
+snx = struct('n', n, 'm', m, 'cs', cs, 'x', x, 'sig', sig, 'M', M, ...
+    'kind', kind, 'epoch', refEpoch);
+snx.stats = struct([]);
+if ~isempty(statKeys)
+    st = struct('keys', statKeys, 'values', statVals);
+    pick = @(pat) statVals(find(contains(statKeys, pat), 1));
+    v = pick("NUMBER OF OBSERVATIONS");        if ~isempty(v), st.nobs = v; end
+    v = pick("NUMBER OF UNKNOWNS");            if ~isempty(v), st.nunk = v; end
+    v = pick("NUMBER OF DEGREES OF FREEDOM");  if ~isempty(v), st.dof = v; end
+    v = pick("WEIGHTED SQUARE SUM OF O-C");    if ~isempty(v), st.wsos = v; end
+    if ~isfield(st, 'wsos')
+        v = pick("SQUARE SUM OF RESIDUALS");   if ~isempty(v), st.wsos = v; end
+    end
+    v = pick("VARIANCE FACTOR");               if ~isempty(v), st.vfactor = v; end
+    snx.stats = st;
+end
 
 % ---- optional inversion NEQ -> covariance
 if opts.Output == "covariance" && strcmp(kind, 'NEQ') && ~isempty(M)
@@ -190,6 +230,16 @@ if ~isempty(fieldnames(opts.Index))
     snx.x = snx.x(perm); snx.sig = snx.sig(perm);
     if ~isempty(snx.M), snx.M = snx.M(perm, perm); end
 end
+end
+
+% ---------------------------------------------------------------- local
+function y = sinexEpoch2Year(tok)
+%SINEXEPOCH2YEAR yy:doy:sssss -> decimal year (leap-year exact).
+p = double(split(string(tok), ":"));
+yy = p(1); doy = p(2); sec = p(3);
+if yy < 80, yr = 2000 + yy; else, yr = 1900 + yy; end
+nd = 365 + double(mod(yr, 4) == 0 && (mod(yr, 100) ~= 0 || mod(yr, 400) == 0));
+y = yr + (doy - 1 + sec / 86400) / nd;
 end
 
 
@@ -265,5 +315,7 @@ assert(nEst > 0, 'shLowLevel:readSINEX:noEstimates', ...
     'No SOLUTION/ESTIMATE CN/SN lines found (streaming mode).');
 snx = struct('n', nA(1:nEst), 'm', mA(1:nEst), 'cs', csA(1:nEst), ...
     'x', xA(1:nEst), 'sigma', sigA(1:nEst), 'M', [], 'kind', 'estimate', ...
-    'note', 'streaming Only="estimate": matrix blocks skipped');
+    'epoch', NaN, ...
+    'note', 'streaming Only="estimate": matrix blocks and STATISTICS skipped');
+snx.stats = struct([]);
 end
