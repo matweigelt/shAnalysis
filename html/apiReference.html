@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.19.0)</h1>
+<h1>shAnalysis API reference (v3.20.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -74,6 +74,7 @@ code itself.</p>
 <a href="#shLowLevel.makeTutorials">makeTutorials</a>
 <a href="#shLowLevel.mcPropagate">mcPropagate</a>
 <a href="#shLowLevel.nashSutcliffe">nashSutcliffe</a>
+<a href="#shLowLevel.neqCombine">neqCombine</a>
 <a href="#shLowLevel.normalFieldCS">normalFieldCS</a>
 <a href="#shLowLevel.obpChain">obpChain</a>
 <a href="#shLowLevel.oceanChain">oceanChain</a>
@@ -855,6 +856,29 @@ code itself.</p>
 </table>
 <b>Example</b><pre>    nse = shLowLevel.nashSutcliffe(avg(1,:), avg(2,:));   % e.g. SH vs mascon basin</pre>
 </div>
+<div class="entry" id="shLowLevel.neqCombine">
+<h3><code>shLowLevel.neqCombine(neqs, opts)</code></h3>
+<p class="h1line">VCE-weighted combination on the normal-equation level.</p>
+<p>[X, OUT] = shLowLevel.neqCombine(NEQS) combines K normal equations into one solution the COST-G way - on the normal-equation level, BEFORE solving - with one variance component per contribution, estimated by Foerstner/Koch iteration with partial redundancies: N     = sum_i (1/s_i^2) N_i,  b = sum_i (1/s_i^2) b_i x     = N^-1 b Om_i  = ltpl_i - 2 x&#x27; b_i + x&#x27; N_i x     (= v_i&#x27; P_i v_i) r_i   = nobs_i - (1/s_i^2) tr(N^-1 N_i)  (partial redundancy) s_i^2 = Om_i / r_i The redundancy invariant sum(r_i) = sum(nobs_i) - P holds at every iteration and is asserted. This is the rigorous sibling of shLowLevel.combineCenters, which combines on the SOLUTION level with approximate noise shapes; here the full information content of each contribution enters (Kvas 2019, Sec. 2.1-2.2 formalism).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>neqs</code></td><td>1 x :</td><td>struct</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Weights</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>MaxIter</code></td><td>1 x 1</td><td>double</td><td>20</td></tr><tr><td><code>Tol</code></td><td>1 x 1</td><td>double</td><td>1e-6</td></tr><tr><td><code>Covariance</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>x</code></td><td>(P x 1) double  combined solution</td></tr>
+<tr><td><code>out</code></td><td>(1 x 1) struct  sigma2 (K x 1) final variance factors (the fixed 1./Weights when given), w (K x 1) = 1./sigma2, redundancy (K x 1) partial redundancies (NaN in fixed mode), nIter (1 x 1), converged (1 x 1 logical), N (P x P) combined normal matrix, Cx (P x P, Covariance=true only), names (K x 1 string)</td></tr>
+</table>
+<b>Example</b><pre>    a = shLowLevel.readSINEX(fileA, Index = idx);
+    b = shLowLevel.readSINEX(fileB, Index = idx);
+    [x, out] = shLowLevel.neqCombine([a, b]);
+    disp(out.sigma2&#x27;)          % who carries how much noise power
+
+  Numerics pre-validated in Python (tools/dev/validate_neqcombine.py,
+  5 checks: fixed == stacked GLS, factor recovery, redundancy
+  invariant, combined beats singles, equal-noise symmetry).
+
+  Reference: Koch (1999) variance component estimation; Foerstner
+  (1979); Kvas, TU Graz PhD thesis (2019), Secs. 2.1-2.2; the
+  COST-G combination concept (Jaeggi et al.).</pre>
+</div>
 <div class="entry" id="shLowLevel.normalFieldCS">
 <h3><code>shLowLevel.normalFieldCS(nmax, opts)</code></h3>
 <p class="h1line">Even zonal harmonics of an ellipsoidal normal field.</p>
@@ -1072,7 +1096,7 @@ code itself.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filename</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Index</code></td><td>n x m</td><td>struct</td><td>struct([])</td></tr><tr><td><code>Output</code></td><td>1 x 1</td><td>string</td><td>&quot;raw&quot;</td></tr><tr><td><code>Only</code></td><td>1 x 1</td><td>string</td><td>&quot;all&quot;</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>snx</code></td><td>(1 x 1) struct  parsed solution with fields n, m, cs (Q x 1 double) parameter list (cs: 0=C, 1=S; file order or IDX order), x and sig (Q x 1 double) estimates and formal sigmas (NaN if absent), M (Q x Q double) covariance or normal-equation matrix per Output= ([] if absent), kind (&#x27;COVA&#x27; | &#x27;NEQ&#x27; | &#x27;&#x27;), epoch (1 x 1 double) and header meta</td></tr>
+<tr><td><code>snx</code></td><td>(1 x 1) struct  parsed solution with fields n, m, cs (Q x 1 double) parameter list (cs: 0=C, 1=S; file order or IDX order), x and sig (Q x 1 double) estimates and formal sigmas (NaN if absent), M (Q x Q double) covariance or normal-equation matrix per Output= ([] if absent), kind (&#x27;COVA&#x27; | &#x27;NEQ&#x27; | &#x27;&#x27;), stats (v3.20: parsed +SOLUTION/STATISTICS - keys/values verbatim plus nobs, nunk, dof, wsos (l&#x27;Pl; also matched from &quot;SQUARE SUM OF RESIDUALS&quot;) and vfactor where present; struct([]) when the block is absent, and always struct([]) on the streaming Only=&quot;estimate&quot; path, which stops before it - neqCombine&#x27;s VCE feeds on nobs and wsos), epoch (1 x 1 double) and header meta</td></tr>
 </table>
 </div>
 <div class="entry" id="shLowLevel.readTN13">
@@ -2254,4 +2278,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.19.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.20.0). Generated by tools - do not edit.</p></body></html>

@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.20.0] - 2026-08-17 - neqCombine (NEQ-level VCE combination)
+
+shLowLevel.neqCombine combines normal equations before solving
+(COST-G style) with Foerstner variance components and asserted
+redundancy invariant; accepts readSINEX NEQ structs directly.
+readSINEX gains the +SOLUTION/STATISTICS parse (snx.stats) and finally
+delivers the long-promised snx.epoch (decimal year from REF_EPOCH) -
+closing a latent kalmanChain NEQ-mode crash. Python pre-validation in
+tools/dev/validate_neqcombine.py (5 checks); four new MATLAB tests
+including a synthetic-SINEX end-to-end run through neqCombine.
+
 ## [3.19.0] - 2026-08-17 - matfile covariance store
 
 kalmanFilter/rtsSmoother/kalmanChain gain StoreCov="matfile": full

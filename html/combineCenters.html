@@ -21,7 +21,11 @@ th { background: #f5f7fa; }
 <body><div class="content">
 <span class="tag">Combination</span>
 <h1>shLowLevel.combineCenters</h1>
-<p>VCE-weighted multi-center combination with partial redundancies.</p>
+<p>VCE-weighted multi-center combination with partial redundancies. Two levels exist since
+v3.20: this page's <code class="inline">combineCenters</code> works on the <em>solutions</em> with
+approximate noise shapes; <code class="inline">shLowLevel.neqCombine</code> (below) works on the
+<em>normal equations</em> before solving &mdash; the rigorous COST-G way, when SINEX NEQs are
+available.</p>
 <h2>Syntax</h2>
 <pre>[tsComb, info] = shLowLevel.combineCenters({tsITSG, tsCSR, tsGFZ}, Robust=true);
 plot(info.epochs, info.weights')      % the weight time series diagnostic
@@ -32,7 +36,27 @@ s&sup2;_c(t) = v_c&prime; N_c&#8315;&sup1; v_c / r_c(t)
 r_c(t)  = P &minus; tr( H &middot; w_c N_c&#8315;&sup1; )        (partial redundancy)</pre>
 <p>ONE factor per (center, month) &mdash; the COST-G granularity: relative center quality is time-variable and the redundancy (thousands per month at n96) supports it. The partial-redundancy term is essential; without it factors bias low. Noise shapes N_c: each center's own (order, C/S, parity) block covariance from its climatology residuals, TRACE-NORMALIZED to mean unit variance - so the s2 factors carry each center's absolute noise power and are comparable across centers, while the combination weights are invariant under the normalization (v2.4.1). All algebra runs block-wise. Robust=true takes the median over per-block unbiased estimates q_b/r_b (outlier-month protection). Python-validated: known time-varying factors recovered within scatter; the combined field beats every single center (std 0.685 vs best 1.095 in the validation setup).</p>
 <div class="note"><b>Two documented limits.</b> (1) Common-mode errors &mdash; shared K-band data, AOD1B, ocean tides &mdash; are invisible to inter-center VCE; posterior sigmas are a LOWER bound. (2) Inter-center correlations violate the independence assumption; info.interCenterCorr shows how optimistic the weights are. Combine on GSM level BEFORE TN-14/TN-13 (identical for all centers &mdash; apply once afterwards).</div>
-<h2>See also</h2><p class="seealso"><a href="vceRescale.html">vceRescale</a> <a href="buildNoiseCov.html">buildNoiseCov</a></p>
+<h2>neqCombine &mdash; combination on the normal-equation level (v3.20)</h2>
+<p>When the contributions come as normal equations (ITSG SINEX,
+<code class="inline">fetchITSGSINEX</code>), combining <em>before</em> solving preserves the full
+information content of every contribution &mdash; the COST-G approach. One Foerstner/Koch variance
+component per contribution, partial redundancies, and the invariant
+&sum;r<sub>i</sub> = &sum;n<sub>i</sub> &minus; P asserted at every iteration:</p>
+<pre>a = shLowLevel.readSINEX(fileA, Index=idx);   % kind='NEQ'; v3.20 also parses
+b = shLowLevel.readSINEX(fileB, Index=idx);   % +SOLUTION/STATISTICS (nobs, l'Pl)
+[x, out] = shLowLevel.neqCombine([a, b]);
+disp(out.sigma2')                             % who carries how much noise power</pre>
+<div class="note"><b>Two contracts.</b> (1) VCE needs <code class="inline">ltpl</code> and
+<code class="inline">nobs</code> on every contribution (the SINEX STATISTICS block); without them
+it refuses loudly &mdash; pass fixed <code class="inline">Weights=</code> instead, never silent
+assumptions. (2) All contributions must share the SAME background models and parametrization;
+no algebra can detect a background mismatch for you.</div>
+<p>Fixed <code class="inline">Weights=</code> reproduce the directly stacked weighted least squares
+exactly (unit-tested); the VCE path recovers known variance factors within statistical scatter
+(Python pre-validation, <code class="inline">tools/dev/validate_neqcombine.py</code>). The
+common-mode caveat above applies unchanged: shared background models are invisible to
+inter-contribution VCE on either level.</p>
+<h2>See also</h2><p class="seealso"><a href="vceRescale.html">vceRescale</a> <a href="buildNoiseCov.html">buildNoiseCov</a> <a href="kalman.html">Kalman/VAR module</a></p>
 <p style="color:#999;font-size:11px;margin-top:40px;">shAnalysis v2.4 &mdash; Claude (Fable 5), 2026-08-07</p>
 </div><p class="provenance">Developed by Matthias Weigelt with the help of Claude (Fable 5).</p>
 </body></html>

@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.19.0 (R2026a-compatible) 17-Aug-2026
+% Version 3.20.0 (R2026a-compatible) 17-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,24 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.20.0 (neqCombine: VCE combination on the NEQ level)
+%   - shLowLevel.neqCombine - COST-G-style combination of K normal
+%     equations BEFORE solving, with Foerstner/Koch variance components
+%     (partial redundancies; the invariant sum(r) = sum(nobs) - P is
+%     asserted every iteration). Fixed Weights= skip VCE; VCE requires
+%     ltpl/nobs on every contribution and errors loudly otherwise.
+%     Accepts raw N/b structs or readSINEX NEQ results directly. The
+%     rigorous sibling of combineCenters (which works on solutions).
+%   - readSINEX parses +SOLUTION/STATISTICS into snx.stats (keys/values
+%     verbatim + nobs/nunk/dof/wsos/vfactor) - exactly what
+%     neqCombine's VCE feeds on - and now DELIVERS snx.epoch (decimal
+%     year from the estimate REF_EPOCH): the help had promised the
+%     field since v2.x but it never existed, a latent kalmanChain
+%     NEQ-mode crash on first real use, fixed and pinned by test.
+%   - Numerics pre-validated in Python (tools/dev/validate_neqcombine.py,
+%     5 checks: fixed == stacked GLS, factor recovery, redundancy
+%     invariant, combined beats singles, equal-noise symmetry).
 %
 % New in v3.19.0 (matfile covariance store: long daily Kalman runs)
 %   - kalmanFilter StoreCov="matfile": predicted/filtered covariances

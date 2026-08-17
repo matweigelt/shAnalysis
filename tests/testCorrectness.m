@@ -3024,3 +3024,98 @@ filt = shLowLevel.kalmanFilter(model, obs, StoreCov = "diag");
 verifyError(testCase, @() shLowLevel.rtsSmoother(filt), ...
     'shLowLevel:rtsSmoother:needFullCov');
 end
+
+% ------------------------------------------------- neqCombine (v3.20)
+function testNeqCombineFixedEqualsStacked(testCase)
+%TESTNEQCOMBINEFIXEDEQUALSSTACKED fixed weights: the NEQ-level
+%   combination must equal the directly stacked weighted least squares.
+rng(31);
+P = 8;
+xT = randn(P, 1);
+A1 = randn(300, P); l1 = A1 * xT + 1.0 * randn(300, 1);
+A2 = randn(400, P); l2 = A2 * xT + 2.0 * randn(400, 1);
+neqs = struct('N', {A1.'*A1, A2.'*A2}, 'b', {A1.'*l1, A2.'*l2});
+w = [1; 0.25];
+x = shLowLevel.neqCombine(neqs, Weights = w);
+Astk = [sqrt(w(1)) * A1; sqrt(w(2)) * A2];
+lstk = [sqrt(w(1)) * l1; sqrt(w(2)) * l2];
+verifyEqual(testCase, x, Astk \ lstk, AbsTol = 1e-9 * max(abs(xT)));
+end
+
+function testNeqCombineVCERecoversFactors(testCase)
+%TESTNEQCOMBINEVCERECOVERSFACTORS Foerstner VCE must recover known
+%   variance factors [1, 4] within statistical scatter, satisfy the
+%   redundancy invariant sum(r) = sum(nobs) - P, and the combination
+%   must beat both single-contribution solutions against the truth.
+rng(37);
+P = 10;
+xT = randn(P, 1);
+mk = @(A, s) struct('N', A.'*A, 'b', [], 'ltpl', [], 'nobs', size(A, 1), ...
+    'name', "c");
+A1 = randn(4000, P); l1 = A1 * xT + 1.0 * randn(4000, 1);
+A2 = randn(4000, P); l2 = A2 * xT + 2.0 * randn(4000, 1);
+n1 = mk(A1, 1); n1.b = A1.' * l1; n1.ltpl = l1.' * l1;
+n2 = mk(A2, 2); n2.b = A2.' * l2; n2.ltpl = l2.' * l2;
+[x, out] = shLowLevel.neqCombine([n1, n2]);
+verifyTrue(testCase, out.converged);
+verifyEqual(testCase, out.sigma2(1), 1, AbsTol = 0.1);
+verifyEqual(testCase, out.sigma2(2), 4, AbsTol = 0.4);
+verifyEqual(testCase, sum(out.redundancy), 8000 - P, RelTol = 1e-6);
+e = @(y) norm(y - xT);
+verifyTrue(testCase, e(x) < e(n1.N \ n1.b) && e(x) < e(n2.N \ n2.b));
+end
+
+function testNeqCombineVCENeedsStatsLoudly(testCase)
+%TESTNEQCOMBINEVCENEEDSSTATSLOUDLY VCE without ltpl/nobs must refuse
+%   with the identified error - no silent noise assumptions.
+neqs = struct('N', eye(3), 'b', ones(3, 1));
+verifyError(testCase, @() shLowLevel.neqCombine(neqs), ...
+    'shLowLevel:neqCombine:needStats');
+end
+
+function testReadSINEXStatsAndEpoch(testCase)
+%TESTREADSINEXSTATSANDEPOCH v3.20: the +SOLUTION/STATISTICS block is
+%   parsed (nobs/nunk/wsos) and snx.epoch is delivered from the
+%   estimate REF_EPOCH - the help had promised epoch since v2.x but the
+%   field never existed (latent kalmanChain NEQ-mode crash, fixed
+%   here). The real ITSG fixture (no STATISTICS block) must yield
+%   empty stats and epoch 2008-04 mid-month; a synthetic file with a
+%   STATISTICS block must feed neqCombine end-to-end.
+f = fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
+    'ITSG-Grace2018_n96_2008-04_head12.snx');
+snx = shLowLevel.readSINEX(f);
+verifyTrue(testCase, isempty(snx.stats));
+verifyEqual(testCase, snx.epoch, 2008 + 106/366, AbsTol = 1e-9);  % 08:107
+% synthetic twin WITH statistics (values invented, layout ITSG-faithful)
+tmp = [tempname, '.snx'];
+cleanup = onCleanup(@() delete(tmp));
+lines = [ ...
+"%=SNX 2.02 TUG 18:300:38958 TUG 08:092:00000 08:122:00000 C 00002 2            2"
+"+SOLUTION/STATISTICS"
+"*_STATISTICAL PARAMETER________ __VALUE(S)____________"
+" NUMBER OF OBSERVATIONS               5000"
+" NUMBER OF UNKNOWNS                      2"
+" WEIGHTED SQUARE SUM OF O-C           4998.0"
+"-SOLUTION/STATISTICS"
+"+SOLUTION/ESTIMATE"
+"     1 CN        2 --    0 08:107:00000 ---- 2  2.00000000000000e+00 1.0e-03"
+"     2 CN        2 --    1 08:107:00000 ---- 2 -1.00000000000000e+00 1.0e-03"
+"-SOLUTION/ESTIMATE"
+"+SOLUTION/NORMAL_EQUATION_MATRIX U"
+"1  1  4.00000000000000e+00  1.00000000000000e+00"
+"2  2  3.00000000000000e+00"
+"-SOLUTION/NORMAL_EQUATION_MATRIX U"];
+writelines(lines, tmp);
+snx2 = shLowLevel.readSINEX(tmp);
+verifyEqual(testCase, snx2.stats.nobs, 5000);
+verifyEqual(testCase, snx2.stats.nunk, 2);
+verifyEqual(testCase, snx2.stats.wsos, 4998.0);
+verifyEqual(testCase, snx2.kind, 'NEQ');
+verifyEqual(testCase, snx2.M, [4 1; 1 3]);
+% two copies through the readSINEX front door of neqCombine: equal
+% contributions -> equal variance factors, x == N \ (N*xhat)
+[x, out] = shLowLevel.neqCombine([snx2, snx2]);
+verifyTrue(testCase, out.converged);
+verifyEqual(testCase, out.sigma2(1), out.sigma2(2), RelTol = 1e-9);
+verifyEqual(testCase, x, snx2.x, AbsTol = 1e-9);
+end
