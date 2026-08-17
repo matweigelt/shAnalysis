@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.17.0] - 2026-08-17 - Kalman/VAR module (Kurtenbach/Kvas)
+
+Temporal smoothing of SH series after Kurtenbach (DGK C-683, 2012) and
+Kvas (TU Graz, 2019): estimateVAR (Yule-Walker VAR(p); p=1 == Kurtenbach
+closed form), kalmanFilter (solution and SINEX-NEQ information-form
+updates, gap handling, data-contribution diagnostics), rtsSmoother
+(exactly the joint least-squares adjustment under the stationary
+initialization - unit-tested to machine precision), and the single point
+of access kalmanChain. Python pre-validation in
+tools/dev/validate_kalman.py (8 tests). New doc page html/kalman.html.
+
 ## [3.16.2] - 2026-08-13 - final documentation audit
 
 Guide Part IV input tables gain a description column (881 arguments,

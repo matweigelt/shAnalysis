@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.16.2 (R2026a-compatible) 13-Aug-2026
+% Version 3.17.0 (R2026a-compatible) 17-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,25 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.17.0 (Kalman/VAR module: Kurtenbach/Kvas temporal smoothing)
+%   - shLowLevel.estimateVAR - empirical VAR(p) process model from an SH
+%     state series via Yule-Walker; Order=1 is exactly Kurtenbach (2012)
+%     eqs. (3.84)-(3.85); Shrink and CondFun (Kvas-style covariance
+%     conditioning) for stability; companion spectral-radius warning.
+%   - shLowLevel.kalmanFilter - forward Kalman filter, solution mode
+%     (l = x + v with R) and NEQ mode (information-form update straight
+%     from readSINEX normal equations); gaps = prediction-only; data
+%     contribution per coefficient (Kurtenbach Sec. 3.3.2).
+%   - shLowLevel.rtsSmoother - RTS backward pass; with the stationary
+%     initialization identical to the joint least-squares adjustment
+%     over all epochs (Kvas Sec. 2.3; unit-tested to machine precision).
+%   - shLowLevel.kalmanChain - single point of access: model series ->
+%     VAR model -> filter -> smoother -> shSeries with formal sigmas;
+%     observation climatology restored in solution mode; daily grids
+%     with prediction across missing days via Epochs=.
+%   - Numerics pre-validated in Python (tools/dev/validate_kalman.py,
+%     8 tests including KF+RTS == batch adjustment at 1e-15).
 %
 % New in v3.16.2 (final documentation audit)
 %   - Guide Part IV input tables now carry a DESCRIPTION column, fed

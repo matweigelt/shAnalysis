@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.16.2)</h1>
+<h1>shAnalysis API reference (v3.17.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -38,6 +38,7 @@ code itself.</p>
 <a href="#shLowLevel.erodeMask">erodeMask</a>
 <a href="#shLowLevel.errorMap">errorMap</a>
 <a href="#shLowLevel.estimateDegree1">estimateDegree1</a>
+<a href="#shLowLevel.estimateVAR">estimateVAR</a>
 <a href="#shLowLevel.evalMask">evalMask</a>
 <a href="#shLowLevel.fetchDDK">fetchDDK</a>
 <a href="#shLowLevel.fetchGAX">fetchGAX</a>
@@ -60,6 +61,8 @@ code itself.</p>
 <a href="#shLowLevel.httpRetryDelay">httpRetryDelay</a>
 <a href="#shLowLevel.hydroExtremeIndex">hydroExtremeIndex</a>
 <a href="#shLowLevel.icgemDate2Year">icgemDate2Year</a>
+<a href="#shLowLevel.kalmanChain">kalmanChain</a>
+<a href="#shLowLevel.kalmanFilter">kalmanFilter</a>
 <a href="#shLowLevel.kernelFactors">kernelFactors</a>
 <a href="#shLowLevel.leakageCorrect">leakageCorrect</a>
 <a href="#shLowLevel.legendreALF">legendreALF</a>
@@ -92,6 +95,7 @@ code itself.</p>
 <a href="#shLowLevel.readTN14">readTN14</a>
 <a href="#shLowLevel.rescaleGMR">rescaleGMR</a>
 <a href="#shLowLevel.resolutionMap">resolutionMap</a>
+<a href="#shLowLevel.rtsSmoother">rtsSmoother</a>
 <a href="#shLowLevel.safeMove">safeMove</a>
 <a href="#shLowLevel.seaLevelFingerprint">seaLevelFingerprint</a>
 <a href="#shLowLevel.sensitivityKernel">sensitivityKernel</a>
@@ -380,6 +384,28 @@ code itself.</p>
   See also shLowLevel.readTN13, shSeries.addDegree1,
   shLowLevel.oceanRMS.</pre>
 </div>
+<div class="entry" id="shLowLevel.estimateVAR">
+<h3><code>shLowLevel.estimateVAR(X, opts)</code></h3>
+<p class="h1line">Empirical VAR(p) process model from an SH state series.</p>
+<p>MODEL = shLowLevel.estimateVAR(X) estimates the stochastic process model of Kurtenbach et al. (2012) from a centred state realization: the vector autoregressive model x_t = Phi_1 x_{t-1} + ... + Phi_p x_{t-p} + w,  w ~ N(0, Q) determined by the Yule-Walker equations from the empirical (cross-)covariances Sigma(h) = 1/(T-h) sum x_i x_{i-h}&#x27; of the series (Kvas 2019, Sec. 2.4). For Order = 1 this is EXACTLY the closed form of Kurtenbach (2012), eqs. (3.84)-(3.85): B = Sigma(1) Sigma(0)^-1,  Q = Sigma(0) - B Sigma(0) B&#x27; (unit-tested against it). The realization X is typically a geophysical model series (AOD1B/GAX, ESA ESM, hydrology) reduced by mean, trend and (semi-)annual cycle - shSeries.climatology does that reduction; the state ordering is shLowLevel.shIndex.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>X</code></td><td>: x :</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>model</code></td><td>(1 x 1) struct  process model: Phi (1 x p cell of P x P double) coefficient matrices, Q (P x P double) symmetric PSD process-noise covariance, Sigma0 (P x P double) empirical auto-covariance Sigma(0) (the stationary state covariance and the filter&#x27;s initial covariance), order (1 x 1), P (1 x 1), specRadius (1 x 1) spectral radius of the companion matrix (&lt; 1 = stable; a warning is raised otherwise - filtering an unstable model diverges over long gaps)</td></tr>
+</table>
+<b>Example</b><pre>    [~, resid] = tsModel.climatology;              % reduce long-term parts
+    idx = shLowLevel.shIndex(tsModel.nmax);
+    X = zeros(idx.P, resid.nEpochs);
+    for k = 1:resid.nEpochs
+        g = resid.at(k);
+        X(:, k) = shLowLevel.vecFromCS(g.C, g.S, idx);
+    end
+    model = shLowLevel.estimateVAR(X, Order=1);
+
+  Reference: Kurtenbach, DGK C-683 (2012), Sec. 3.2; Kvas, TU Graz
+  PhD thesis (2019), Secs. 2.3-2.4; Luetkepohl (2005).
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
+</div>
 <div class="entry" id="shLowLevel.evalMask">
 <h3><code>shLowLevel.evalMask(idx, region, opts)</code></h3>
 <p class="h1line">Evaluate a region definition on the toolbox quadrature grid.</p>
@@ -653,6 +679,47 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>y</code></td><td>(same size as input) double   decimal years</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.kalmanChain">
+<h3><code>shLowLevel.kalmanChain(obsIn, opts)</code></h3>
+<p class="h1line">Kalman-smoothed SH series in one call (Kurtenbach/Kvas).</p>
+<p>[TS, REP] = shLowLevel.kalmanChain(OBSIN, ModelSeries=TSM) is the single point of access to the Kalman/VAR module: it turns noisy per-epoch gravity information plus a geophysical model series into a temporally smoothed shSeries, encoding the correctly ordered chain of Kurtenbach (2012) and Kvas (2019): 1. reduce the model series TSM by its own climatology (mean, trend, annual, semi-annual) - the residual approximates the short-term process (Kurtenbach eq. 3.81) 2. estimate the VAR(Order) process model from the residuals (shLowLevel.estimateVAR; Order=1 is Kurtenbach&#x27;s B/Q) 3. build one observation record per requested epoch: a solution with noise covariance, a SINEX normal equation, or a gap 4. forward Kalman filter with stationary initialization (shLowLevel.kalmanFilter) 5. RTS smoother (shLowLevel.rtsSmoother) - with step 4 exactly the joint adjustment over all epochs (Kvas Sec. 2.3) 6. repack into an shSeries with formal sigmas; in solution mode the observation climatology removed in step 3 is restored, so TS is directly comparable to the input series</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obsIn</code></td><td>1 x 1</td><td>-</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>ModelSeries</code></td><td>1 x 1</td><td>shSeries</td><td>-</td></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>Epochs</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.5/365.25</td></tr><tr><td><code>NoiseCov</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>Climatology</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Smoother</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.snx*&quot;</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>ts</code></td><td>(1 x 1) shSeries  smoothed series on the epoch grid, formal 1-sigma stacks filled, every step in the history</td></tr>
+<tr><td><code>rep</code></td><td>(1 x 1) struct  report: mode, order, nEpochs, nGaps, specRadius, meanContribution (mean data share per epoch, Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical), model (the estimateVAR struct, for reuse), memGB (covariance storage actually used)</td></tr>
+</table>
+<b>Example</b><pre>    tsm = shSeries.fromFolder(gaxFolder).truncate(40);
+    [ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries=tsm, Order=1);
+
+  Memory: the smoother stores two full (pP x pP) covariances per
+  epoch: n40/p1/T365 ~ 16 GB. For long daily series run in windows
+  or set Smoother=false; REP.memGB reports the actual footprint.
+
+  Reference: Kurtenbach, DGK C-683 (2012); Kvas, TU Graz PhD thesis
+  (2019). Numerics pre-validated in Python
+  (tools/dev/validate_kalman.py).</pre>
+</div>
+<div class="entry" id="shLowLevel.kalmanFilter">
+<h3><code>shLowLevel.kalmanFilter(model, obs, opts)</code></h3>
+<p class="h1line">Forward Kalman filter for SH series (Kurtenbach/Kvas).</p>
+<p>FILT = shLowLevel.kalmanFilter(MODEL, OBS) runs the forward Kalman filter of Kurtenbach (2012, Sec. 3.3) with the VAR(p) process model from shLowLevel.estimateVAR and one observation record per epoch. Two observation modes, decided per epoch by the fields present: solution  l = x + v, v ~ N(0, R): a (noisy) coefficient-vector solution with its error covariance - e.g. a GFC series with formal sigmas, or a SINEX COVA solution neq       N x = b: an unreduced normal equation - the SINEX NEQ blocks shLowLevel.readSINEX returns (kind = &#x27;NEQ&#x27;); applied as information-form update, no R needed An empty record is a data gap: prediction only, the state relaxes toward the process prior (zero mean, covariance -&gt; Sigma0).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr><tr><td><code>obs</code></td><td>1 x :</td><td>struct</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;full&quot;</td></tr><tr><td><code>Contribution</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>filt</code></td><td>(1 x 1) struct  companion-space filter results: xf, xp (pP x T double) filtered / predicted states, Pf, Pp (pP x pP x T double, StoreCov=&quot;full&quot;) or dPf, dPp (pP x T double, StoreCov=&quot;diag&quot;) covariances, contrib (P x T double) data share per coefficient (NaN in gaps), gap (1 x T logical), P (1 x 1) block size, order (1 x 1), storeCov (1 x 1) string. The physical state is the first block: xf(1:P, :).</td></tr>
+</table>
+<b>Example</b><pre>    model = shLowLevel.estimateVAR(X, Order=1);
+    obs = repmat(struct(&#x27;l&#x27;,[],&#x27;R&#x27;,[],&#x27;N&#x27;,[],&#x27;b&#x27;,[]), 1, numel(ep));
+    for t = 1:numel(ep)          % fill l/R (or N/b), leave gaps empty
+        obs(t).l = L(:, t);  obs(t).R = sig(:, t).^2;
+    end
+    filt = shLowLevel.kalmanFilter(model, obs);
+
+  Reference: Kurtenbach, DGK C-683 (2012), Sec. 3.3; Kvas, TU Graz
+  PhD thesis (2019), Secs. 2.2-2.3.
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
 </div>
 <div class="entry" id="shLowLevel.kernelFactors">
 <h3><code>shLowLevel.kernelFactors(quantity, nmax, GM, R, opts)</code></h3>
@@ -1022,6 +1089,22 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>res</code></td><td>(nlat x nlon) double  local resolution [km] of the filter</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.rtsSmoother">
+<h3><code>shLowLevel.rtsSmoother(filt)</code></h3>
+<p class="h1line">Rauch-Tung-Striebel backward pass for kalmanFilter output.</p>
+<p>SMO = shLowLevel.rtsSmoother(FILT) runs the fixed-interval RTS smoother (Kurtenbach 2012, Sec. 3.3.3) over the forward-filter result of shLowLevel.kalmanFilter: G_t  = Pf_t B&#x27; Pp_{t+1}^-1 xs_t = xf_t + G_t (xs_{t+1} - xp_{t+1}) Ps_t = Pf_t + G_t (Ps_{t+1} - Pp_{t+1}) G_t&#x27; so the estimate at epoch t uses ALL observations, past and future. With the stationary initialization of kalmanFilter this reproduces the joint least-squares adjustment over all epochs exactly (Kvas 2019, Sec. 2.3; unit-tested to machine precision), i.e. the forward-backward pass is an exact solver for the block-tridiagonal joint normal-equation system - never build that system explicitly.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filt</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>smo</code></td><td>(1 x 1) struct  smoothed results, physical block only: xs (P x T double) smoothed states, sig (P x T double) formal 1-sigma per coefficient (sqrt of the smoothed covariance diagonal), PsLast (P x P double) full smoothed covariance of the LAST epoch (equals the filtered one there), P (1 x 1), order (1 x 1)</td></tr>
+</table>
+<b>Example</b><pre>    filt = shLowLevel.kalmanFilter(model, obs);   % StoreCov=&quot;full&quot;
+    smo  = shLowLevel.rtsSmoother(filt);
+    plot(ep, smo.xs(1, :))                        % first coefficient
+
+  Reference: Rauch, Tung &amp; Striebel (1965); Kurtenbach, DGK C-683
+  (2012), Sec. 3.3.3; Kvas, TU Graz PhD thesis (2019), Sec. 2.3.
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
 </div>
 <div class="entry" id="shLowLevel.safeMove">
 <h3><code>shLowLevel.safeMove(src, dst, opts)</code></h3>
@@ -2146,4 +2229,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 13-Aug-2026 (v3.16.2). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.17.0). Generated by tools - do not edit.</p></body></html>

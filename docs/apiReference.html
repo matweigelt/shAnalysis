@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.15.1)</h1>
+<h1>shAnalysis API reference (v3.17.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -38,14 +38,15 @@ code itself.</p>
 <a href="#shLowLevel.erodeMask">erodeMask</a>
 <a href="#shLowLevel.errorMap">errorMap</a>
 <a href="#shLowLevel.estimateDegree1">estimateDegree1</a>
+<a href="#shLowLevel.estimateVAR">estimateVAR</a>
 <a href="#shLowLevel.evalMask">evalMask</a>
 <a href="#shLowLevel.fetchDDK">fetchDDK</a>
 <a href="#shLowLevel.fetchGAX">fetchGAX</a>
 <a href="#shLowLevel.fetchICGEM">fetchICGEM</a>
 <a href="#shLowLevel.fetchITSG">fetchITSG</a>
 <a href="#shLowLevel.fetchITSGBackground">fetchITSGBackground</a>
+<a href="#shLowLevel.fetchITSGSINEX">fetchITSGSINEX</a>
 <a href="#shLowLevel.fetchLoveNumbers">fetchLoveNumbers</a>
-<a href="#shLowLevel.fetchSINEX">fetchSINEX</a>
 <a href="#shLowLevel.fetchTN">fetchTN</a>
 <a href="#shLowLevel.fitDeterministicModel">fitDeterministicModel</a>
 <a href="#shLowLevel.gaussLegendre">gaussLegendre</a>
@@ -60,6 +61,8 @@ code itself.</p>
 <a href="#shLowLevel.httpRetryDelay">httpRetryDelay</a>
 <a href="#shLowLevel.hydroExtremeIndex">hydroExtremeIndex</a>
 <a href="#shLowLevel.icgemDate2Year">icgemDate2Year</a>
+<a href="#shLowLevel.kalmanChain">kalmanChain</a>
+<a href="#shLowLevel.kalmanFilter">kalmanFilter</a>
 <a href="#shLowLevel.kernelFactors">kernelFactors</a>
 <a href="#shLowLevel.leakageCorrect">leakageCorrect</a>
 <a href="#shLowLevel.legendreALF">legendreALF</a>
@@ -92,6 +95,7 @@ code itself.</p>
 <a href="#shLowLevel.readTN14">readTN14</a>
 <a href="#shLowLevel.rescaleGMR">rescaleGMR</a>
 <a href="#shLowLevel.resolutionMap">resolutionMap</a>
+<a href="#shLowLevel.rtsSmoother">rtsSmoother</a>
 <a href="#shLowLevel.safeMove">safeMove</a>
 <a href="#shLowLevel.seaLevelFingerprint">seaLevelFingerprint</a>
 <a href="#shLowLevel.sensitivityKernel">sensitivityKernel</a>
@@ -326,7 +330,7 @@ code itself.</p>
 <div class="entry" id="shLowLevel.eofSeparate">
 <h3><code>shLowLevel.eofSeparate(R, w, opts)</code></h3>
 <p class="h1line">Separate coherent modes from noise in a residual stack.</p>
-<p>[CIRC, NOISER, INFO] = shLowLevel.eofSeparate(R, W) splits a time-centred residual stack into a coherent low-mode part (for ocean applications: residual circulation - interannual dynamics left after the trend + seasonal fit) and a noise remainder, using an area-weighted EOF decomposition with the North et al. (1982) rule: leading modes are kept while their eigenvalue is separated from the next one by more than its sampling uncertainty lambda * sqrt(2/T).</p>
+<p>[CIRC, NOISER, INFO] = shLowLevel.eofSeparate(R, W) splits a time-centred residual stack into a coherent low-mode part (for ocean applications: residual circulation - interannual dynamics left after the trend + seasonal fit) and a noise remainder, using an area-weighted EOF decomposition with the North et al. (1982) rule: leading modes are kept while their eigenvalue is separated from the next one by more than its sampling uncertainty lambda * sqrt(2/T), extended by the North multiplet rule: effectively degenerate leading modes (mutual gaps inside the sampling uncertainty) are kept or dropped as a GROUP judged by the group&#x27;s lower edge - a leading degenerate pair is physics (two circulation patterns of similar variance), not noise.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>R</code></td><td>: x :</td><td>double</td><td>required</td></tr><tr><td><code>w</code></td><td>: x 1</td><td>double</td><td>required</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>NKeep</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>MaxModes</code></td><td>1 x 1</td><td>double</td><td>10</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
@@ -380,6 +384,28 @@ code itself.</p>
   See also shLowLevel.readTN13, shSeries.addDegree1,
   shLowLevel.oceanRMS.</pre>
 </div>
+<div class="entry" id="shLowLevel.estimateVAR">
+<h3><code>shLowLevel.estimateVAR(X, opts)</code></h3>
+<p class="h1line">Empirical VAR(p) process model from an SH state series.</p>
+<p>MODEL = shLowLevel.estimateVAR(X) estimates the stochastic process model of Kurtenbach et al. (2012) from a centred state realization: the vector autoregressive model x_t = Phi_1 x_{t-1} + ... + Phi_p x_{t-p} + w,  w ~ N(0, Q) determined by the Yule-Walker equations from the empirical (cross-)covariances Sigma(h) = 1/(T-h) sum x_i x_{i-h}&#x27; of the series (Kvas 2019, Sec. 2.4). For Order = 1 this is EXACTLY the closed form of Kurtenbach (2012), eqs. (3.84)-(3.85): B = Sigma(1) Sigma(0)^-1,  Q = Sigma(0) - B Sigma(0) B&#x27; (unit-tested against it). The realization X is typically a geophysical model series (AOD1B/GAX, ESA ESM, hydrology) reduced by mean, trend and (semi-)annual cycle - shSeries.climatology does that reduction; the state ordering is shLowLevel.shIndex.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>X</code></td><td>: x :</td><td>double</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>model</code></td><td>(1 x 1) struct  process model: Phi (1 x p cell of P x P double) coefficient matrices, Q (P x P double) symmetric PSD process-noise covariance, Sigma0 (P x P double) empirical auto-covariance Sigma(0) (the stationary state covariance and the filter&#x27;s initial covariance), order (1 x 1), P (1 x 1), specRadius (1 x 1) spectral radius of the companion matrix (&lt; 1 = stable; a warning is raised otherwise - filtering an unstable model diverges over long gaps)</td></tr>
+</table>
+<b>Example</b><pre>    [~, resid] = tsModel.climatology;              % reduce long-term parts
+    idx = shLowLevel.shIndex(tsModel.nmax);
+    X = zeros(idx.P, resid.nEpochs);
+    for k = 1:resid.nEpochs
+        g = resid.at(k);
+        X(:, k) = shLowLevel.vecFromCS(g.C, g.S, idx);
+    end
+    model = shLowLevel.estimateVAR(X, Order=1);
+
+  Reference: Kurtenbach, DGK C-683 (2012), Sec. 3.2; Kvas, TU Graz
+  PhD thesis (2019), Secs. 2.3-2.4; Luetkepohl (2005).
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
+</div>
 <div class="entry" id="shLowLevel.evalMask">
 <h3><code>shLowLevel.evalMask(idx, region, opts)</code></h3>
 <p class="h1line">Evaluate a region definition on the toolbox quadrature grid.</p>
@@ -406,7 +432,7 @@ code itself.</p>
 <h3><code>shLowLevel.fetchGAX(dest, opts)</code></h3>
 <p class="h1line">Download AOD1B GAX monthly means (GAA/GAB/GAC/GAD) from ICGEM.</p>
 <p>FILES = shLowLevel.fetchGAX(DEST) downloads the monthly-mean dealiasing products needed for full ocean-mass restoration (Chambers &amp; Willis 2010) as ICGEM-converted .gfc files into DEST/&lt;PRODUCT&gt;/. The AOD1B products are identical across processing centres, so the GFZ series pages (which carry all four products from 2002 on) serve every GSM series including COST-G. Listing and download go through the toolbox&#x27;s Retry-After-aware fetch layer; files already present are skipped unless Update = true.</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>dest</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Products</code></td><td>1 x :</td><td>string</td><td>[&quot;GAD&quot;, &quot;GAA&quot;]</td></tr><tr><td><code>Series</code></td><td>1 x :</td><td>string</td><td>[&quot;01_GRACE/GFZ/GFZ Release 06&quot;, &quot;01_GRACE/GFZ/GFZ Release 06.3 (GFO)&quot;]</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>MaxFailures</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>PauseSec</code></td><td>1 x 1</td><td>double</td><td>1.5</td></tr><tr><td><code>RetryAfterCap</code></td><td>1 x 1</td><td>double</td><td>30</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>info</code></td><td>(1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed, nRemaining (budget cut) per product, series actually used</td></tr>
@@ -416,7 +442,7 @@ code itself.</p>
         GADFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAD&quot;, ...
         GAAFolder = &quot;E:/DATAPOOL/GravityField/GAX/GAA&quot;);
 
-  See fetchSINEX and fetchITSGBackground for the ITSG-side products;
+  See fetchITSGSINEX and fetchITSGBackground for the ITSG-side products;
   the ITSG background models are per-release means, NOT the AOD1B
   GAX split.</pre>
 </div>
@@ -434,7 +460,7 @@ code itself.</p>
 <div class="entry" id="shLowLevel.fetchITSG">
 <h3><code>shLowLevel.fetchITSG(months, opts)</code></h3>
 <p class="h1line">Download ITSG monthly OR daily solutions from TU Graz.</p>
-<p>The fetch family, one function per source and product: fetchITSG and fetchICGEM for solution series, fetchGAX for the AOD1B GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchSINEX for the ITSG monthly normal-equation SINEX, fetchITSGBackground for the ITSG monthly background models, plus fetchTN, fetchDDK, fetchLoveNumbers for auxiliaries.</p>
+<p>The fetch family, one function per source and product: fetchITSG and fetchICGEM for solution series, fetchGAX for the AOD1B GAA/GAB/GAC/GAD monthly means (ICGEM/GFZ pages), fetchITSGSINEX for the ITSG monthly normal-equation SINEX, fetchITSGBackground for the ITSG monthly background models, plus fetchTN, fetchDDK, fetchLoveNumbers for auxiliaries.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x m</td><td>-</td><td>&quot;&quot;</td></tr></table>
 <b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>NaN</td></tr><tr><td><code>Product</code></td><td>1 x 1</td><td>string</td><td>&quot;monthly&quot;</td></tr><tr><td><code>Timeout</code></td><td>1 x 1</td><td>double</td><td>60</td></tr><tr><td><code>Proxy</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Catalog</code></td><td>1 x :</td><td>double</td><td>[]</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
@@ -454,6 +480,18 @@ code itself.</p>
 <b>Example</b><pre>    f = shLowLevel.fetchITSGBackground([&quot;2018-06&quot;, &quot;2018-07&quot;]);
     g = shCoefficients.read(f(1));   % plain gfc, C(n+1, m+1)</pre>
 </div>
+<div class="entry" id="shLowLevel.fetchITSGSINEX">
+<h3><code>shLowLevel.fetchITSGSINEX(months, opts)</code></h3>
+<p class="h1line">Download ITSG monthly normal-equation SINEX from TU Graz.</p>
+<p>FILES = shLowLevel.fetchITSGSINEX(&quot;2018-06&quot;) downloads the monthly normal-equation/solution SINEX of the ITSG series - the only public per-month SINEX source (COST-G combines on the normal-equation level internally but does NOT distribute per-month SINEX or covariances). Release routing follows fetchITSG: months before 2017-07 come from ITSG-Grace2018, months from 2018-06 on from ITSG-Grace_operational. Feed the files to shLowLevel.readSINEX (verified against exactly this product).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x 1</td><td>-</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>96</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>MaxFailures</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>PauseSec</code></td><td>1 x 1</td><td>double</td><td>1.5</td></tr><tr><td><code>RetryAfterCap</code></td><td>1 x 1</td><td>double</td><td>30</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed, nRemaining, missing (requested months absent on the server), releases used</td></tr>
+</table>
+<b>Example</b><pre>    f = shLowLevel.fetchITSGSINEX([&quot;2018-06&quot;, &quot;2018-07&quot;], Nmax = 96);
+    snx = shLowLevel.readSINEX(f(1), Only = &quot;estimate&quot;);</pre>
+</div>
 <div class="entry" id="shLowLevel.fetchLoveNumbers">
 <h3><code>shLowLevel.fetchLoveNumbers(names, opts)</code></h3>
 <p class="h1line">Download load/deformation Love number files (GROOPS set).</p>
@@ -466,18 +504,6 @@ code itself.</p>
 </table>
 <b>Example</b><pre>    [f, inf] = shLowLevel.fetchLoveNumbers();
     kn = inf.parsed(1).kn(1:61);        % degrees 0..60 for an n60 field</pre>
-</div>
-<div class="entry" id="shLowLevel.fetchSINEX">
-<h3><code>shLowLevel.fetchSINEX(months, opts)</code></h3>
-<p class="h1line">Download ITSG monthly normal-equation SINEX from TU Graz.</p>
-<p>FILES = shLowLevel.fetchSINEX(&quot;2018-06&quot;) downloads the monthly normal-equation/solution SINEX of the ITSG series - the only public per-month SINEX source (COST-G combines on the normal-equation level internally but does NOT distribute per-month SINEX or covariances). Release routing follows fetchITSG: months before 2017-07 come from ITSG-Grace2018, months from 2018-06 on from ITSG-Grace_operational. Feed the files to shLowLevel.readSINEX (verified against exactly this product).</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>months</code></td><td>n x 1</td><td>-</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Dest</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Nmax</code></td><td>1 x 1</td><td>double</td><td>96</td></tr><tr><td><code>Release</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>Update</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>MaxFiles</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>BudgetSec</code></td><td>1 x 1</td><td>double</td><td>Inf</td></tr><tr><td><code>MaxFailures</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>PauseSec</code></td><td>1 x 1</td><td>double</td><td>1.5</td></tr><tr><td><code>RetryAfterCap</code></td><td>1 x 1</td><td>double</td><td>30</td></tr><tr><td><code>Downloader</code></td><td>1 x 1</td><td>string</td><td>&quot;websave&quot;</td></tr><tr><td><code>BaseURL</code></td><td>1 x 1</td><td>string</td><td>&quot;https://ftp.tugraz.at/pub/ITSG/GRACE&quot;</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr></table>
-<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>info</code></td><td>(1 x 1) struct  nListed, nDownloaded, nSkipped, nFailed, nRemaining, missing (requested months absent on the server), releases used</td></tr>
-</table>
-<b>Example</b><pre>    f = shLowLevel.fetchSINEX([&quot;2018-06&quot;, &quot;2018-07&quot;], Nmax = 96);
-    snx = shLowLevel.readSINEX(f(1), Only = &quot;estimate&quot;);</pre>
 </div>
 <div class="entry" id="shLowLevel.fetchTN">
 <h3><code>shLowLevel.fetchTN(opts)</code></h3>
@@ -654,6 +680,47 @@ code itself.</p>
 <tr><td><code>y</code></td><td>(same size as input) double   decimal years</td></tr>
 </table>
 </div>
+<div class="entry" id="shLowLevel.kalmanChain">
+<h3><code>shLowLevel.kalmanChain(obsIn, opts)</code></h3>
+<p class="h1line">Kalman-smoothed SH series in one call (Kurtenbach/Kvas).</p>
+<p>[TS, REP] = shLowLevel.kalmanChain(OBSIN, ModelSeries=TSM) is the single point of access to the Kalman/VAR module: it turns noisy per-epoch gravity information plus a geophysical model series into a temporally smoothed shSeries, encoding the correctly ordered chain of Kurtenbach (2012) and Kvas (2019): 1. reduce the model series TSM by its own climatology (mean, trend, annual, semi-annual) - the residual approximates the short-term process (Kurtenbach eq. 3.81) 2. estimate the VAR(Order) process model from the residuals (shLowLevel.estimateVAR; Order=1 is Kurtenbach&#x27;s B/Q) 3. build one observation record per requested epoch: a solution with noise covariance, a SINEX normal equation, or a gap 4. forward Kalman filter with stationary initialization (shLowLevel.kalmanFilter) 5. RTS smoother (shLowLevel.rtsSmoother) - with step 4 exactly the joint adjustment over all epochs (Kvas Sec. 2.3) 6. repack into an shSeries with formal sigmas; in solution mode the observation climatology removed in step 3 is restored, so TS is directly comparable to the input series</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obsIn</code></td><td>1 x 1</td><td>-</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>ModelSeries</code></td><td>1 x 1</td><td>shSeries</td><td>-</td></tr><tr><td><code>Order</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Shrink</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>CondFun</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>Epochs</code></td><td>: x 1</td><td>double</td><td>[]</td></tr><tr><td><code>Tolerance</code></td><td>1 x 1</td><td>double</td><td>0.5/365.25</td></tr><tr><td><code>NoiseCov</code></td><td>n x m</td><td>double</td><td>[]</td></tr><tr><td><code>Climatology</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Smoother</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>Pattern</code></td><td>1 x 1</td><td>string</td><td>&quot;*.snx*&quot;</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>ts</code></td><td>(1 x 1) shSeries  smoothed series on the epoch grid, formal 1-sigma stacks filled, every step in the history</td></tr>
+<tr><td><code>rep</code></td><td>(1 x 1) struct  report: mode, order, nEpochs, nGaps, specRadius, meanContribution (mean data share per epoch, Kurtenbach Sec. 3.3.2; NaN in gaps), epochs, gap (logical), model (the estimateVAR struct, for reuse), memGB (covariance storage actually used)</td></tr>
+</table>
+<b>Example</b><pre>    tsm = shSeries.fromFolder(gaxFolder).truncate(40);
+    [ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries=tsm, Order=1);
+
+  Memory: the smoother stores two full (pP x pP) covariances per
+  epoch: n40/p1/T365 ~ 16 GB. For long daily series run in windows
+  or set Smoother=false; REP.memGB reports the actual footprint.
+
+  Reference: Kurtenbach, DGK C-683 (2012); Kvas, TU Graz PhD thesis
+  (2019). Numerics pre-validated in Python
+  (tools/dev/validate_kalman.py).</pre>
+</div>
+<div class="entry" id="shLowLevel.kalmanFilter">
+<h3><code>shLowLevel.kalmanFilter(model, obs, opts)</code></h3>
+<p class="h1line">Forward Kalman filter for SH series (Kurtenbach/Kvas).</p>
+<p>FILT = shLowLevel.kalmanFilter(MODEL, OBS) runs the forward Kalman filter of Kurtenbach (2012, Sec. 3.3) with the VAR(p) process model from shLowLevel.estimateVAR and one observation record per epoch. Two observation modes, decided per epoch by the fields present: solution  l = x + v, v ~ N(0, R): a (noisy) coefficient-vector solution with its error covariance - e.g. a GFC series with formal sigmas, or a SINEX COVA solution neq       N x = b: an unreduced normal equation - the SINEX NEQ blocks shLowLevel.readSINEX returns (kind = &#x27;NEQ&#x27;); applied as information-form update, no R needed An empty record is a data gap: prediction only, the state relaxes toward the process prior (zero mean, covariance -&gt; Sigma0).</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>model</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr><tr><td><code>obs</code></td><td>1 x :</td><td>struct</td><td>required</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>StoreCov</code></td><td>1 x 1</td><td>string</td><td>&quot;full&quot;</td></tr><tr><td><code>Contribution</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>filt</code></td><td>(1 x 1) struct  companion-space filter results: xf, xp (pP x T double) filtered / predicted states, Pf, Pp (pP x pP x T double, StoreCov=&quot;full&quot;) or dPf, dPp (pP x T double, StoreCov=&quot;diag&quot;) covariances, contrib (P x T double) data share per coefficient (NaN in gaps), gap (1 x T logical), P (1 x 1) block size, order (1 x 1), storeCov (1 x 1) string. The physical state is the first block: xf(1:P, :).</td></tr>
+</table>
+<b>Example</b><pre>    model = shLowLevel.estimateVAR(X, Order=1);
+    obs = repmat(struct(&#x27;l&#x27;,[],&#x27;R&#x27;,[],&#x27;N&#x27;,[],&#x27;b&#x27;,[]), 1, numel(ep));
+    for t = 1:numel(ep)          % fill l/R (or N/b), leave gaps empty
+        obs(t).l = L(:, t);  obs(t).R = sig(:, t).^2;
+    end
+    filt = shLowLevel.kalmanFilter(model, obs);
+
+  Reference: Kurtenbach, DGK C-683 (2012), Sec. 3.3; Kvas, TU Graz
+  PhD thesis (2019), Secs. 2.2-2.3.
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
+</div>
 <div class="entry" id="shLowLevel.kernelFactors">
 <h3><code>shLowLevel.kernelFactors(quantity, nmax, GM, R, opts)</code></h3>
 <p class="h1line">Degree-dependent spectral factors for SH synthesis/analysis.</p>
@@ -799,7 +866,7 @@ code itself.</p>
 <p class="h1line">Global-ocean mass chain: barystatic series from GSM + GravIS.</p>
 <p>[OUT, REP] = shLowLevel.oceanChain(FOLDER, kn = KN, OceanMask = OC) runs the ocean sibling of the validated chains (roadmap item 7): gravisL2B corrections (C20/C30/C21/S21, degree 1, minus NFIL mean, GIA rate ON by default - the ocean-floor GIA correction matters for barystatic trends) -&gt; global EWH synthesis on a GridStep graticule -&gt; area-weighted ocean-mean series [cm] -&gt; trend + annual fit. The residual after the per-pixel trend+seasonal fit is what remains for the noise proxy: this chain SEPARATES the real open-ocean signal (barystatic rise + seasonal circulation) from the residual that oceanRMS should see - the guide-V6 finding (&quot;the trend&#x27;s open-ocean RMS is mostly real barystatic signal, not error&quot;) as an API.</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>folder</code></td><td>1 x 1</td><td>string</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>SeparateCirculation</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>CoastBufferKm</code></td><td>1 x 1</td><td>double</td><td>0</td></tr><tr><td><code>RemoveLandLeakage</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>LandLeakIter</code></td><td>1 x 1</td><td>double</td><td>5</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>kn</code></td><td>n x 1</td><td>double</td><td>[]</td></tr><tr><td><code>OceanMask</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>gravisFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GIAFile</code></td><td>1 x 1</td><td>string</td><td>&quot;GRAVIS-2B_COSTG_0200_GIA_ICE-6G_D_VM5a_0001.gz&quot;</td></tr><tr><td><code>GIAEpoch</code></td><td>1 x 1</td><td>double</td><td>2011</td></tr><tr><td><code>Filter</code></td><td>1 x 1</td><td>string</td><td>&quot;gauss445&quot;</td></tr><tr><td><code>GridStep</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>SpanEnd</code></td><td>1 x 1</td><td>double</td><td>[]</td></tr><tr><td><code>GADFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>GAAFolder</code></td><td>1 x 1</td><td>string</td><td>&quot;&quot;</td></tr><tr><td><code>SeparateCirculation</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>CoastBufferKm</code></td><td>1 x 1</td><td>double</td><td>300</td></tr><tr><td><code>RemoveLandLeakage</code></td><td>1 x 1</td><td>logical</td><td>false</td></tr><tr><td><code>LandLeakIter</code></td><td>1 x 1</td><td>double</td><td>1</td></tr><tr><td><code>Quiet</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>out</code></td><td>(1 x 1) struct with fields</td></tr>
 <tr><td><code>epochs</code></td><td>(T x 1) decimal years oceanMean (T x 1) area-weighted ocean-mean EWH [cm]</td></tr>
@@ -1022,6 +1089,22 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>res</code></td><td>(nlat x nlon) double  local resolution [km] of the filter</td></tr>
 </table>
+</div>
+<div class="entry" id="shLowLevel.rtsSmoother">
+<h3><code>shLowLevel.rtsSmoother(filt)</code></h3>
+<p class="h1line">Rauch-Tung-Striebel backward pass for kalmanFilter output.</p>
+<p>SMO = shLowLevel.rtsSmoother(FILT) runs the fixed-interval RTS smoother (Kurtenbach 2012, Sec. 3.3.3) over the forward-filter result of shLowLevel.kalmanFilter: G_t  = Pf_t B&#x27; Pp_{t+1}^-1 xs_t = xf_t + G_t (xs_{t+1} - xp_{t+1}) Ps_t = Pf_t + G_t (Ps_{t+1} - Pp_{t+1}) G_t&#x27; so the estimate at epoch t uses ALL observations, past and future. With the stationary initialization of kalmanFilter this reproduces the joint least-squares adjustment over all epochs exactly (Kvas 2019, Sec. 2.3; unit-tested to machine precision), i.e. the forward-backward pass is an exact solver for the block-tridiagonal joint normal-equation system - never build that system explicitly.</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>filt</code></td><td>1 x 1</td><td>struct</td><td>required</td></tr></table>
+<b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
+<tr><td><code>smo</code></td><td>(1 x 1) struct  smoothed results, physical block only: xs (P x T double) smoothed states, sig (P x T double) formal 1-sigma per coefficient (sqrt of the smoothed covariance diagonal), PsLast (P x P double) full smoothed covariance of the LAST epoch (equals the filtered one there), P (1 x 1), order (1 x 1)</td></tr>
+</table>
+<b>Example</b><pre>    filt = shLowLevel.kalmanFilter(model, obs);   % StoreCov=&quot;full&quot;
+    smo  = shLowLevel.rtsSmoother(filt);
+    plot(ep, smo.xs(1, :))                        % first coefficient
+
+  Reference: Rauch, Tung &amp; Striebel (1965); Kurtenbach, DGK C-683
+  (2012), Sec. 3.3.3; Kvas, TU Graz PhD thesis (2019), Sec. 2.3.
+  Numerics pre-validated in Python (tools/dev/validate_kalman.py).</pre>
 </div>
 <div class="entry" id="shLowLevel.safeMove">
 <h3><code>shLowLevel.safeMove(src, dst, opts)</code></h3>
@@ -2146,4 +2229,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 13-Aug-2026 (v3.15.1). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 17-Aug-2026 (v3.17.0). Generated by tools - do not edit.</p></body></html>

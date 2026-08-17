@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Kalman/VAR module</title>
+<style>
+body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #222; }
+.content { max-width: 900px; margin: 0 auto; padding: 24px 32px 60px 32px; }
+h1 { font-size: 24px; border-bottom: 1px solid #d6d6d6; padding-bottom: 8px; color: #1a1a1a; }
+h2 { font-size: 16px; margin-top: 28px; color: #0b5394; border-bottom: 1px solid #eaeaea; padding-bottom: 4px; }
+h3 { font-size: 13px; margin-top: 18px; color: #333; }
+p, li { font-size: 13px; line-height: 1.55; }
+code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; }
+pre { background: #f7f7f7; border: 1px solid #e2e2e2; border-radius: 4px; padding: 10px 14px; overflow-x: auto; }
+code.inline { background: #f2f2f2; padding: 1px 4px; border-radius: 3px; }
+table { border-collapse: collapse; margin: 10px 0 18px 0; width: 100%; }
+th, td { border: 1px solid #ddd; padding: 6px 10px; font-size: 12.5px; text-align: left; vertical-align: top; }
+th { background: #f5f7fa; }
+.tag { display:inline-block; background:#eef3fb; color:#0b5394; border-radius:3px; padding:1px 7px; font-size:11px; margin-right:6px;}
+.seealso a { margin-right: 14px; }
+.note { background: #fff8e6; border-left: 3px solid #e0b400; padding: 8px 12px; font-size: 12.5px; margin: 12px 0; }
+</style>
+</head>
+<body><div class="content">
+<span class="tag">Package function</span><span class="tag">v3.17.0</span>
+<h1>Kalman/VAR module &mdash; temporally smoothed SH series</h1>
+<p>The classic chains treat every epoch independently: even the tvANS Wiener filter uses a
+<em>spatial</em> signal covariance only. The Kalman/VAR module adds the <em>temporal</em> prior of
+Kurtenbach (2012) and Kvas (2019): a stochastic process model estimated from geophysical model
+output couples adjacent epochs, so that sparse or noisy per-epoch information (daily solutions,
+normal equations, gappy series) is stabilized by what the gravity field did the day before.</p>
+
+<pre>[ts, rep] = shLowLevel.kalmanChain(obsIn, ModelSeries=tsm, Name=Value)</pre>
+
+<h2>The idea in four equations</h2>
+<p>The state <code class="inline">x_t</code> is the shIndex-ordered coefficient vector of the
+short-term residual field. A geophysical model series (AOD1B/GAX, ESA ESM, hydrology), reduced by
+its climatology, is taken as a realization of the same process; its empirical covariances give the
+VAR(1) model (Kurtenbach eqs. 3.84&ndash;3.88):</p>
+<pre>B = &Sigma;(1) &Sigma;(0)&#8315;&sup1;          Q = &Sigma;(0) &minus; B &Sigma;(0) B&#8217;
+x_t = B x_{t&minus;1} + w,  w ~ N(0, Q)</pre>
+<p>Observations are fused epoch by epoch by the Kalman filter, followed by the RTS smoother so
+every estimate uses past <em>and</em> future data. Higher orders VAR(p) (Kvas Sec. 2.4) are
+estimated by Yule&ndash;Walker and run in companion form.</p>
+
+<div class="note"><b>The exactness guarantee.</b> With the stationary initialization
+<code class="inline">x&#8320;&#8315; = 0, P&#8320;&#8315; = &Sigma;(0)</code> (Kvas eqs.
+2.90&ndash;2.92), filter + smoother reproduce the joint least-squares adjustment over <em>all</em>
+epochs to machine precision &mdash; unit-tested. The recursion is an exact solver for the
+block-tridiagonal joint system, never an approximation to it.</div>
+
+<h2>The chain stages</h2>
+<table>
+<tr><th>#</th><th>Stage</th><th>Function</th></tr>
+<tr><td>1</td><td>reduce the model series by its climatology</td><td><code class="inline">shSeries.climatology</code></td></tr>
+<tr><td>2</td><td>estimate the VAR(p) process model</td><td><code class="inline">shLowLevel.estimateVAR</code></td></tr>
+<tr><td>3</td><td>build per-epoch observation records (solution / NEQ / gap)</td><td>inside <code class="inline">kalmanChain</code></td></tr>
+<tr><td>4</td><td>forward filter, stationary initialization</td><td><code class="inline">shLowLevel.kalmanFilter</code></td></tr>
+<tr><td>5</td><td>RTS smoother</td><td><code class="inline">shLowLevel.rtsSmoother</code></td></tr>
+<tr><td>6</td><td>repack to shSeries with formal sigmas</td><td>inside <code class="inline">kalmanChain</code></td></tr>
+</table>
+
+<h2>Two observation modes</h2>
+<table>
+<tr><th>Mode</th><th>Input</th><th>Update</th></tr>
+<tr><td>solution</td><td>an <code class="inline">shSeries</code> with formal sigmas (or explicit
+<code class="inline">NoiseCov</code>)</td><td>l = x + v, gain form</td></tr>
+<tr><td>neq</td><td>a folder of SINEX files with
+<code class="inline">NORMAL_EQUATION_MATRIX</code> blocks
+(<a href="fetchITSG.html">fetchITSGSINEX</a>)</td><td>N x = b, information form &mdash; no
+covariance inversion of the data needed</td></tr>
+</table>
+<div class="note"><b>NEQ backgrounds.</b> Normal equations refer to the provider&rsquo;s
+background models. The chain takes them as-is and returns a <em>residual</em> series; restoring
+GAX / static field is your responsibility, exactly as in the rest of the toolbox.</div>
+
+<h2>Typical calls</h2>
+<pre>% smooth a noisy daily-type series with a GAX process prior
+tsm = shSeries.fromFolder(gaxFolder).truncate(40);
+[ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries=tsm, Order=1);
+
+% bridge missing days: prediction-only epochs on a daily grid
+grid = (2017 + (0:364)'/365.25);
+[ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries=tsm, Epochs=grid);
+plot(rep.epochs, rep.meanContribution)   % data share per epoch (Kurtenbach 3.3.2)</pre>
+
+<h2>What to watch</h2>
+<ul>
+<li><b>Memory.</b> The smoother stores two full (pP&times;pP) covariances per epoch: n40, p=1,
+T=365 &asymp; 16&nbsp;GB. Run in windows, lower nmax, or set
+<code class="inline">Smoother=false</code> for one-pass NRT-style runs;
+<code class="inline">rep.memGB</code> reports the footprint.</li>
+<li><b>Stationarity.</b> <code class="inline">estimateVAR</code> warns when the companion spectral
+radius reaches 1; an unstable model diverges across long gaps. Shrinkage
+(<code class="inline">Shrink</code>) or covariance conditioning
+(<code class="inline">CondFun</code>, the land/ocean masking and distance taper of Kvas Sec. 2.4)
+restore stability.</li>
+<li><b>Contribution.</b> <code class="inline">rep.meanContribution</code> is the average share of
+the estimate coming from the <em>data</em> rather than the process model &mdash; near 0 the
+output is the prior wearing your product name.</li>
+</ul>
+
+<h2>References</h2>
+<p>Kurtenbach, E. (2012): Entwicklung eines Kalman-Filters zur Bestimmung kurzzeitiger
+Variationen des Erdschwerefeldes aus Daten der Satellitenmission GRACE. DGK Reihe C, Nr. 683.<br>
+Kvas, A. (2019): Estimation of high-frequency mass variations from satellite data in near
+real-time. PhD thesis, TU Graz.<br>
+Kurtenbach, E., Eicker, A., Mayer-G&uuml;rr, T. et al. (2012): Improved daily GRACE gravity field
+solutions using a Kalman smoother. J. Geodyn. 59&ndash;60, 39&ndash;48.</p>
+
+<h2 class="seealso">See also</h2>
+<p class="seealso"><a href="standardChain.html">standardChain</a>
+<a href="tvANS.html">tvANS filter</a>
+<a href="fetchITSG.html">fetchITSGSINEX / ITSG daily solutions</a>
+<a href="apiReference.html">API reference</a></p>
+</div></body></html>

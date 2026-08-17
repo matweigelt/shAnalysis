@@ -31,6 +31,7 @@
 
   <tocitem target="standardChain.html">Processing chains
     <tocitem target="standardChain.html">standardChain (the canonical chain)</tocitem>
+    <tocitem target="kalman.html">kalmanChain (Kalman/VAR temporal smoothing)</tocitem>
     <tocitem target="designFilter.html">designFilter (custom anisotropic filters)</tocitem>
   </tocitem>
 

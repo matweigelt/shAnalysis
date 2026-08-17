@@ -2733,3 +2733,190 @@ idx = shLowLevel.shIndex(10, MinDegree = 0);
 verifyWarning(testCase, @() shLowLevel.basinKernel(idx, ...
     [10 10; 10 10; 10 10]), 'shLowLevel:basinKernel:zeroArea');
 end
+
+% ---------------------------------------------------------- kalman (v3.17)
+function testVAR1MatchesKurtenbachClosedForm(testCase)
+%TESTVAR1MATCHESKURTENBACHCLOSEDFORM estimateVAR(Order=1) must equal the
+%   closed form of Kurtenbach (2012) eqs. (3.84)-(3.85):
+%   B = Sigma(1) Sigma(0)^-1, Q = Sigma(0) - B Sigma(0) B'.
+rng(42);
+P = 6; T = 4000;
+A = randn(P); A = 0.9 * A / max(abs(eig(A)));
+X = zeros(P, T + 500);
+for t = 2:T + 500
+    X(:, t) = A * X(:, t-1) + sqrt(0.2) * randn(P, 1);
+end
+X = X(:, 501:end);
+model = shLowLevel.estimateVAR(X, Order = 1);
+S0 = (X * X.') / T;
+S1 = (X(:, 2:end) * X(:, 1:end-1).') / (T - 1);
+Bref = S1 / S0;
+Qref = S0 - Bref * S0 * Bref.';
+verifyEqual(testCase, model.Phi{1}, Bref, AbsTol = 1e-12);
+verifyEqual(testCase, model.Q, (Qref + Qref.') / 2, AbsTol = 1e-12);
+verifyTrue(testCase, model.specRadius < 1);
+ev = eig(model.Q);
+verifyTrue(testCase, min(ev) > -1e-10 * max(ev));   % PSD
+end
+
+function testKalmanRTSEqualsBatchAdjustment(testCase)
+%TESTKALMANRTSEQUALSBATCHADJUSTMENT Kvas (2019) Sec. 2.3: with the
+%   stationary initialization, forward filter + RTS smoother is the
+%   exact solution of the joint block-tridiagonal least-squares system
+%   over all epochs - including a data gap.
+rng(7);
+P = 5; T = 10;
+[model, ~] = localStableModel(P);
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+for t = 1:T
+    if t ~= 5                                        % epoch 5 is a gap
+        obs(t).l = randn(P, 1);
+        obs(t).R = diag(0.3 + rand(P, 1));
+    end
+end
+filt = shLowLevel.kalmanFilter(model, obs);
+smo = shLowLevel.rtsSmoother(filt);
+xb = localBatchLSA(model.Phi{1}, model.Q, model.Sigma0, obs);
+verifyEqual(testCase, smo.xs, xb, ...
+    AbsTol = 1e-9 * max(abs(xb(:))));
+end
+
+function testNeqModeEqualsSolutionMode(testCase)
+%TESTNEQMODEEQUALSSOLUTIONMODE the information-form update with
+%   N = R^-1, b = N l must reproduce the solution-mode update exactly
+%   (states and covariances).
+rng(11);
+P = 5; T = 6;
+[model, ~] = localStableModel(P);
+obsS = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+obsN = obsS;
+for t = 1:T
+    l = randn(P, 1); R = diag(0.3 + rand(P, 1));
+    obsS(t).l = l; obsS(t).R = R;
+    N = inv(R);
+    obsN(t).N = N; obsN(t).b = N * l;
+end
+fS = shLowLevel.kalmanFilter(model, obsS);
+fN = shLowLevel.kalmanFilter(model, obsN);
+verifyEqual(testCase, fN.xf, fS.xf, AbsTol = 1e-9);
+verifyEqual(testCase, fN.Pf, fS.Pf, AbsTol = 1e-9);
+end
+
+function testKalmanWienerLimit(testCase)
+%TESTKALMANWIENERLIMIT with Phi = 0 (white process, Q = Sigma0) a single
+%   update is the per-epoch Wiener filter Sigma0 (Sigma0 + R)^-1 l -
+%   the temporal generalization claim vs. tvANSFilter, made exact.
+rng(3);
+P = 5;
+[~, S0] = localStableModel(P);
+model = struct('Phi', {{zeros(P)}}, 'Q', S0, 'Sigma0', S0, ...
+    'order', 1, 'P', P, 'specRadius', 0);
+l = randn(P, 1); R = diag(0.3 + rand(P, 1));
+obs = struct('l', l, 'R', R, 'N', [], 'b', []);
+filt = shLowLevel.kalmanFilter(model, obs);
+verifyEqual(testCase, filt.xf(:, 1), (S0 / (S0 + R)) * l, AbsTol = 1e-10);
+end
+
+function testKalmanGapRelaxesToPrior(testCase)
+%TESTKALMANGAPRELAXESTOPRIOR over a long gap the filtered covariance
+%   must relax to the stationary prior Sigma(0) and the state to zero -
+%   the graceful degradation Kurtenbach designed the process model for.
+rng(5);
+P = 4;
+[model, ~] = localStableModel(P);
+T = 80;
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+obs(1).l = randn(P, 1); obs(1).R = 0.1 * eye(P);
+filt = shLowLevel.kalmanFilter(model, obs);
+Sst = localStationaryCov(model);
+relEnd = max(abs(filt.Pf(1:P, 1:P, T) - Sst), [], 'all') / max(abs(Sst), [], 'all');
+verifyTrue(testCase, relEnd < 1e-2);
+verifyTrue(testCase, max(abs(filt.xf(:, T))) < 0.05 * max(abs(filt.xf(:, 1))));
+verifyEqual(testCase, nnz(filt.gap), T - 1);
+end
+
+function testKalmanChainSolutionRoundtrip(testCase)
+%TESTKALMANCHAINSOLUTIONROUNDTRIP end-to-end: a VAR(1) truth packed into
+%   shSeries, noisy observations with formal sigmas -> kalmanChain must
+%   beat the raw observations against the truth and preserve epochs.
+rng(21);
+nmax = 6;
+idx = shLowLevel.shIndex(nmax);
+P = idx.P;
+T = 60;
+ep = 2005 + (0:T-1).' / 12;
+A = 0.85 * eye(P) + 0.02 * randn(P);  A = 0.9 * A / max(abs(eig(A)));
+Xt = zeros(P, T + 200);
+for t = 2:T + 200
+    Xt(:, t) = A * Xt(:, t-1) + 1e-10 * randn(P, 1);
+end
+Xt = Xt(:, 201:end);
+L1 = nmax + 1;
+[Cs, Ss, sC, sS] = deal(zeros(L1, L1, T));
+sigObs = 2e-10;
+CsO = Cs; SsO = Ss;
+for t = 1:T
+    [Cs(:,:,t), Ss(:,:,t)] = shLowLevel.csFromVec(Xt(:, t), idx);
+    [CsO(:,:,t), SsO(:,:,t)] = shLowLevel.csFromVec( ...
+        Xt(:, t) + sigObs * randn(P, 1), idx);
+    [sC(:,:,t), sS(:,:,t)] = shLowLevel.csFromVec( ...
+        sigObs * ones(P, 1), idx);
+end
+tsModel = shSeries(Cs, Ss = Ss, Epochs = ep);      % truth as model series
+tsObs = shSeries(CsO, Ss = SsO, Epochs = ep, SigmaCs = sC, SigmaSs = sS);
+[ts, rep] = shLowLevel.kalmanChain(tsObs, ModelSeries = tsModel, ...
+    Order = 1, Climatology = false, Shrink = 1e-6);
+verifyEqual(testCase, ts.epochs, ep, AbsTol = 1e-12);
+verifyEqual(testCase, rep.nGaps, 0);
+eF = 0; eO = 0;
+for t = 1:T
+    g = ts.at(t);
+    eF = eF + sum((shLowLevel.vecFromCS(g.C, g.S, idx) - Xt(:, t)).^2);
+    eO = eO + sum((shLowLevel.vecFromCS(CsO(:,:,t), SsO(:,:,t), idx) - Xt(:, t)).^2);
+end
+verifyTrue(testCase, eF < 0.9 * eO);               % filter must help
+verifyTrue(testCase, all(isfinite(rep.meanContribution)));
+end
+
+% ------------------------------------------------- kalman local helpers
+function [model, S0] = localStableModel(P)
+A = randn(P); A = 0.8 * A / max(abs(eig(A)));
+Q = 0.2 * eye(P) + 0.05 * ones(P);                 % SPD
+S0 = Q;
+for k = 1:500, S0 = A * S0 * A.' + Q; end          % Lyapunov fixed point
+S0 = (S0 + S0.') / 2;
+model = struct('Phi', {{A}}, 'Q', Q, 'Sigma0', S0, ...
+    'order', 1, 'P', P, 'specRadius', max(abs(eig(A))));
+end
+
+function Sst = localStationaryCov(model)
+Sst = model.Q;
+for k = 1:800
+    Sst = model.Phi{1} * Sst * model.Phi{1}.' + model.Q;
+end
+Sst = (Sst + Sst.') / 2;
+end
+
+function xb = localBatchLSA(B, Q, S0, obs)
+%LOCALBATCHLSA joint least squares over all epochs (Kvas Sec. 2.3):
+%   pseudo-obs x_1 ~ N(0,S0), x_t - B x_{t-1} ~ N(0,Q), plus the data.
+P = size(B, 1); T = numel(obs);
+N = zeros(T * P); rhs = zeros(T * P, 1);
+iS0 = inv(S0); iQ = inv(Q);
+N(1:P, 1:P) = iS0;
+for t = 2:T
+    i0 = (t-2) * P; i1 = (t-1) * P;
+    N(i1+1:i1+P, i1+1:i1+P) = N(i1+1:i1+P, i1+1:i1+P) + iQ;
+    N(i0+1:i0+P, i0+1:i0+P) = N(i0+1:i0+P, i0+1:i0+P) + B.' * iQ * B;
+    N(i0+1:i0+P, i1+1:i1+P) = N(i0+1:i0+P, i1+1:i1+P) - B.' * iQ;
+    N(i1+1:i1+P, i0+1:i0+P) = N(i1+1:i1+P, i0+1:i0+P) - iQ * B;
+end
+for t = 1:T
+    if isempty(obs(t).l), continue; end
+    i0 = (t-1) * P;
+    iR = inv(obs(t).R);
+    N(i0+1:i0+P, i0+1:i0+P) = N(i0+1:i0+P, i0+1:i0+P) + iR;
+    rhs(i0+1:i0+P) = rhs(i0+1:i0+P) + iR * obs(t).l;
+end
+xb = reshape(N \ rhs, P, T);
+end
