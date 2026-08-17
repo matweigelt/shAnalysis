@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.24.0] - 2026-08-18 - fixed-lag smoother
+
+rtsSmoother gains Lag=L: bounded-latency smoothing for NRT-style daily
+production (definition-true windowed backward recursion, O(T*L)).
+Lag=0 == filter, Lag >= T-1 == full RTS to rounding; identical through
+memory and matfile stores (all unit-tested); error-vs-lag decay
+Python-measured. Completes this session's Kalman-module program:
+QC (3.21), Joseph update (3.22), multi-center (3.23), fixed lag (3.24).
+
 ## [3.23.0] - 2026-08-18 - multi-center Kalman chain
 
 kalmanChain neq mode accepts several SINEX folders (one per center),

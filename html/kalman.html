@@ -121,6 +121,15 @@ the estimate coming from the <em>data</em> rather than the process model &mdash;
 output is the prior wearing your product name.</li>
 </ul>
 
+<h2>Near-real-time use (v3.24)</h2>
+<p><code class="inline">rtsSmoother(filt, Lag=L)</code> bounds the latency: the estimate at day t
+waits only L further days - Kurtenbach's production variant. <code class="inline">Lag=0</code> is
+the pure filter, <code class="inline">Lag=Inf</code> the full smoother; combined with
+<code class="inline">QC="reject"</code> and the matfile store this is the complete NRT-style
+chain. The resulting daily <code class="inline">shSeries</code> feeds
+<code class="inline">shLowLevel.hydroExtremeIndex</code> directly (Stage-2 daily monitoring),
+closing the loop from SINEX to flood indicator.</p>
+
 <h2>References</h2>
 <p>Kurtenbach, E. (2012): Entwicklung eines Kalman-Filters zur Bestimmung kurzzeitiger
 Variationen des Erdschwerefeldes aus Daten der Satellitenmission GRACE. DGK Reihe C, Nr. 683.<br>

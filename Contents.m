@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.23.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.24.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,17 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.24.0 (fixed-lag smoother)
+%   - rtsSmoother Lag=L: the estimate at epoch t uses observations up
+%     to t+L only - the near-real-time production variant (Kurtenbach's
+%     practical choice). Definition-true windowed backward recursion,
+%     cost O(T*L) against O(T) for the full pass; Lag=0 returns the
+%     filter, Lag >= T-1 the full smoother to rounding (unit-tested,
+%     also through the matfile store); the error decays with L at the
+%     process-memory rate (Python: validate_kalman_qc.py L1/L2).
+%     Closes the NRT loop: daily solutions with bounded latency feed
+%     hydroExtremeIndex directly (any shSeries does).
 %
 % New in v3.23.0 (multi-center Kalman: neqCombine inside kalmanChain)
 %   - kalmanChain accepts a string ARRAY of SINEX folders (one per

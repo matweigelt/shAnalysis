@@ -3301,3 +3301,37 @@ end
 lines(end+1) = "-SOLUTION/NORMAL_EQUATION_MATRIX U";
 writelines(lines, fn);
 end
+
+% ------------------------------------------- fixed-lag smoother (v3.24)
+function testRTSFixedLagConvergesToFull(testCase)
+%TESTRTSFIXEDLAGCONVERGESTOFULL Lag >= T-1 must reproduce the full RTS
+%   to rounding, and the error against it must decrease monotonically
+%   over lags 0 -> 3 -> 10 (Python checks L1/L2 through the MATLAB
+%   path). Also exercised through the matfile store: lag results must
+%   be independent of where the covariances live.
+rng(59);
+P = 5; T = 20;
+[model, ~] = localStableModel(P);
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+for t = 1:T
+    obs(t).l = randn(P, 1);
+    obs(t).R = diag(0.3 + rand(P, 1));
+end
+filt = shLowLevel.kalmanFilter(model, obs);
+full = shLowLevel.rtsSmoother(filt);
+lagFull = shLowLevel.rtsSmoother(filt, Lag = T - 1);
+verifyEqual(testCase, lagFull.xs, full.xs, AbsTol = 1e-10);
+verifyEqual(testCase, lagFull.sig, full.sig, AbsTol = 1e-10);
+e = zeros(1, 3); lags = [0, 3, 10];
+for i = 1:3
+    sl = shLowLevel.rtsSmoother(filt, Lag = lags(i));
+    e(i) = norm(sl.xs - full.xs, 'fro');
+end
+verifyTrue(testCase, e(2) < e(1) && e(3) < e(2));
+% matfile store gives identical lag results
+fFil = shLowLevel.kalmanFilter(model, obs, StoreCov = "matfile");
+cleanup = onCleanup(@() delete(fFil.covFile));
+sFil = shLowLevel.rtsSmoother(fFil, Lag = 3);
+sMem = shLowLevel.rtsSmoother(filt, Lag = 3);
+verifyEqual(testCase, sFil.xs, sMem.xs);
+end
