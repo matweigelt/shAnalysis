@@ -16,8 +16,12 @@ function smo = rtsSmoother(filt)
 %
 %   Inputs
 %     filt  (1 x 1) struct  from shLowLevel.kalmanFilter with
-%           StoreCov = "full" (the smoother needs the full predicted
-%           and filtered covariances; "diag" runs error loudly)
+%           StoreCov = "full" (covariances in RAM) or "matfile"
+%           (covariances read epoch-by-epoch from FILT.covFile: RAM
+%           stays flat, results identical to the last bit,
+%           unit-tested; the file is only READ - deleting it stays
+%           the caller's responsibility). "diag" errors loudly: the
+%           backward gain needs the full predicted covariances.
 %
 %   Outputs
 %     smo  (1 x 1) struct  smoothed results, physical block only:
@@ -43,10 +47,19 @@ arguments
     filt (1,1) struct
 end
 
-if filt.storeCov ~= "full"
+useFile = filt.storeCov == "matfile";
+if filt.storeCov ~= "full" && ~useFile
     error('shLowLevel:rtsSmoother:needFullCov', ...
-        ['rtsSmoother needs kalmanFilter(..., StoreCov="full"); the ' ...
-         'backward gain uses the full predicted covariances.']);
+        ['rtsSmoother needs kalmanFilter(..., StoreCov="full") or ' ...
+         '"matfile"; the backward gain uses the full predicted ' ...
+         'covariances - "diag" cannot provide them.']);
+end
+if useFile
+    if ~isfile(filt.covFile)
+        error('shLowLevel:rtsSmoother:covFileMissing', ...
+            'Covariance file %s not found - was it deleted?', filt.covFile);
+    end
+    mf = matfile(filt.covFile);
 end
 
 B = filt.B;
@@ -55,14 +68,24 @@ Pc = size(filt.xf, 1);
 T = size(filt.xf, 2);
 
 xs = filt.xf;                          % companion space, overwritten backwards
-Ps = filt.Pf(:, :, T);
+if useFile
+    Ps = mf.Pf(:, :, T);
+else
+    Ps = filt.Pf(:, :, T);
+end
+PfLast = Ps(1:P, 1:P);
 sig = zeros(P, T);
 sig(:, T) = sqrt(max(diag(Ps(1:P, 1:P)), 0));
 xsNext = xs(:, T);
 PsNext = Ps;
 for t = T-1:-1:1
-    PfT = filt.Pf(:, :, t);
-    PpN = filt.Pp(:, :, t+1);
+    if useFile
+        PfT = mf.Pf(:, :, t);
+        PpN = mf.Pp(:, :, t+1);
+    else
+        PfT = filt.Pf(:, :, t);
+        PpN = filt.Pp(:, :, t+1);
+    end
     G = (PfT * B.') / PpN;             % backward gain, no explicit inverse
     xsT = filt.xf(:, t) + G * (xsNext - filt.xp(:, t+1));
     PsT = PfT + G * (PsNext - PpN) * G.';
@@ -73,5 +96,5 @@ for t = T-1:-1:1
 end
 
 smo = struct('xs', xs(1:P, :), 'sig', sig, ...
-    'PsLast', filt.Pf(1:P, 1:P, T), 'P', P, 'order', filt.order);
+    'PsLast', PfLast, 'P', P, 'order', filt.order);
 end

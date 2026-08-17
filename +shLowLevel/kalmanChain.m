@@ -62,8 +62,15 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %     Climatology (true)  solution mode: reduce OBSIN by its own
 %            climatology before filtering and restore it afterwards
 %     Smoother (true)   run the RTS pass (false: filter only, e.g. for
-%            NRT-style one-way runs a la Kvas Ch. 3; then StoreCov of
-%            the internal filter is "diag" and memory stays flat)
+%            NRT-style one-way runs a la Kvas Ch. 3; then the internal
+%            filter stores only diagonals and memory stays flat)
+%     StoreCov ("auto") where the filter keeps the full covariances the
+%            smoother needs: "auto" = "full" (RAM) with the smoother,
+%            "diag" without; "matfile" streams them through a v7.3 MAT
+%            on disk instead - RAM stays flat for long daily runs,
+%            results identical to the last bit. The file is deleted
+%            after smoothing (it is chain-internal); REP.memGB then
+%            reports the DISK footprint
 %     Pattern ("*.snx*")  neq mode: file pattern inside the folder
 %
 %   Outputs
@@ -101,6 +108,7 @@ arguments
     opts.NoiseCov double = []
     opts.Climatology (1,1) logical = true
     opts.Smoother (1,1) logical = true
+    opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["auto","full","matfile"])} = "auto"
     opts.Pattern (1,1) string = "*.snx*"
 end
 
@@ -177,13 +185,23 @@ for t = 1:T
 end
 
 % ---- 4./5. filter and smooth
-store = "full"; if ~opts.Smoother, store = "diag"; end
+if opts.StoreCov == "auto"
+    store = "full"; if ~opts.Smoother, store = "diag"; end
+else
+    store = opts.StoreCov;
+end
 filt = shLowLevel.kalmanFilter(model, obs, StoreCov=store);
 if opts.Smoother
     smo = shLowLevel.rtsSmoother(filt);
     xs = smo.xs; sig = smo.sig;
+    if store == "matfile" && isfile(filt.covFile)
+        delete(filt.covFile);                  % chain-internal temp
+    end
 else
     xs = filt.xf(1:P, :); sig = sqrt(max(filt.dPf(1:P, :), 0));
+    if store == "matfile" && isfile(filt.covFile)
+        delete(filt.covFile);                  % never read: no leak
+    end
 end
 
 % ---- 6. repack (restore the observation climatology on the grid first)

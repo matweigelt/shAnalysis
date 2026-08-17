@@ -31,11 +31,18 @@ function filt = kalmanFilter(model, obs, opts)
 %            double) for neq mode; leave all fields [] for a gap
 %
 %   Options
-%     StoreCov ("full")  "full" keeps the predicted and filtered
-%            covariances (needed by rtsSmoother; memory: 2 T (pP)^2
-%            doubles - n40, p=1, T=365: ~16 GB; keep T or nmax small,
-%            or filter in windows) | "diag" keeps only diagonals
-%            (filter-only runs, e.g. NRT one-pass a la Kvas Ch. 3)
+%     StoreCov ("full")  where the predicted and filtered covariances
+%            live (rtsSmoother needs them in full):
+%            "full"    in RAM: 2 T (pP)^2 doubles - n40, p=1, T=365:
+%                      ~16 GB; keep T or nmax small
+%            "matfile" on disk (v7.3 MAT, partial I/O): RAM stays
+%                      flat at one (pP)^2 working copy; the file path
+%                      is returned in FILT.covFile and is the
+%                      CALLER'S to delete - rtsSmoother only reads it.
+%                      Same results as "full" to the last bit
+%                      (unit-tested); slower by the disk
+%            "diag"    only diagonals (filter-only runs, e.g. NRT
+%                      one-pass a la Kvas Ch. 3; smoother refuses)
 %     Contribution (true)  record diag(K) (solution) / diag(P+ N)
 %            (neq): the share of the estimate coming from the DATA
 %            rather than the process model - Kurtenbach Sec. 3.3.2
@@ -44,7 +51,10 @@ function filt = kalmanFilter(model, obs, opts)
 %     filt  (1 x 1) struct  companion-space filter results:
 %           xf, xp (pP x T double) filtered / predicted states,
 %           Pf, Pp (pP x pP x T double, StoreCov="full") or
-%           dPf, dPp (pP x T double, StoreCov="diag") covariances,
+%           dPf, dPp (pP x T double, StoreCov="diag"|"matfile")
+%           covariances, covFile (1 x 1) string path of the v7.3 MAT
+%           holding Pf/Pp (StoreCov="matfile" only, else "" - delete
+%           it when done),
 %           contrib (P x T double) data share per coefficient (NaN in
 %           gaps), gap (1 x T logical), P (1 x 1) block size, order
 %           (1 x 1), storeCov (1 x 1) string. The physical state is
@@ -68,7 +78,7 @@ function filt = kalmanFilter(model, obs, opts)
 arguments
     model (1,1) struct
     obs (1,:) struct
-    opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["full","diag"])} = "full"
+    opts.StoreCov (1,1) string {mustBeMember(opts.StoreCov, ["full","diag","matfile"])} = "full"
     opts.Contribution (1,1) logical = true
 end
 
@@ -90,9 +100,18 @@ S0 = kron(eye(p), model.Sigma0);        % block-diagonal stationary init
 % companion stationary covariance - conservative, converges in few steps)
 
 full = opts.StoreCov == "full";
+useFile = opts.StoreCov == "matfile";
 xf = zeros(Pc, T); xp = zeros(Pc, T);
+covFile = "";
 if full
     Pf = zeros(Pc, Pc, T); Pp = zeros(Pc, Pc, T);
+elseif useFile
+    covFile = string(tempname) + ".mat";
+    zz = 0; save(covFile, "zz", "-v7.3"); %#ok<USENS>
+    mf = matfile(covFile, Writable = true);
+    mf.Pf(Pc, Pc, T) = 0;                     % preallocate datasets
+    mf.Pp(Pc, Pc, T) = 0;
+    dPf = zeros(Pc, T); dPp = zeros(Pc, T);   % diagonals stay in RAM
 else
     dPf = zeros(Pc, T); dPp = zeros(Pc, T);
 end
@@ -107,7 +126,12 @@ for t = 1:T
     Pm = B * PPrev * B.' + Q;
     Pm = (Pm + Pm.') / 2;
     xp(:, t) = xm;
-    if full, Pp(:, :, t) = Pm; else, dPp(:, t) = diag(Pm); end
+    if full
+        Pp(:, :, t) = Pm;
+    else
+        dPp(:, t) = diag(Pm);
+        if useFile, mf.Pp(:, :, t) = Pm; end
+    end
 
     % ---- update
     o = obs(t);
@@ -152,12 +176,18 @@ for t = 1:T
     end
     PPl = (PPl + PPl.') / 2;
     xf(:, t) = xPl;
-    if full, Pf(:, :, t) = PPl; else, dPf(:, t) = diag(PPl); end
+    if full
+        Pf(:, :, t) = PPl;
+    else
+        dPf(:, t) = diag(PPl);
+        if useFile, mf.Pf(:, :, t) = PPl; end
+    end
     xPrev = xPl; PPrev = PPl;
 end
 
 filt = struct('xf', xf, 'xp', xp, 'contrib', contrib, 'gap', gap, ...
-    'P', P, 'order', p, 'storeCov', opts.StoreCov, 'B', B);
+    'P', P, 'order', p, 'storeCov', opts.StoreCov, 'B', B, ...
+    'covFile', covFile);
 if full
     filt.Pf = Pf; filt.Pp = Pp;
 else

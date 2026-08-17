@@ -2980,3 +2980,47 @@ model = shLowLevel.estimateVAR(X, Order = 1, CondFun = cf);
 verifyTrue(testCase, all(isfinite(model.Phi{1}(:))));
 verifyTrue(testCase, all(isfinite(model.Q(:))));
 end
+
+% -------------------------------------------- matfile cov store (v3.19)
+function testKalmanMatfileEqualsMemory(testCase)
+%TESTKALMANMATFILEEQUALSMEMORY StoreCov="matfile" must reproduce the
+%   in-RAM results to the last bit through filter AND smoother - the
+%   store is plumbing, never numerics. The covariance file must exist
+%   at the reported path after the filter and remain (read-only
+%   contract) after the smoother; cleanup is registered before use.
+rng(23);
+P = 5; T = 8;
+[model, ~] = localStableModel(P);
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+for t = 1:T
+    if t ~= 3                                        % keep a gap in play
+        obs(t).l = randn(P, 1);
+        obs(t).R = diag(0.3 + rand(P, 1));
+    end
+end
+fMem = shLowLevel.kalmanFilter(model, obs, StoreCov = "full");
+fFil = shLowLevel.kalmanFilter(model, obs, StoreCov = "matfile");
+cleanup = onCleanup(@() delete(fFil.covFile));       % BEFORE any verify
+verifyTrue(testCase, isfile(fFil.covFile));
+verifyEqual(testCase, fFil.xf, fMem.xf);             % bit-identical
+verifyEqual(testCase, fFil.dPf, ...
+    squeeze(sum(fMem.Pf .* repmat(eye(P), 1, 1, T), 2)));
+sMem = shLowLevel.rtsSmoother(fMem);
+sFil = shLowLevel.rtsSmoother(fFil);
+verifyEqual(testCase, sFil.xs, sMem.xs);
+verifyEqual(testCase, sFil.sig, sMem.sig);
+verifyEqual(testCase, sFil.PsLast, sMem.PsLast);
+verifyTrue(testCase, isfile(fFil.covFile));          % smoother only reads
+end
+
+function testKalmanDiagRefusesSmootherLoudly(testCase)
+%TESTKALMANDIAGREFUSESSMOOTHERLOUDLY "diag" cannot feed the backward
+%   gain - the refusal must be an identified error, not a field crash.
+rng(29);
+P = 4;
+[model, ~] = localStableModel(P);
+obs = struct('l', randn(P, 1), 'R', eye(P), 'N', [], 'b', []);
+filt = shLowLevel.kalmanFilter(model, obs, StoreCov = "diag");
+verifyError(testCase, @() shLowLevel.rtsSmoother(filt), ...
+    'shLowLevel:rtsSmoother:needFullCov');
+end
