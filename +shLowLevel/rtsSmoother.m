@@ -14,8 +14,26 @@ function smo = rtsSmoother(filt)
 %   forward-backward pass is an exact solver for the block-tridiagonal
 %   joint normal-equation system - never build that system explicitly.
 %
+%   Lag=L (v3.24) runs the FIXED-LAG variant: the estimate at epoch t
+%   uses observations up to t+L only - Kurtenbach's practical choice
+%   for near-real-time daily production, where waiting for the whole
+%   series is not an option. Definition-true implementation: one
+%   windowed backward recursion per output epoch, cost O(T*L) backward
+%   gains (and O(T*L) matfile reads in matfile mode) against O(T) for
+%   the full pass; L >= T-1 reproduces the full smoother to rounding
+%   (unit-tested) and the error against it decays with growing L at
+%   the rate of the process memory (Python-measured:
+%   tools/dev/validate_kalman_qc.py L1/L2).
+%
 %   Inputs
 %     filt  (1 x 1) struct  from shLowLevel.kalmanFilter with
+%
+%   Options
+%     Lag (Inf)  (1 x 1) double  smoothing window in epochs: the
+%           estimate at t uses data up to t+Lag; 0 returns the pure
+%           filter estimates, Inf the full RTS pass. The filt
+%           requirement below applies to both.
+%
 %           StoreCov = "full" (covariances in RAM) or "matfile"
 %           (covariances read epoch-by-epoch from FILT.covFile: RAM
 %           stays flat, results identical to the last bit,
@@ -45,6 +63,7 @@ function smo = rtsSmoother(filt)
 
 arguments
     filt (1,1) struct
+    opts.Lag (1,1) double {mustBeNonnegative} = Inf
 end
 
 useFile = filt.storeCov == "matfile";
@@ -64,28 +83,50 @@ end
 
 B = filt.B;
 P = filt.P;
-Pc = size(filt.xf, 1);
 T = size(filt.xf, 2);
+if useFile
+    getPf = @(t) mf.Pf(:, :, t);
+    getPp = @(t) mf.Pp(:, :, t);
+else
+    getPf = @(t) filt.Pf(:, :, t);
+    getPp = @(t) filt.Pp(:, :, t);
+end
+
+if isfinite(opts.Lag)
+    % ---- fixed-lag: windowed backward recursion per output epoch
+    L = round(opts.Lag);
+    xsL = zeros(P, T); sigL = zeros(P, T); PfLast = [];
+    for t = 1:T
+        e = min(T, t + L);
+        xN = filt.xf(:, e);
+        PN = getPf(e);
+        for u = e-1:-1:t
+            PfT = getPf(u);
+            PpN = getPp(u+1);
+            G = (PfT * B.') / PpN;
+            xN = filt.xf(:, u) + G * (xN - filt.xp(:, u+1));
+            PN = PfT + G * (PN - PpN) * G.';
+            PN = (PN + PN.') / 2;
+        end
+        xsL(:, t) = xN(1:P);
+        sigL(:, t) = sqrt(max(diag(PN(1:P, 1:P)), 0));
+        if t == T, PfLast = PN(1:P, 1:P); end
+    end
+    smo = struct('xs', xsL, 'sig', sigL, 'PsLast', PfLast, ...
+        'P', P, 'order', filt.order);
+    return
+end
 
 xs = filt.xf;                          % companion space, overwritten backwards
-if useFile
-    Ps = mf.Pf(:, :, T);
-else
-    Ps = filt.Pf(:, :, T);
-end
+Ps = getPf(T);
 PfLast = Ps(1:P, 1:P);
 sig = zeros(P, T);
 sig(:, T) = sqrt(max(diag(Ps(1:P, 1:P)), 0));
 xsNext = xs(:, T);
 PsNext = Ps;
 for t = T-1:-1:1
-    if useFile
-        PfT = mf.Pf(:, :, t);
-        PpN = mf.Pp(:, :, t+1);
-    else
-        PfT = filt.Pf(:, :, t);
-        PpN = filt.Pp(:, :, t+1);
-    end
+    PfT = getPf(t);
+    PpN = getPp(t+1);
     G = (PfT * B.') / PpN;             % backward gain, no explicit inverse
     xsT = filt.xf(:, t) + G * (xsNext - filt.xp(:, t+1));
     PsT = PfT + G * (PsNext - PpN) * G.';
