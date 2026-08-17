@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.21.0] - 2026-08-18 - innovation-based quality control (Kvas 3.3)
+
+kalmanFilter/kalmanChain gain QC="flag"|"reject": per-epoch chi-square
+innovation test (solution and NEQ form, algebraically identical when
+N = R^-1); rejected epochs become prediction-only so blunders never
+enter the recursive state. New base-MATLAB shLowLevel.chi2Quantile
+(Wilson-Hilferty) with measured accuracy map. Python pre-validation
+tools/dev/validate_kalman_qc.py Q1-Q4 (statistic calibration E[T]=dof,
+NEQ==solution identity, blunder detection); three MATLAB tests with
+scipy-pinned quantile references.
+
 ## [3.20.0] - 2026-08-17 - neqCombine (NEQ-level VCE combination)
 
 shLowLevel.neqCombine combines normal equations before solving

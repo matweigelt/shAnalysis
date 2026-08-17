@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.20.0 (R2026a-compatible) 17-Aug-2026
+% Version 3.21.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,22 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.21.0 (innovation-based quality control, Kvas Sec. 3.3)
+%   - kalmanFilter QC=("none")|"flag"|"reject": chi-square innovation
+%     test per epoch, solution form d'S^-1 d and NEQ form
+%     u'(N P- N + N)^+ u with dof = rank(N) (identical when N = R^-1;
+%     Python-validated). "reject" turns a failing epoch into
+%     prediction-only so a blunder never enters the recursion - it
+%     would otherwise be dragged through all later epochs. Off by
+%     default (rank(N) costs an SVD per NEQ epoch). kalmanChain
+%     passes QC/QCAlpha through; rep.qcStat and rep.nRejected.
+%   - shLowLevel.chi2Quantile - base-MATLAB chi-square quantile
+%     (Wilson-Hilferty; same reason pctile exists). Accuracy MEASURED
+%     against scipy over the QC range and stated in the help: <= 3.5%
+%     at dof <= 10, essentially exact at the operating point dof = P.
+%   - Python pre-validation tools/dev/validate_kalman_qc.py (with the
+%     importable core kalman_port_base.py): checks Q1-Q4.
 %
 % New in v3.20.0 (neqCombine: VCE combination on the NEQ level)
 %   - shLowLevel.neqCombine - COST-G-style combination of K normal
