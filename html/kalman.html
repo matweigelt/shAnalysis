@@ -83,10 +83,12 @@ plot(rep.epochs, rep.meanContribution)   % data share per epoch (Kurtenbach 3.3.
 
 <h2>What to watch</h2>
 <ul>
-<li><b>Memory.</b> The smoother stores two full (pP&times;pP) covariances per epoch: n40, p=1,
-T=365 &asymp; 16&nbsp;GB. Run in windows, lower nmax, or set
-<code class="inline">Smoother=false</code> for one-pass NRT-style runs;
-<code class="inline">rep.memGB</code> reports the footprint.</li>
+<li><b>Memory.</b> The smoother needs two full (pP&times;pP) covariances per epoch: n40, p=1,
+T=365 &asymp; 16&nbsp;GB. Since v3.19, <code class="inline">StoreCov="matfile"</code> streams
+them through a v7.3 MAT on disk with partial I/O &mdash; RAM stays flat and the results are
+identical to the in-RAM path to the last bit (unit-tested). Alternatives: run in windows, lower
+nmax, or <code class="inline">Smoother=false</code> for one-pass NRT-style runs;
+<code class="inline">rep.memGB</code> reports the footprint (disk, in matfile mode).</li>
 <li><b>Stationarity.</b> <code class="inline">estimateVAR</code> warns when the companion spectral
 radius reaches 1; an unstable model diverges across long gaps. Shrinkage
 (<code class="inline">Shrink</code>) or covariance conditioning restore stability.</li>

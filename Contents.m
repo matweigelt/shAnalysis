@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.18.0 (R2026a-compatible) 17-Aug-2026
+% Version 3.19.0 (R2026a-compatible) 17-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,21 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.19.0 (matfile covariance store: long daily Kalman runs)
+%   - kalmanFilter StoreCov="matfile": predicted/filtered covariances
+%     stream through a v7.3 MAT with partial I/O - RAM stays flat at
+%     one (pP)^2 working copy, so n40 daily years become feasible on
+%     ordinary machines. Results identical to StoreCov="full" to the
+%     last bit (unit-tested through filter AND smoother, gap included).
+%     The file path is returned in filt.covFile; the filter's caller
+%     deletes it.
+%   - rtsSmoother reads the matfile epoch-by-epoch (read-only; file
+%     survives smoothing); "diag" still refuses with an identified
+%     error.
+%   - kalmanChain StoreCov=("auto")|"full"|"matfile": chain-internal
+%     temp file, deleted after smoothing (and in the no-smoother
+%     branch - no leak); rep.memGB then reports the disk footprint.
 %
 % New in v3.18.0 (buildCondFun: Kvas EWH-domain covariance conditioning)
 %   - shLowLevel.buildCondFun - builds the CondFun handle for estimateVAR

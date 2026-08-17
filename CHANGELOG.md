@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.19.0] - 2026-08-17 - matfile covariance store
+
+kalmanFilter/rtsSmoother/kalmanChain gain StoreCov="matfile": full
+covariances stream through a v7.3 MAT with partial I/O instead of RAM,
+making long daily Kalman runs (n40, a year: ~16 GB) feasible on
+ordinary machines. Bit-identical to the in-RAM path (unit-tested
+through filter and smoother, including a gap); explicit file-ownership
+contract (filter's caller deletes; the smoother only reads; the chain
+cleans up its internal temp in both branches).
+
 ## [3.18.0] - 2026-08-17 - buildCondFun (Kvas covariance conditioning)
 
 shLowLevel.buildCondFun builds the estimateVAR CondFun after Kvas
