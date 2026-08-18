@@ -121,7 +121,8 @@ if ~isempty(opts.Catalog)
     return
 end
 % ---- months = "all": enumerate every .gfc in the target folder(s)
-if (isstring(months) || ischar(months)) && string(months) == "all"
+if (isstring(months) || ischar(months)) && isscalar(string(months)) ...
+        && string(months) == "all"
     rels = opts.Release;
     if strlength(rels) == 0
         rels = ["ITSG-Grace2018", "ITSG-Grace_operational"];

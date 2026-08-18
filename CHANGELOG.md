@@ -3,8 +3,10 @@
 ## [3.27.1] - 2026-08-18 - fetchITSG accepts Months arrays again
 
 The no-selection gate crashed on 1 x K string Months (array logical in
-&&), hit live by the starter level of setup(Download="all"). Fixed
-array-safe; offline regression test with a local BaseURL covers the
+&&), hit live by the starter level of setup(Download="all"). Two sites carried the pattern (no-selection gate and the
+"all"-detection); the first fix missed the second and the machine
+rerun caught it before CI ever saw the branch. Both fixed; offline
+regression test with a local BaseURL covers the
 array path and both loud empty-selection forms. Diagnosed from the
 failure label and skip counts of the user's summary struct.
 

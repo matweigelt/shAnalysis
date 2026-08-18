@@ -218,8 +218,10 @@
 %     crashed on any 1 x K Months array - hit live by the starter
 %     level inside setup_shAnalysis(Download="all") (the "all" level
 %     itself completed; the label in summary.failed localized the
-%     block). Array-safe all(strlength(...)==0) now; offline test
-%     pins the 1 x K path plus both loud no-selection forms.
+%     block). TWO sites carried the pattern - the no-selection gate
+%     AND the all-detection (the first fix missed the second; the
+%     machine rerun caught it before CI). Offline test pins the
+%     1 x K path plus both loud no-selection forms.
 %
 % New in v3.27.0 (Download="all"; FetchITSG option removed)
 %   - setup_shAnalysis(Download="all"): fifth cumulative level - the
