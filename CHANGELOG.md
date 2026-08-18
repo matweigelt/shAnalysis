@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.24.1] - 2026-08-18 - gate hardening: mlint_lite R5
+
+New static rule R5 in tools/dev/mlint_lite.py: name-value structs of
+arguments blocks must be the last input on the function line
+(MismatchBetweenBlockAndLine otherwise). Motivated by the one defect
+that escaped this session's gates; the broken v3.24.0 rtsSmoother now
+trips the rule (regression-checked against that exact commit). Repo
+sweep of all 143 .m files: clean. Tooling only.
+
 ## [3.24.0] - 2026-08-18 - fixed-lag smoother
 
 rtsSmoother gains Lag=L: bounded-latency smoothing for NRT-style daily

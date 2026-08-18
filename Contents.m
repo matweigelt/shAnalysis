@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.24.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.24.1 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,14 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.24.1 (gate hardening: mlint_lite R5)
+%   - tools/dev/mlint_lite.py rule R5: a name-value struct declared in
+%     an arguments block (opts.Field) must appear as the LAST input of
+%     the function declaration line - exactly the defect that escaped
+%     to CI in the v3.24.0 fixed-lag PR (green gates, every call red).
+%     Six-case self-test incl. that escaped file verbatim; repo-wide
+%     sweep of 143 .m files clean. No toolbox code changed.
 %
 % New in v3.24.0 (fixed-lag smoother)
 %   - rtsSmoother Lag=L: the estimate at epoch t uses observations up
