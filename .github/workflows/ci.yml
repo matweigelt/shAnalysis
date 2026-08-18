@@ -46,6 +46,18 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      # Fixtures live on the orphan branch 'testdata' (v3.26.1): main no
+      # longer needs to carry the 11 MB. The step is safe in BOTH worlds -
+      # while tests/test_data still exists on main, checkout cleans and
+      # replaces the folder; once it is removed from main, this step is
+      # the only source. Development machines use SHX_TESTDATA_FOLDER
+      # instead (tests/shxTestDataDir).
+      - name: Check out test fixtures (orphan branch 'testdata')
+        uses: actions/checkout@v6
+        with:
+          ref: testdata
+          path: tests/test_data
+
       - name: Documentation completeness audit
         run: python3 tools/help_audit.py
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.26.1] - 2026-08-18 - CI fixtures from the orphan branch
+
+Fixtures now live on the orphan branch 'testdata' (20 files, 11 MB,
+no history); CI checks it out into tests/test_data before the suite.
+The step is idempotent against main still carrying the folder, so the
+in-repo copy can be deleted in a later commit without coordination.
+Tooling only.
+
 ## [3.26.0] - 2026-08-18 - structured VAR estimation
 
 estimateVAR gains Structure="diagonal"|"orderblock" (block-wise
