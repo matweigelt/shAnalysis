@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.27.1 (R2026a-compatible) 18-Aug-2026
+% Version 3.28.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,27 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.28.0 (guide chapter 27: the Kalman/VAR module; kalmanChain
+% Structure passthrough)
+%   - guide chapter 27 "Temporal smoothing: Kalman filtering with VAR
+%     process models": state-space model, VAR(1) closed form, exact
+%     batch equivalence, the measured VAR order/structure table as a
+%     computed figure, a LIVE attenuation + contribution figure from
+%     the acceptance machine (orderblock VAR(1) on the 257-month ITSG
+%     residual series: degree-RMS attenuation 0.95 at n=2 -> 0.52 at
+%     n=40; data contribution 0.93 -> 0.63), the honest monthly-basin
+%     scope note (11-deg cap changes 2% RMS only - daily is the target
+%     regime), QC/Joseph/multi-center/bounded-latency summaries, and
+%     Kurtenbach 2012 + Kvas 2019 thesis references. References
+%     renumbered to chapter 28.
+%   - kalmanChain Structure=("full")|"diagonal"|"orderblock" passes
+%     through to estimateVAR; "orderblock" builds the canonical
+%     (order, C/S) partition from the series index itself (test:
+%     rep.model Phi exactly zero outside the blocks).
+%   - README: Kalman lane added to the intro, stale fixtures line
+%     fixed (they left the repo in v3.26.3), Download="all" in the
+%     quick-start levels; kalman.html links the guide chapter.
 %
 % New in v3.27.1 (fetchITSG: Months arrays pass the input gate again)
 %   - the no-selection check used scalar-only strlength inside && and

@@ -3400,6 +3400,39 @@ mDy = shLowLevel.estimateVAR(Ytr, Structure = "diagonal");
 verifyTrue(testCase, r(mDy, Ytr, Yte) < r(mFy, Ytr, Yte));
 end
 
+function testKalmanChainStructurePassthrough(testCase)
+%TESTKALMANCHAINSTRUCTUREPASSTHROUGH kalmanChain(Structure="orderblock")
+%   must build the canonical (m, C/S) partition itself and hand it to
+%   estimateVAR: the resulting model in rep must carry a Phi that is
+%   exactly zero outside those blocks (v3.28 single point of access).
+rng(67);
+nmax = 3;
+idx = shLowLevel.shIndex(nmax);
+P = idx.P; L1 = nmax + 1;
+epM = 2008 + (0:29).' / 12;
+X = zeros(P, 230);
+for t = 2:230, X(:, t) = 0.8 * X(:, t-1) + 1e-9 * randn(P, 1); end
+X = X(:, 201:230);
+[Cs, Ss] = deal(zeros(L1, L1, 30));
+for t = 1:30
+    [Cs(:,:,t), Ss(:,:,t)] = shLowLevel.csFromVec(X(:, t), idx);
+end
+sig = 1e-10 * ones(L1, L1, 30);
+tsm = shSeries(Cs, Ss = Ss, Epochs = epM, SigmaCs = sig, SigmaSs = sig);
+[~, rep] = shLowLevel.kalmanChain(tsm, ModelSeries = tsm, ...
+    Structure = "orderblock", Shrink = 1e-2);
+Phi = rep.model.Phi{1};
+mask = false(P);
+for mo = 0:nmax
+    for cs = 0:1
+        bb = find(idx.m == mo & idx.cs == cs);
+        mask(bb, bb) = true;
+    end
+end
+verifyEqual(testCase, Phi(~mask), zeros(nnz(~mask), 1));
+verifyTrue(testCase, any(Phi(mask) ~= 0));
+end
+
 % --------------------------------- fetchITSG months array (v3.27.1)
 function testFetchITSGMonthsArrayOffline(testCase)
 %TESTFETCHITSGMONTHSARRAYOFFLINE a 1 x K string Months array must pass

@@ -43,7 +43,7 @@ import re as _re
 _cm = open("/tmp/shx_git/Contents.m").read()
 VERSION = "v" + _re.search(r"% Version (\S+)", _cm).group(1)
 STAMP = ("shAnalysis %s - Workflow & Theory Guide - Developed by "
-         "Matthias Weigelt with the help of Claude, 2026-08-11"
+         "Matthias Weigelt with the help of Claude, 2026-08-18"
          % VERSION)
 
 PAGE_W, PAGE_H = A4
@@ -1004,7 +1004,119 @@ story += [para("26. Daily solutions and near-real-time monitoring "
                "form does not; a planted +3&sigma; January-2nd flood "
                "scores z = 2.9 straight across the year boundary."),]
 
-story += [para("27. References", "h2"),
+story += [para("27. Temporal smoothing: Kalman filtering with VAR "
+               "process models (v3.21&ndash;3.26)", "h2"),
+          para("Every method so far treats months independently. But mass "
+               "redistribution has memory: the field of one epoch predicts "
+               "the next. Kurtenbach (2012) and Kvas (2019) built the ITSG "
+               "daily solutions on exactly this idea &mdash; a "
+               "vector-autoregressive (VAR) process model inside a Kalman "
+               "filter &mdash; and the module implements their chain end "
+               "to end: estimateVAR, kalmanFilter, rtsSmoother, "
+               "buildCondFun, neqCombine, with kalmanChain as the single "
+               "point of access."),
+          para("The process and observation model", "h3"),
+          para("The reduced (climatology-removed) coefficient vector "
+               "x<sub>t</sub> follows a VAR(p); observations are either "
+               "solutions with covariance (l = x + v) or normal "
+               "equations (N x = b) consumed in information form. For "
+               "p = 1 the Yule&ndash;Walker solution is Kurtenbach's "
+               "closed form:")]
+story += eq(r"B=\Sigma(1)\,\Sigma(0)^{-1},\qquad "
+            r"Q=\Sigma(0)-B\,\Sigma(0)\,B^{\mathsf{T}}")
+story += [para("Higher orders embed into the companion form; the filter "
+               "starts stationary (x&#8320;&#8315; = 0, "
+               "P&#8320;&#8315; = &Sigma;(0)), which makes the forward "
+               "filter plus RTS smoother an EXACT solver of the joint "
+               "block-tridiagonal least-squares adjustment over all "
+               "epochs (Kvas Sec. 2.3) &mdash; pinned in the test suite "
+               "to 1e-15 (Python) and 1e-9 (MATLAB) against the "
+               "explicitly built batch system. Gap months become "
+               "prediction-only and relax toward the prior at the rate "
+               "the estimated dynamics dictate."),
+          para("Choosing the process model: measured, not assumed", "h3"),
+          para("The first live VAR table (ITSG monthly n40, T = 257, "
+               "36-month holdout, one-step coefficient RMS, computed "
+               "through the shipped estimator) settled the defaults:")]
+story += fig("kalman_var_table.png",
+             "Figure: one-step holdout RMS per process model on the live "
+             "monthly series. The dense VAR(1) at weak shrink is WORSE "
+             "than no dynamics at all (overfit at T &asymp; 0.13 P); the "
+             "structured estimators beat climatology-only by 21&ndash;23%; "
+             "p &ge; 2 explodes. Order = 1 confirmed.")
+story += [para("Consequence in the API: estimateVAR "
+               "Structure = &quot;full&quot; | &quot;diagonal&quot; | "
+               "&quot;orderblock&quot;. For MONTHLY series use "
+               "&quot;orderblock&quot; (one block per order m and C/S "
+               "&mdash; kalmanChain builds the partition itself) or "
+               "&quot;diagonal&quot;; the dense default targets the "
+               "DAILY regime, where Kurtenbach's production choice is "
+               "dense plus spatial conditioning (buildCondFun: the Kvas "
+               "EWH-domain land/ocean masks with the "
+               "exp(&minus;&psi;/&psi;&#8320;) taper, PSD by the Schur "
+               "product theorem &mdash; it turns a singular empirical "
+               "&Sigma;(0) into a usable one, measured rcond "
+               "0 &rarr; 5.7e-2)."),
+          para("What the filter does to real data", "h3")]
+story += fig("kalman_live_run.png",
+             "Figure: the live run on the monthly residual series "
+             "(orderblock VAR(1), formal sigmas as R). Left: the smoother "
+             "leaves the signal-dominated low degrees at 95% and halves "
+             "the noise-dominated n = 40 band. Right: Kurtenbach's "
+             "contribution diagnostic diag(K) &mdash; the share of each "
+             "estimate coming from the DATA; the process model carries a "
+             "third of the estimate at high degrees.")
+story += [para("Honest scope note: an 11&deg;-cap basin average of the "
+               "same run changes by 2% RMS only (measured ratio 0.979) "
+               "&mdash; basin averaging is itself a low-pass, so on "
+               "monthly data the module's value sits at coefficient "
+               "level, in the propagated sigmas, and in the machinery "
+               "below. The DAILY regime it targets is different: there "
+               "the process model is the difference between unusable "
+               "and usable fields (Kurtenbach), and a live acceptance "
+               "against the published ITSG daily series is on the "
+               "roadmap, waiting on public daily normal equations."),
+          para("Robustness machinery, each decided on measurement", "h3"),
+          *bullets([
+    "Innovation QC (Kvas Sec. 3.3, v3.21): per-epoch chi-square test "
+    "T = d'S&#8315;&sup1;d (solution form, dof = P) or "
+    "u'(N P&#8315; N + N)&#8314; u (NEQ form, dof = rank(N)); identical "
+    "when N = R&#8315;&sup1;. QC = &quot;reject&quot; turns a failing "
+    "epoch into prediction-only &mdash; essential in a RECURSIVE "
+    "estimator, where one accepted blunder propagates into every later "
+    "state (test: rejecting one 50-sigma epoch cuts downstream error "
+    "by &gt; 20%). Thresholds from the base-MATLAB Wilson&ndash;"
+    "Hilferty quantile, accuracy measured against scipy.",
+    "Joseph-stabilized update (v3.22): decided on a 50-digit-reference "
+    "A/B, not textbook habit &mdash; with R small against a "
+    "wide-spectrum prior (the strong-daily-data regime) the standard "
+    "(I&minus;K)P update loses six orders of covariance accuracy "
+    "(1.3e-6 vs 1.9e-13). Exact-arithmetic identical otherwise.",
+    "Multi-center (v3.23): a string array of SINEX folders is grouped "
+    "by epoch and combined by neqCombine (per-epoch VCE or fixed "
+    "weights) BEFORE the update; rep.sigma2 reports the factors.",
+    "Bounded memory and latency (v3.19/v3.24): StoreCov = "
+    "&quot;matfile&quot; keeps year-long full-covariance runs flat in "
+    "RAM (bit-identical to in-memory); rtsSmoother Lag = L bounds the "
+    "latency for near-real-time production (Lag = 0 is the filter, "
+    "Lag &ge; T&minus;1 the full smoother to rounding). With "
+    "QC = &quot;reject&quot; this is the complete bounded-latency "
+    "chain; the daily output feeds hydroExtremeIndex directly "
+    "(chapter 26)."]),
+          para("The one-call form", "h3")]
+story += code("""idx  = shLowLevel.shIndex(40);
+ts   = shSeries.fromFolder(folder, Truncate = 40);
+[tsK, rep] = shLowLevel.kalmanChain(ts, ModelSeries = ts, ...
+    Structure = "orderblock", Shrink = 1e-2, QC = "reject");
+plot(rep.epochs, rep.qcStat); yline(shLowLevel.chi2Quantile(0.999, idx.P));""")
+story += [para("For SINEX normal equations replace the first argument by "
+               "the folder (or a string array of folders, one per "
+               "center); kalmanChain reads, epoch-groups, VCE-combines "
+               "and filters in information form, and returns the "
+               "smoothed shSeries with propagated sigmas plus the full "
+               "report (model, contribution, QC record).")]
+
+story += [para("28. References", "h2"),
           *bullets([
     "Chambers, D.P., Willis, J.K. (2010): A global evaluation of ocean "
     "bottom pressure from GRACE, OMCT, and steric-corrected altimetry. "
@@ -1026,6 +1138,15 @@ story += [para("27. References", "h2"),
     "Kusche, J. (2007): Approximate decorrelation and non-isotropic "
     "smoothing of time-variable GRACE-type gravity field models. "
     "J. Geodesy 81, 733&ndash;749.",
+    "Kurtenbach, E. (2012): Entwicklung eines Kalman-Filters zur "
+    "Bestimmung kurzzeitiger Variationen des Erdschwerefeldes aus "
+    "Daten der Satellitenmission GRACE. DGK Reihe C, Nr. 683, Bonn. "
+    "(The VAR(1) closed form and the contribution diagnostic of "
+    "chapter 27.)",
+    "Kvas, A. (2019): Estimation of high-frequency mass variations "
+    "from GRACE inter-satellite ranging. PhD thesis, TU Graz. (The "
+    "batch-equivalence, innovation QC and EWH conditioning of "
+    "chapter 27.)",
     "Kvas, A. et al. (2019): ITSG-Grace2018: overview and evaluation of "
     "a new GRACE-only gravity field time series. J. Geophys. Res. Solid "
     "Earth 124, 9332&ndash;9344.",
