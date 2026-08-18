@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.25.0] - 2026-08-18 - relocatable test fixtures
+
+New tests/shxTestDataDir: SHX_TESTDATA_FOLDER env var, then the
+TestDataFolder preference, then the in-repo tests/test_data fallback.
+All direct fixture paths in the suites route through it; new
+setup_shAnalysis option TestDataFolder (env + setpref, like
+SeriesFolder). Removing the fixtures from the repository itself
+remains a separate decision: CI consumes the in-repo copy until a CI
+data source (e.g. a release-asset download step) exists.
+
 ## [3.24.1] - 2026-08-18 - gate hardening: mlint_lite R5
 
 New static rule R5 in tools/dev/mlint_lite.py: name-value structs of

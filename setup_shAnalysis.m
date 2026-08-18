@@ -70,6 +70,12 @@ function summary = setup_shAnalysis(opts)
 %                         'GravisFolder' (opt-in real-data tests)
 %     DDKFolder ("")      DDK filter binaries folder, exported as
 %                         SHX_DDK_FOLDER + preference 'DDKFolder'
+%     TestDataFolder ("")  folder holding the test fixtures when they
+%                         live outside the repository (exported as
+%                         SHX_TESTDATA_FOLDER + preference; the test
+%                         suites resolve it via tests/shxTestDataDir,
+%                         falling back to tests/test_data - CI is
+%                         unaffected)
 %     Quiet (false)       suppress progress output
 %     DataFolder ("")  persistent data folder, applied BEFORE any fetcher runs
 %     FetchITSG ("none")  "all" additionally downloads every monthly ITSG solution
@@ -121,6 +127,7 @@ arguments
     opts.MasconFile (1,1) string = ""
     opts.GravisFolder (1,1) string = ""
     opts.DDKFolder (1,1) string = ""
+    opts.TestDataFolder (1,1) string = ""
     opts.Quiet (1,1) logical = false
 end
 root = string(fileparts(mfilename('fullpath')));
@@ -281,10 +288,11 @@ end
 % Data locations: setenv for this session AND setpref('shAnalysis', ...)
 % for persistence across sessions - the opt-in tests and chains read
 % both (env first). getpref survives restarts; no startup.m needed.
-locs = ["SeriesFolder", "SHX_SERIES_FOLDER", "folder"
-        "MasconFile",   "SHX_MASCON_FILE",   "file"
-        "GravisFolder", "SHX_GRAVIS_FOLDER", "folder"
-        "DDKFolder",    "SHX_DDK_FOLDER",    "folder"];
+locs = ["SeriesFolder",   "SHX_SERIES_FOLDER",   "folder"
+        "MasconFile",     "SHX_MASCON_FILE",     "file"
+        "GravisFolder",   "SHX_GRAVIS_FOLDER",   "folder"
+        "DDKFolder",      "SHX_DDK_FOLDER",      "folder"
+        "TestDataFolder", "SHX_TESTDATA_FOLDER", "folder"];
 for li = 1:size(locs, 1)
     val = opts.(locs(li, 1));
     if strlength(val) == 0, continue; end
