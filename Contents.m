@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.25.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.26.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,19 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.26.0 (structured VAR estimation, measured on live data)
+%   - estimateVAR Structure=("full")|"diagonal"|"orderblock" (+Blocks):
+%     block-wise Yule-Walker on the same Sigma(h) machinery. Decision
+%     basis, MEASURED on the live ITSG monthly series (n40, T=257,
+%     36-month holdout, one-step RMS): full VAR(1) at weak shrink is
+%     WORSE than climatology-only (4.61 vs 4.24e-12 - overfit at
+%     T ~ 0.13 P); diagonal AR(1) 3.35e-12; order-block ~3.36e-12;
+%     VAR(2)/VAR(3) explode (companion radius 16305/4364). Default
+%     stays "full" - the daily regime the module targets is unmeasured
+%     and Kurtenbach's choice there is dense+conditioned; the help
+%     carries the monthly table and recommends "diagonal" for monthly
+%     series. Order=1 default confirmed by the same table.
 %
 % New in v3.25.0 (relocatable test fixtures)
 %   - tests/shxTestDataDir resolves the fixture folder: env

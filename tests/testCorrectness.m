@@ -3335,3 +3335,49 @@ sFil = shLowLevel.rtsSmoother(fFil, Lag = 3);
 sMem = shLowLevel.rtsSmoother(filt, Lag = 3);
 verifyEqual(testCase, sFil.xs, sMem.xs);
 end
+
+% ------------------------------------- estimateVAR Structure (v3.26)
+function testEstimateVARStructures(testCase)
+%TESTESTIMATEVARSTRUCTURES the structured Yule-Walker variants
+%   (Python S1-S3 through the MATLAB path): "diagonal" gives diagonal
+%   Phi/Q equal to the per-coefficient lag-1 regression; "orderblock"
+%   is exactly zero outside its blocks and errors loudly without or
+%   with a broken partition; at T ~ P both structured estimates beat
+%   the raw full solve out of sample - the live ITSG-monthly finding,
+%   pinned synthetically.
+rng(61);
+blocks = {1:4, 5:10};
+P = 10;
+PhiT = zeros(P);
+for b = 1:2
+    A = randn(numel(blocks{b}));
+    PhiT(blocks{b}, blocks{b}) = 0.7 * A / max(abs(eig(A)));
+end
+L = diag(0.5 + rand(P, 1));
+X = zeros(P, 260);
+for t = 2:260, X(:, t) = PhiT * X(:, t-1) + L * randn(P, 1); end
+X = X(:, 201:260);                       % T = 60, deliberately short
+% diagonal: shape + value
+mD = shLowLevel.estimateVAR(X, Structure = "diagonal");
+verifyEqual(testCase, mD.Phi{1}, diag(diag(mD.Phi{1})));
+verifyEqual(testCase, mD.Q, diag(diag(mD.Q)));
+Xc = X - mean(X, 2);
+a1 = sum(Xc(1, 2:end) .* Xc(1, 1:end-1)) / sum(Xc(1, 1:end-1).^2);
+verifyEqual(testCase, mD.Phi{1}(1, 1), a1, RelTol = 1e-10);
+% orderblock: pattern + loud errors
+mB = shLowLevel.estimateVAR(X, Structure = "orderblock", Blocks = blocks);
+off = mB.Phi{1}; off(1:4, 1:4) = 0; off(5:10, 5:10) = 0;
+verifyEqual(testCase, off, zeros(P));
+verifyError(testCase, @() shLowLevel.estimateVAR(X, Structure = "orderblock"), ...
+    'shLowLevel:estimateVAR:needBlocks');
+verifyError(testCase, @() shLowLevel.estimateVAR(X, ...
+    Structure = "orderblock", Blocks = {1:4, 4:10}), ...
+    'shLowLevel:estimateVAR:badBlocks');
+% short-sample ranking on a holdout
+Xtr = X(:, 1:30); Xte = X(:, 31:end);
+mF = shLowLevel.estimateVAR(Xtr, Shrink = 1e-3);
+mB = shLowLevel.estimateVAR(Xtr, Structure = "orderblock", Blocks = blocks, Shrink = 1e-2);
+mD = shLowLevel.estimateVAR(Xtr, Structure = "diagonal");
+r = @(m) norm(Xte(:, 2:end) - m.Phi{1} * Xte(:, 1:end-1), 'fro');
+verifyTrue(testCase, r(mB) < r(mF) && r(mD) < r(mF));
+end

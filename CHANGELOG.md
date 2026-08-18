@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.26.0] - 2026-08-18 - structured VAR estimation
+
+estimateVAR gains Structure="diagonal"|"orderblock" (block-wise
+Yule-Walker, structure-consistent Q and Sigma0, loud Blocks
+validation). Driven by the first live VAR-order table (ITSG monthly,
+36-month holdout): the dense estimate overfits at monthly sample
+sizes while diagonal/order-block beat climatology-only by ~21%;
+p >= 2 explodes. Order=1 and Structure="full" defaults confirmed/kept
+for the daily target regime; monthly guidance documented in the help.
+Python S1-S3 checks + one MATLAB test covering shape, values, loud
+errors, and the short-sample ranking.
+
 ## [3.25.0] - 2026-08-18 - relocatable test fixtures
 
 New tests/shxTestDataDir: SHX_TESTDATA_FOLDER env var, then the
