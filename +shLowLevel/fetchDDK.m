@@ -7,8 +7,9 @@ function [files, info] = fetchDDK(which, opts)
 %   repository into <dataFolder>/DDK. Existing files are skipped unless
 %   Update (false)=true, which re-downloads them with a safe swap (the fresh
 %   file is parse-verified by shLowLevel.readDDK before replacing the old one).
-%   DDK3 additionally ships inside the toolbox (tests/test_data) and
-%   never needs fetching.
+%   DDK3 additionally ships as a toolbox sample (resolved via
+%   shLowLevel.testDataDir; CI pulls it from the orphan branch
+%   testdata) and never needs fetching.
 %
 %   Ordering strong -> weak smoothing, regularization a*l^4:
 %     DDK1 1e14   DDK2 1e13   DDK3 1e12   DDK4 5e11

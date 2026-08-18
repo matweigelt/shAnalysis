@@ -30,10 +30,11 @@ function reg = demo_shAnalysis(cases, opts)
 %     D16  Export                        writeGrid netCDF, writeAnimation MP4
 %
 %   Data policy: D01-D04 use the REAL ITSG files shipped in
-%   tests/test_data (GRACE 2008-04, GRACE-FO 2025-12, DDK3 Wbd) - D02/
+%   the sample folder shLowLevel.testDataDir() (GRACE 2008-04,
+%   GRACE-FO 2025-12, DDK3 Wbd) - D02/
 %   D04 show the real 17.7-yr mass-change difference with real stripes.
 %   D05/D06 use a real monthly series once shLowLevel.fetchITSG(years) has
-%   populated tests/test_data/itsg_series (>= 24 months). D12/D13/D14
+%   populated <testDataDir>/itsg_series (>= 24 months). D12/D13/D14
 %   stay synthetic BY DESIGN: they demonstrate recovery of KNOWN truth
 %   (modes, breaks, noise factors), which real data cannot provide.
 %   Every case falls back to synthetic data and stays self-contained.
