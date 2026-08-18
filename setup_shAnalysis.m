@@ -7,6 +7,7 @@ function summary = setup_shAnalysis(opts)
 %   setup_shAnalysis(Download ("none") = "core")     + TN-14 and TN-13 files
 %   setup_shAnalysis(Download = "filters")  + DDK (3) filter matrices
 %   setup_shAnalysis(Download = "starter")  + ITSG starter months
+%   setup_shAnalysis(Download = "all")      + EVERY monthly ITSG solution
 %   setup_shAnalysis(DryRun (false) = true, ...)    print/return the plan, do
 %                                           NOTHING (no path change, no
 %                                           folders, no network)
@@ -18,6 +19,9 @@ function summary = setup_shAnalysis(opts)
 %                completion chain. Every file is verified by parse.
 %     "filters"  core + shLowLevel.fetchDDK(DDK): anisotropic DDK
 %                decorrelation matrices (~10 MB each).
+%     "all"      starter + shLowLevel.fetchITSG("all", Nmax=Nmax): the
+%                complete monthly archive - the extension of "starter"
+%                for machines that shall hold the full series
 %     "starter"  filters + shLowLevel.fetchITSG(Months (["2008-04", "2025-12"]), Nmax (96)=Nmax): a small
 %                monthly-solution starter set - by default the n96
 %                companions of the two shipped n60 fixture months
@@ -32,7 +36,11 @@ function summary = setup_shAnalysis(opts)
 %     Permanent (false)   addpath + savepath; if savepath fails (no
 %                         write permission on pathdef.m) a warning
 %                         explains the startup.m alternative
-%     Download ("none")   "none" | "core" | "filters" | "starter"
+%     Download ("none")   "none" | "core" | "filters" | "starter" | "all"
+%                         "all" (v3.27) extends "starter" to the FULL
+%                         ITSG monthly archive (2002 -> present, both
+%                         releases, at Nmax; several GB, resumable:
+%                         existing files are skipped)
 %     DDK (3)             subset of 1..8 for the "filters" level
 %     Providers (["GFZ","CSR","JPL"])  TN-13 providers for "core"
 %     Months (["2008-04","2025-12"])   months for "starter"
@@ -78,7 +86,6 @@ function summary = setup_shAnalysis(opts)
 %                         unaffected)
 %     Quiet (false)       suppress progress output
 %     DataFolder ("")  persistent data folder, applied BEFORE any fetcher runs
-%     FetchITSG ("none")  "all" additionally downloads every monthly ITSG solution
 %     Proxy ("")  per-call proxy URL, e.g. "http://proxy:8080" (empty: MATLAB Web Preferences)
 %
 %   Output
@@ -110,7 +117,7 @@ function summary = setup_shAnalysis(opts)
 arguments
     opts.Permanent (1,1) logical = false
     opts.Download (1,1) string {mustBeMember(opts.Download, ...
-        ["none", "core", "filters", "starter"])} = "none"
+        ["none", "core", "filters", "starter", "all"])} = "none"
     opts.DDK (1,:) double {mustBeInteger, mustBeInRange(opts.DDK, 1, 8)} = 3
     opts.Providers (1,:) string ...
         {mustBeMember(opts.Providers, ["GFZ", "CSR", "JPL"])} = ...
@@ -120,7 +127,6 @@ arguments
     opts.Docs (1,1) logical = false
     opts.DryRun (1,1) logical = false
     opts.DataFolder (1,1) string = ""
-    opts.FetchITSG (1,1) string = "none"
     opts.Proxy (1,1) string = ""
     opts.Update (1,1) logical = false
     opts.SeriesFolder (1,1) string = ""
@@ -131,7 +137,7 @@ arguments
     opts.Quiet (1,1) logical = false
 end
 root = string(fileparts(mfilename('fullpath')));
-level = find(opts.Download == ["none", "core", "filters", "starter"]);
+level = find(opts.Download == ["none", "core", "filters", "starter", "all"]);
 
 % ------------------------------------------------------------- the plan
 plan = strings(1, 0);
@@ -161,6 +167,11 @@ end
 if level >= 4
     plan(end+1) = "starter: shLowLevel.fetchITSG -> ITSG n" + opts.Nmax + ...
         " months " + strjoin(opts.Months, ", ") + ...
+        ternary(opts.Update, " (update existing)", "");
+end
+if level >= 5
+    plan(end+1) = "all: shLowLevel.fetchITSG -> COMPLETE ITSG monthly archive n" + ...
+        opts.Nmax + " (2002 -> present, several GB; existing files skipped)" + ...
         ternary(opts.Update, " (update existing)", "");
 end
 if opts.Docs
@@ -237,21 +248,6 @@ if level >= 2
         summary.failed(end+1) = "fetchTN: " + err.message;
     end
 end
-% ---- optional bulk ITSG download (v3.0.0): FetchITSG = "all" pulls
-% every monthly solution (ITSG-Grace2018 + operational, Nmax = 96)
-if opts.FetchITSG == "all"
-    try
-        [~, iI] = shLowLevel.fetchITSG("all", Nmax = 96, Update = opts.Update, ...
-            Proxy = opts.Proxy, Quiet = opts.Quiet);
-        summary.fetched = [summary.fetched, iI.fetched, iI.updated];
-        summary.skipped = [summary.skipped, iI.skipped];
-    catch err
-        summary.failed(end+1) = "fetchITSG: " + err.message;
-    end
-elseif opts.FetchITSG ~= "none"
-    error('shAnalysis:setup:badFetchITSG', ...
-        'FetchITSG must be "none" or "all" (got "%s").', opts.FetchITSG);
-end
 if level >= 3
     try
         [~, iD] = shLowLevel.fetchDDK(unique(opts.DDK), ...
@@ -275,6 +271,22 @@ if level >= 4
         end
     catch err
         summary.failed(end+1) = "fetchITSG: " + err.message;
+    end
+end
+% ---- level 5 (v3.27): the full monthly archive, cumulative on starter
+if level >= 5
+    try
+        [~, iA] = shLowLevel.fetchITSG("all", Nmax = opts.Nmax, ...
+            Update = opts.Update, Proxy = opts.Proxy, Quiet = opts.Quiet);
+        summary.fetched = [summary.fetched, string(iA.fetched), ...
+            string(iA.updated)];
+        summary.skipped = [summary.skipped, string(iA.skipped)];
+        if isfield(iA, 'missing') && ~isempty(iA.missing)
+            summary.failed = [summary.failed, ...
+                "fetchITSG missing: " + strjoin(string(iA.missing), ", ")];
+        end
+    catch err
+        summary.failed(end+1) = "fetchITSG all: " + err.message;
     end
 end
 

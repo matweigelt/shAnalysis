@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.26.3 (R2026a-compatible) 18-Aug-2026
+% Version 3.27.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,16 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.27.0 (Download="all"; FetchITSG option removed)
+%   - setup_shAnalysis(Download="all"): fifth cumulative level - the
+%     starter set plus the COMPLETE ITSG monthly archive at Nmax
+%     (2002 -> present; existing files skipped, so re-runs resume).
+%     This is what the v3.0.0 FetchITSG option was MEANT to be; that
+%     misunderstood option is removed (BREAKING: FetchITSG= now fails
+%     with MATLAB:TooManyInputs - ID measured, not assumed). Plans,
+%     help, setup.html and the DryRun contract test cover the new
+%     level; cumulative behaviour bridge-verified before commit.
 %
 % New in v3.26.3 (fixtures leave the repository)
 %   - tests/test_data removed from main (20 files, 11 MB): CI pulls
