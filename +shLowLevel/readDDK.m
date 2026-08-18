@@ -61,14 +61,14 @@ end
 if (ischar(source) || isstring(source)) && ...
         ~isempty(regexp(char(source), '^[Dd][Dd][Kk][1-8]$', 'once'))
     % name form "DDK<n>" (v2.4.1): resolve against <dataFolder>/DDK and
-    % the shipped tests/test_data (DDK3), else point at shLowLevel.fetchDDK
+    % the shipped samples (shLowLevel.testDataDir - relocatable since
+    % v3.26.2), else point at shLowLevel.fetchDDK
     sc = char(source);
     k = str2double(sc(4));
     fn = shLowLevel.ddkNames(); fn = fn(k);
     cand = [ ...
         string(fullfile(shLowLevel.dataFolder(), 'DDK', fn))
-        string(fullfile(fileparts(fileparts(mfilename('fullpath'))), ...
-            'tests', 'test_data', fn))];
+        string(fullfile(shLowLevel.testDataDir(), fn))];
     hit = cand(arrayfun(@isfile, cand));
     assert(~isempty(hit), 'shLowLevel:readDDK:notFetched', ...
         ['%s (%s) is not in %s or the shipped test data.\n' ...

@@ -176,7 +176,7 @@ end
 
 function [g1, g2] = tryRealPair()
 % the two shipped real months: GRACE 2008-04 and GRACE-FO 2025-12 (n60)
-d = fullfile(fileparts(mfilename('fullpath')), 'tests', 'test_data');
+d = shLowLevel.testDataDir();
 g1 = []; g2 = [];
 f1 = dir(fullfile(d, 'ITSG-Grace2018_n60_*.gfc'));
 f2 = dir(fullfile(d, 'ITSG-Grace_operational_n60_*.gfc'));
@@ -193,8 +193,8 @@ function ts = tryRealSeries(Lcut)
 % real monthly series if shLowLevel.fetchITSG has populated itsg_series/
 ts = [];
 cands = [string(fullfile(shLowLevel.dataFolder(), 'itsg_series')), ...
-    string(fullfile(fileparts(mfilename('fullpath')), 'tests', ...
-    'test_data', 'itsg_series'))];                 % new + legacy location
+    string(fullfile(shLowLevel.testDataDir(), ...
+    'itsg_series'))];                              % new + legacy location
 for d = cands
     if isfolder(d) && numel(dir(fullfile(d, '*.gfc*'))) >= 24
         try
@@ -208,7 +208,7 @@ end
 end
 
 function g = tryRealITSG()
-d = fullfile(fileparts(mfilename('fullpath')), 'tests', 'test_data');
+d = shLowLevel.testDataDir();
 fl = [dir(fullfile(d, '*ITSG*2008*.gfc*')); dir(fullfile(d, '*ITSG*.gfc*'))];
 if isempty(fl), g = []; return, end
 try

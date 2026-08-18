@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.26.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.26.2 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,23 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.26.2 (packaged sample-data resolver)
+%   - shLowLevel.testDataDir: the env/pref/fallback resolution of
+%     v3.25.0, now inside the package - because TOOLBOX code also
+%     consults the shipped samples: readDDK("DDK3") and two demo
+%     loaders failed on the acceptance machine with relocated
+%     fixtures (caught by the 2026-08-18 acceptance run). readDDK,
+%     demo_shAnalysis and tests/shxTestDataDir now share this single
+%     resolver.
+%
+% New in v3.26.1 (CI fixtures from the orphan branch 'testdata')
+%   - the 20 test fixtures moved to the orphan branch 'testdata'; the
+%     CI workflow checks that branch out into tests/test_data before
+%     the suite runs. Works before AND after the folder is removed
+%     from main, so the removal commit can land whenever convenient.
+%     No release, no tag, no external storage; dev machines keep using
+%     SHX_TESTDATA_FOLDER (v3.25.0).
 %
 % New in v3.26.0 (structured VAR estimation, measured on live data)
 %   - estimateVAR Structure=("full")|"diagonal"|"orderblock" (+Blocks):
