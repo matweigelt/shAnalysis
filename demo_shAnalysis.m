@@ -176,7 +176,7 @@ end
 
 function [g1, g2] = tryRealPair()
 % the two shipped real months: GRACE 2008-04 and GRACE-FO 2025-12 (n60)
-d = fullfile(fileparts(mfilename('fullpath')), 'tests', 'test_data');
+d = shLowLevel.testDataDir();
 g1 = []; g2 = [];
 f1 = dir(fullfile(d, 'ITSG-Grace2018_n60_*.gfc'));
 f2 = dir(fullfile(d, 'ITSG-Grace_operational_n60_*.gfc'));
@@ -208,7 +208,7 @@ end
 end
 
 function g = tryRealITSG()
-d = fullfile(fileparts(mfilename('fullpath')), 'tests', 'test_data');
+d = shLowLevel.testDataDir();
 fl = [dir(fullfile(d, '*ITSG*2008*.gfc*')); dir(fullfile(d, '*ITSG*.gfc*'))];
 if isempty(fl), g = []; return, end
 try

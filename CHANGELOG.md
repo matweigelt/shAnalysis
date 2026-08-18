@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.26.2] - 2026-08-18 - packaged sample-data resolver
+
+The acceptance run with fixtures only on the data drive exposed the
+gap in v3.25.0: readDDK's "DDK3" name form and two demo loaders
+resolve the shipped samples from toolbox code, which cannot depend on
+tests/. New shLowLevel.testDataDir carries the env/pref/fallback
+order; readDDK, demo_shAnalysis and tests/shxTestDataDir (now a thin
+delegate) share it. One acceptance failure -> zero.
+
 ## [3.26.1] - 2026-08-18 - CI fixtures from the orphan branch
 
 Fixtures now live on the orphan branch 'testdata' (20 files, 11 MB,
