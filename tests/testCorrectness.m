@@ -3364,9 +3364,11 @@ X = X(:, 201:260);                       % T = 60, deliberately short
 mD = shLowLevel.estimateVAR(X, Structure = "diagonal");
 verifyEqual(testCase, mD.Phi{1}, diag(diag(mD.Phi{1})));
 verifyEqual(testCase, mD.Q, diag(diag(mD.Q)));
-Xc = X - mean(X, 2);
-a1 = sum(Xc(1, 2:end) .* Xc(1, 1:end-1)) / sum(Xc(1, 1:end-1).^2);
-verifyEqual(testCase, mD.Phi{1}(1, 1), a1, RelTol = 1e-10);
+% convention-free value check: diagonal on row i must equal the full
+% estimator run on that single row as a 1 x T series (same Sigma(h)
+% machinery by construction; bridge-measured reldiff 1.4e-16)
+m1 = shLowLevel.estimateVAR(X(1, :));
+verifyEqual(testCase, mD.Phi{1}(1, 1), m1.Phi{1}, RelTol = 1e-10);
 % orderblock: pattern + loud errors
 mB = shLowLevel.estimateVAR(X, Structure = "orderblock", Blocks = blocks);
 off = mB.Phi{1}; off(1:4, 1:4) = 0; off(5:10, 5:10) = 0;
@@ -3376,11 +3378,24 @@ verifyError(testCase, @() shLowLevel.estimateVAR(X, Structure = "orderblock"), .
 verifyError(testCase, @() shLowLevel.estimateVAR(X, ...
     Structure = "orderblock", Blocks = {1:4, 4:10}), ...
     'shLowLevel:estimateVAR:badBlocks');
-% short-sample ranking on a holdout
+% short-sample ranking, each structure on the truth it matches (a
+% diagonal estimate rightly LOSES on a strongly block-coupled truth -
+% the first draft asserted otherwise and CI said no):
+% (a) block truth, T = 30: orderblock beats full (bridge: 13.5 < 15.8)
 Xtr = X(:, 1:30); Xte = X(:, 31:end);
 mF = shLowLevel.estimateVAR(Xtr, Shrink = 1e-3);
 mB = shLowLevel.estimateVAR(Xtr, Structure = "orderblock", Blocks = blocks, Shrink = 1e-2);
-mD = shLowLevel.estimateVAR(Xtr, Structure = "diagonal");
-r = @(m) norm(Xte(:, 2:end) - m.Phi{1} * Xte(:, 1:end-1), 'fro');
-verifyTrue(testCase, r(mB) < r(mF) && r(mD) < r(mF));
+r = @(m, Zt, Ze) norm(Ze(:, 2:end) - m.Phi{1} * Ze(:, 1:end-1), 'fro');
+verifyTrue(testCase, r(mB, Xtr, Xte) < r(mF, Xtr, Xte));
+% (b) diagonal truth, T = 30: diagonal beats full (bridge: 18.7 < 26.2)
+rng(62);
+aT = 0.3 + 0.5 * rand(P, 1);
+L = diag(0.5 + rand(P, 1));
+Y = zeros(P, 260);
+for t = 2:260, Y(:, t) = aT .* Y(:, t-1) + L * randn(P, 1); end
+Y = Y(:, 201:260);
+Ytr = Y(:, 1:30); Yte = Y(:, 31:end);
+mFy = shLowLevel.estimateVAR(Ytr, Shrink = 1e-3);
+mDy = shLowLevel.estimateVAR(Ytr, Structure = "diagonal");
+verifyTrue(testCase, r(mDy, Ytr, Yte) < r(mFy, Ytr, Yte));
 end
