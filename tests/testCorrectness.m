@@ -3399,3 +3399,26 @@ mFy = shLowLevel.estimateVAR(Ytr, Shrink = 1e-3);
 mDy = shLowLevel.estimateVAR(Ytr, Structure = "diagonal");
 verifyTrue(testCase, r(mDy, Ytr, Yte) < r(mFy, Ytr, Yte));
 end
+
+% --------------------------------- fetchITSG months array (v3.27.1)
+function testFetchITSGMonthsArrayOffline(testCase)
+%TESTFETCHITSGMONTHSARRAYOFFLINE a 1 x K string Months array must pass
+%   the input gate - the scalar-only strlength check crashed the live
+%   setup(Download="all") starter level with the operator-&& array
+%   error (2026-08-18). Offline: BaseURL points at an empty local
+%   folder, so both months are reported missing, no network involved.
+tmp = fullfile(tempdir, sprintf('shx_itsg_%d', randi(1e9)));
+mkdir(fullfile(tmp, 'ITSG-Grace2018', 'monthly', 'monthly_n96'));
+mkdir(fullfile(tmp, 'ITSG-Grace_operational', 'monthly', 'monthly_n96'));
+dst = fullfile(tmp, 'out');
+cleanup = onCleanup(@() rmdir(tmp, 's'));
+[files, info] = shLowLevel.fetchITSG(["2008-04", "2025-12"], ...
+    BaseURL = string(tmp), Dest = string(dst), Nmax = 96, Quiet = true);
+verifyEmpty(testCase, files);
+verifyEqual(testCase, sort(info.missing), sort(["2008-04", "2025-12"]));
+% the all-empty selection still errors loudly (scalar and array form)
+verifyError(testCase, @() shLowLevel.fetchITSG("", Quiet = true), ...
+    'shLowLevel:fetchITSG:noSelection');
+verifyError(testCase, @() shLowLevel.fetchITSG(["", ""], Quiet = true), ...
+    'shLowLevel:fetchITSG:noSelection');
+end

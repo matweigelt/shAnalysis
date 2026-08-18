@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.27.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.27.1 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,14 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.27.1 (fetchITSG: Months arrays pass the input gate again)
+%   - the no-selection check used scalar-only strlength inside && and
+%     crashed on any 1 x K Months array - hit live by the starter
+%     level inside setup_shAnalysis(Download="all") (the "all" level
+%     itself completed; the label in summary.failed localized the
+%     block). Array-safe all(strlength(...)==0) now; offline test
+%     pins the 1 x K path plus both loud no-selection forms.
 %
 % New in v3.27.0 (Download="all"; FetchITSG option removed)
 %   - setup_shAnalysis(Download="all"): fifth cumulative level - the
