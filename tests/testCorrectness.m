@@ -10,7 +10,7 @@ function setupOnce(testCase)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-testCase.TestData.dataDir = fullfile(here, 'test_data');
+testCase.TestData.dataDir = shxTestDataDir();
 shLowLevel.legendreCached('clear');
 end
 
@@ -784,7 +784,7 @@ function testMCPropagateFullCovariance(testCase)
 % the Cov path with the REAL SINEX fixture: 12 params = shIndex(3,
 % MinDegree=2); propagated sigma of a linear functional must equal
 % sqrt(w' M w)
-f = fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
+f = fullfile(shxTestDataDir(), ...
     'ITSG-Grace2018_n96_2008-04_head12.snx');
 verifyTrue(testCase, isfile(f));
 idx = shLowLevel.shIndex(3, MinDegree = 2);
@@ -1376,7 +1376,7 @@ end
 function testCompareReports(testCase)
 % aggregator contracts on the real ITSG chain (solutions) and a
 % synthetic 3-center stack (series) incl. TCH ordering and epoch drops
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
@@ -1452,7 +1452,7 @@ verifyNotEqual(testCase, Sr(3, 2), S(3, 2));
 verifyEqual(testCase, Ca, C, 'AbsTol', 0);
 verifyEqual(testCase, Sa, S, 'AbsTol', 0);
 % object form: epoch from the object, history through setCoefficient
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
@@ -2206,7 +2206,7 @@ function testKernelFactorsLoveNumberContract(testCase)
 %   A short kn used to die as MATLAB:badsubscript; 1+kn = 0 (the CM-frame
 %   k1 = -1 convention, shipped in GROOPS' own ak135 files) produced a
 %   silent Inf kernel.
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 kn = readmatrix(fullfile(d, 'loadLoveNumbers_Gegout97.txt'), ...
     FileType = 'text', NumHeaderLines = 2);
 verifyError(testCase, @() shLowLevel.kernelFactors("ewh", 60, ...
@@ -3081,7 +3081,7 @@ function testReadSINEXStatsAndEpoch(testCase)
 %   here). The real ITSG fixture (no STATISTICS block) must yield
 %   empty stats and epoch 2008-04 mid-month; a synthetic file with a
 %   STATISTICS block must feed neqCombine end-to-end.
-f = fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
+f = fullfile(shxTestDataDir(), ...
     'ITSG-Grace2018_n96_2008-04_head12.snx');
 snx = shLowLevel.readSINEX(f);
 verifyTrue(testCase, isempty(snx.stats));

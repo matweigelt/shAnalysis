@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.24.1 (R2026a-compatible) 18-Aug-2026
+% Version 3.25.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,15 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.25.0 (relocatable test fixtures)
+%   - tests/shxTestDataDir resolves the fixture folder: env
+%     SHX_TESTDATA_FOLDER first, preference TestDataFolder second,
+%     tests/test_data as the in-repo fallback - fixtures can live on a
+%     data drive while CI keeps the repo copy unchanged. All direct
+%     test_data paths in the four suites route through it; new
+%     setup_shAnalysis option TestDataFolder follows the
+%     SeriesFolder/DDKFolder env+setpref convention.
 %
 % New in v3.24.1 (gate hardening: mlint_lite R5)
 %   - tools/dev/mlint_lite.py rule R5: a name-value struct declared in

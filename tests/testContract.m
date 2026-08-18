@@ -21,7 +21,7 @@ here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
 tc.TestData.root = root;
-tc.TestData.dataDir = fullfile(here, 'test_data');
+tc.TestData.dataDir = shxTestDataDir();
 shLowLevel.legendreCached('clear');
 end
 
@@ -660,7 +660,7 @@ figure;
 h = shLowLevel.taylorDiagram(1.0, [0.8, 1.1], [0.9, 0.95], ...
     Labels = ["a", "b"], Normalize = true);
 verifyTrue(testCase, isgraphics(h));
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 verifyTrue(testCase, isfile(fG));
 g = shCoefficients.read(fG, Epoch = 2008.29);
@@ -714,7 +714,7 @@ end
 function testStandardChain(testCase)
 % v3.1.0: the canonical pipeline entry point on fixtures - order,
 % report, GIA subtraction, all three filter forms, error contracts
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 src = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 tn14 = fullfile(d, 'TN-14_C30_C20_SLR_GSFC.txt');
 % the shipped GFZ fixture spells the release with an UNDERSCORE
@@ -1134,8 +1134,7 @@ function testStandardChainHandlesTrailingCorrectionTables(testCase)
 %   The chain used to stop with "No TN-13 entry within 0.050 yr", which
 %   made routine use of an up-to-date series impossible. Uncovered
 %   epochs are now dropped and the fact recorded in the report.
-dd = fullfile(fileparts(fileparts(mfilename('fullpath'))), ...
-    'tests', 'test_data');
+dd = shxTestDataDir();
 fol = fullfile(tempdir, sprintf('shx_chain_%d', randi(1e9)));
 mkdir(fol);
 cl = onCleanup(@() rmIfFolder(fol)); %#ok<NASGU>
@@ -1182,8 +1181,7 @@ function testProvenanceSidecarsDoNotBreakTheRoundTrip(testCase)
 %   matched the sidecars and a folder written BY the toolbox could not be
 %   read back BY the toolbox. Also pins that the class API can switch the
 %   sidecar off, which it previously could not.
-dd = fullfile(fileparts(fileparts(mfilename('fullpath'))), ...
-    'tests', 'test_data');
+dd = shxTestDataDir();
 fol = fullfile(tempdir, sprintf('shx_sidecar_%d', randi(1e9)));
 mkdir(fol);
 cl = onCleanup(@() rmIfFolder(fol)); %#ok<NASGU>
@@ -1280,7 +1278,7 @@ if isempty(df), df = getpref('shAnalysis', 'DDKFolder', ''); end
 assumeTrue(testCase, ~isempty(gf) && ~isempty(sf) && ~isempty(df), ...
     ['set SHX_* env vars or setpref("shAnalysis", ...) preferences ' ...
      '(GravisFolder/SeriesFolder/DDKFolder) to enable']);
-kn = readmatrix(fullfile(fileparts(mfilename('fullpath')), 'test_data', ...
+kn = readmatrix(fullfile(shxTestDataDir(), ...
     'loadLoveNumbers_Gegout97.txt'), FileType = 'text', NumHeaderLines = 2);
 out = shLowLevel.twsChain(sf, gf, kn = kn, DDKFolder = df, ...
     Basins = "Amazonas", Quiet = true);

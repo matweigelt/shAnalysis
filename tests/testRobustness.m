@@ -18,7 +18,7 @@ function setupOnce(tc)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-tc.TestData.dataDir = fullfile(here, 'test_data');
+tc.TestData.dataDir = shxTestDataDir();
 shLowLevel.legendreCached('clear');
 end
 
@@ -1094,7 +1094,7 @@ verifyError(testCase, @() shLowLevel.eofAnalysis(ts), 'shLowLevel:eofAnalysis:na
 end
 
 function testFromFolderRealFiles(testCase)
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 ts = shSeries.fromFolder(d, Pattern = "ITSG-*_n60_*.gfc");
 verifyEqual(testCase, ts.nEpochs, 2);
 verifyEqual(testCase, ts.nmax, 60);
@@ -1109,7 +1109,7 @@ verifyError(testCase, ...
 end
 
 function testSeriesTNWrappers(testCase)
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fG = fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc');
 fT = fullfile(d, 'TN-13_GEOC_GFZ_RL06_3.txt');
 verifyTrue(testCase, isfile(fG) && isfile(fT));
@@ -1138,7 +1138,7 @@ end
 
 function testDailyKalmanRealFile(testCase)
 % real ITSG daily Kalman file (shipped, 83 kB): format, epoch, sigmas
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fD = fullfile(d, 'ITSG-Grace2018_Kalman_n40_2008-04-15.gfc');
 verifyTrue(testCase, isfile(fD));
 g = shCoefficients.read(fD);
@@ -1304,7 +1304,7 @@ verifyEqual(tc, numel(i2.skipped), 2);       % already present
 end
 
 function testICGEMListFixtureAndResolve(testCase)
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 fx = fullfile(d, 'icgem_list_fixture.html');
 verifyTrue(testCase, isfile(fx));
 T = shLowLevel.listICGEM(Source = fx);
@@ -1426,7 +1426,7 @@ function testReadGFCWarnsOnTruncationAndCorruption(tc)
 %TESTREADGFCWARNSONTRUNCATIONANDCORRUPTION Audit F-16/F-17.
 %   A truncated download used to parse cleanly into a plausible partial
 %   field; a corrupt numeric parsed to a silent NaN coefficient.
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 raw = fileread(fullfile(d, 'ITSG-Grace2018_n60_2008-04.gfc'));
 tmp = tempname; mkdir(tmp);
 cleanup = onCleanup(@() rmIfFolder(tmp)); %#ok<NASGU>

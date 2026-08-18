@@ -27,7 +27,7 @@ function setupOnce(testCase)
 here = fileparts(mfilename('fullpath'));
 root = fileparts(here);
 addpath(root);
-testCase.TestData.dataDir = fullfile(here, 'test_data');
+testCase.TestData.dataDir = shxTestDataDir();
 end
 
 % ------------------------------------------------- defining constants
@@ -226,7 +226,7 @@ verifyGreaterThan(testCase, low / high, 5, ...
 % demonstrated on the real 257-month ITSG series). The published fact
 % this test is named after is that Greenland LOSES mass over the GRACE
 % era - so synthesize the trend over Greenland and require the loss.
-d = fullfile(fileparts(mfilename('fullpath')), 'test_data');
+d = shxTestDataDir();
 kn = readmatrix(fullfile(d, 'loadLoveNumbers_Gegout97.txt'), ...
     FileType = 'text', NumHeaderLines = 2);
 gLat = (61:2:83)'; gLon = (288:2:340)';   % Greenland box, lon in [0,360)
