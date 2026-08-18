@@ -28,7 +28,6 @@ OPTDESC = {
  'Release': 'explicit ITSG release (empty: 2018 before 2017.5, operational after)',
  'List': 'pre-fetched catalogue table (avoids repeated server queries)',
  'DataFolder': 'persistent data folder, applied BEFORE any fetcher runs',
- 'FetchITSG': '"all" additionally downloads every monthly ITSG solution',
 }
 INDESC = {}   # filled per iteration for flagged inputs
 

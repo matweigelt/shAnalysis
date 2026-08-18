@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.27.0] - 2026-08-18 - Download="all" (BREAKING: FetchITSG removed)
+
+setup_shAnalysis gains the fifth cumulative download level "all":
+starter + the complete ITSG monthly archive at Nmax, resumable. The
+misunderstood v3.0.0 FetchITSG option is removed - it was an earlier
+request for exactly this, delivered as a bolt-on instead of a level.
+Callers using FetchITSG= now get MATLAB:TooManyInputs (measured on
+R2026a). DryRun plan, help, setup.html and the contract test updated;
+cumulative plan and the error ID verified on the acceptance machine
+before commit.
+
 ## [3.26.3] - 2026-08-18 - fixtures leave the repository
 
 tests/test_data removed from main; CI consumes the orphan branch

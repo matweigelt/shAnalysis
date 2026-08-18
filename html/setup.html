@@ -33,6 +33,7 @@ setup_shAnalysis(Permanent = true)      % path + savepath
 setup_shAnalysis(Download = "core")     % + TN-14/TN-13 (~250 KB)
 setup_shAnalysis(Download = "filters", DDK = [2 3 5])
 setup_shAnalysis(Download = "starter")  % + ITSG starter months
+setup_shAnalysis(Download = "all")      % + the COMPLETE monthly archive
 s = setup_shAnalysis(DryRun = true, Download = "starter")   % plan only</pre>
 
 <h2>Download levels (cumulative)</h2>
@@ -42,6 +43,7 @@ s = setup_shAnalysis(DryRun = true, Download = "starter")   % plan only</pre>
 <tr><td><code class="inline">"core"</code></td><td>GSFC TN-14 (C20/C30) + TN-13 geocenter files (GFZ/CSR/JPL) &mdash; the low-degree completion chain</td><td>~250 KB</td><td><code class="inline">shLowLevel.fetchTN</code></td></tr>
 <tr><td><code class="inline">"filters"</code></td><td>anisotropic DDK decorrelation matrices (subset via <code class="inline">DDK=</code>, default 3)</td><td>~10 MB each</td><td><code class="inline">shLowLevel.fetchDDK</code></td></tr>
 <tr><td><code class="inline">"starter"</code></td><td>ITSG monthly-solution starter set (default: the n96 companions of the shipped n60 fixture months, 2008-04 and 2025-12)</td><td>~1 MB/month</td><td><code class="inline">shLowLevel.fetchITSG</code></td></tr>
+<tr><td><code class="inline">"all"</code></td><td>starter + the complete ITSG monthly archive, 2002 &rarr; present (v3.27; existing files skipped, so re-runs resume)</td><td>several GB</td><td><code class="inline">shLowLevel.fetchITSG</code></td></tr>
 </table>
 <p>Downloads land in <code class="inline">shLowLevel.dataFolder()</code> subfolders
 (<code class="inline">TN/</code>, <code class="inline">DDK/</code>,
