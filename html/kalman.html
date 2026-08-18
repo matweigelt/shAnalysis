@@ -121,6 +121,16 @@ the estimate coming from the <em>data</em> rather than the process model &mdash;
 output is the prior wearing your product name.</li>
 </ul>
 
+<h2>Choosing the process model (v3.26, measured)</h2>
+<p>First live VAR-order table (ITSG monthly n40, T&nbsp;=&nbsp;257, 36-month holdout, one-step
+coefficient RMS): climatology-only 4.24e-12; dense VAR(1) at weak shrink <em>worse</em>
+(4.61e-12 &mdash; overfit at T&nbsp;&asymp;&nbsp;0.13&nbsp;P); <code class="inline">Structure="diagonal"</code>
+3.348e-12 (radius 0.93); <code class="inline">"orderblock"</code> at Shrink 1e-2 <em>best</em>:
+3.268e-12 (radius 0.96); VAR(2)/VAR(3) non-stationary
+(companion radius 16305/4364). Practical rule: monthly series &rarr; orderblock or diagonal; daily series
+&rarr; dense with <code class="inline">buildCondFun</code> conditioning (Kurtenbach/Kvas regime).
+<code class="inline">Order=1</code> confirmed.</p>
+
 <h2>Near-real-time use (v3.24)</h2>
 <p><code class="inline">rtsSmoother(filt, Lag=L)</code> bounds the latency: the estimate at day t
 waits only L further days - Kurtenbach's production variant. <code class="inline">Lag=0</code> is

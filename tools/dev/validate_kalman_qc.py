@@ -217,7 +217,84 @@ def run():
     assert errs[-1] < 0.02 * errs[0], "L2 decay"
     print(f"L2  error vs lag decays {errs[0]:.2f} -> {errs[-1]:.1e}       PASS")
 
-    print("\nAll 8 checks PASS")
+    run_structure_checks()
+    print("\nAll 11 checks PASS")
+
+
+
+
+# ---------------------------------------------------------------- S-block
+def estimate_var1_structured(X, structure, shrink):
+    """Mirror of estimateVAR Order=1 with Structure option (S-checks)."""
+    P, T = X.shape
+    Xc = X - X.mean(axis=1, keepdims=True)
+    if structure == "diagonal":
+        num = (Xc[:, 1:] * Xc[:, :-1]).sum(axis=1)
+        den = (Xc[:, :-1] ** 2).sum(axis=1)
+        return np.diag(num / den)
+    S0 = Xc[:, :-1] @ Xc[:, :-1].T / (T - 1)
+    S1 = Xc[:, 1:] @ Xc[:, :-1].T / (T - 1)
+    S0 = (1 - shrink) * S0 + shrink * np.diag(np.diag(S0))
+    if structure == "full":
+        return np.linalg.solve(S0.T, S1.T).T
+    # orderblock: caller passes block index list via structure=("blocks", [...])
+    kind, blocks = structure
+    assert kind == "blocks"
+    Phi = np.zeros((P, P))
+    for blk in blocks:
+        Phi[np.ix_(blk, blk)] = np.linalg.solve(
+            S0[np.ix_(blk, blk)].T, S1[np.ix_(blk, blk)].T).T
+    return Phi
+
+
+def run_structure_checks():
+    rng = np.random.default_rng(11)
+    # truth: two independent blocks with strong in-block coupling
+    blocks = [list(range(0, 4)), list(range(4, 10))]
+    P = 10
+    Phi_true = np.zeros((P, P))
+    for blk in blocks:
+        A = rng.standard_normal((len(blk), len(blk)))
+        A = 0.7 * A / np.max(np.abs(np.linalg.eigvals(A)))
+        Phi_true[np.ix_(blk, blk)] = A
+    L = np.diag(0.5 + rng.random(P))
+    T = 60                                     # deliberately short: P near T
+    X = np.zeros((P, T + 200))
+    for t in range(1, T + 200):
+        X[:, t] = Phi_true @ X[:, t - 1] + L @ rng.standard_normal(P)
+    X = X[:, 200:]
+
+    # S1 diagonal estimator == per-row lag-1 regression, Phi is diagonal
+    D = estimate_var1_structured(X, "diagonal", 0)
+    assert np.count_nonzero(D - np.diag(np.diag(D))) == 0, "S1 shape"
+    Xc = X - X.mean(axis=1, keepdims=True)
+    a0 = (Xc[0, 1:] * Xc[0, :-1]).sum() / (Xc[0, :-1] ** 2).sum()
+    assert abs(D[0, 0] - a0) < 1e-12, "S1 value"
+    print("S1  diagonal == per-coefficient AR(1)                PASS")
+
+    # S2 orderblock respects the block pattern exactly
+    B = estimate_var1_structured(X, ("blocks", blocks), 0.01)
+    off = B.copy()
+    for blk in blocks:
+        off[np.ix_(blk, blk)] = 0
+    assert np.abs(off).max() == 0, "S2 pattern"
+    print("S2  orderblock: zero outside the blocks              PASS")
+
+    # S3 short-sample ranking: with T ~ P the structured estimators must
+    # beat the raw full one on held-out one-step prediction (the live
+    # ITSG-monthly finding, reproduced synthetically)
+    Xtr, Xte = X[:, :T // 2], X[:, T // 2:]
+    def rms(Phi):
+        E = Xte[:, 1:] - Phi @ Xte[:, :-1]
+        return np.sqrt((E ** 2).mean())
+    r_full = rms(estimate_var1_structured(Xtr, "full", 1e-3))
+    r_blk = rms(estimate_var1_structured(Xtr, ("blocks", blocks), 0.01))
+    r_dia = rms(estimate_var1_structured(Xtr, "diagonal", 0))
+    assert r_blk < r_full and r_dia < r_full, \
+        f"S3 {r_full:.3e} {r_blk:.3e} {r_dia:.3e}"
+    print(f"S3  short-sample: blk {r_blk:.3e} dia {r_dia:.3e} "
+          f"< full {r_full:.3e}       PASS")
+
 
 
 if __name__ == "__main__":

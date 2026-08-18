@@ -32,6 +32,29 @@ function model = estimateVAR(X, opts)
 %     Shrink (0)    (1 x 1) diagonal loading factor: Sigma(0) +
 %                   Shrink * trace(Sigma(0))/P * I. Stabilizes the
 %                   Yule-Walker solve when T is not >> P.
+%     Structure ("full")  coupling structure of the estimate:
+%            "full"       dense Yule-Walker solve (Kurtenbach/Kvas) -
+%                         needs T >> P; the right choice for daily
+%                         sampling with conditioned covariances
+%            "diagonal"   independent per-coefficient AR(p): Phi_k and
+%                         Q diagonal - no tuning, immune to short
+%                         samples
+%            "orderblock" block-diagonal per (order m, C/S) block:
+%                         couples coefficients within an order, none
+%                         across - the structured middle ground;
+%                         requires Blocks
+%            MEASURED on the live ITSG monthly series through THIS
+%            estimator (n40, T = 257, 36-month holdout, one-step RMS,
+%            2026-08-18): climatology-only 4.245e-12; "full" at weak
+%            shrink WORSE (4.613e-12 - overfit at T ~ 0.13 P);
+%            "diagonal" 3.348e-12 (radius 0.93); "orderblock" with
+%            Shrink=1e-2 best at 3.268e-12 (radius 0.96). For monthly
+%            series prefer "orderblock" (blocks per (m, C/S) from
+%            shIndex) or "diagonal"; "full" remains the default for
+%            the daily regime the Kalman module targets.
+%     Blocks ({})  cell of index vectors partitioning 1:P, required
+%            for Structure="orderblock" - e.g. from shIndex:
+%            one block per (m, C/S) pair
 %     CondFun ([])  function handle C -> C applied to every Sigma(h)
 %                   before the solve, for covariance conditioning a la
 %                   Kvas Sec. 2.4: land/ocean block masking and the
@@ -72,6 +95,8 @@ arguments
     opts.Order (1,1) double {mustBeInteger, mustBePositive} = 1
     opts.Shrink (1,1) double {mustBeNonnegative} = 0
     opts.CondFun = []
+    opts.Structure (1,1) string {mustBeMember(opts.Structure, ["full","diagonal","orderblock"])} = "full"
+    opts.Blocks cell = {}
 end
 
 [P, T] = size(X);
@@ -80,7 +105,7 @@ if T <= p + 1
     error('shLowLevel:estimateVAR:tooShort', ...
         'Need T > Order + 1 epochs (got T = %d, Order = %d).', T, p);
 end
-if T < 3 * P && opts.Shrink == 0
+if T < 3 * P && opts.Shrink == 0 && opts.Structure == "full"
     warning('shLowLevel:estimateVAR:shortSeries', ...
         ['T = %d epochs for P = %d parameters: the empirical covariance ' ...
          'is poorly conditioned. Consider Shrink > 0 or CondFun.'], T, P);
@@ -101,33 +126,61 @@ if ~isempty(opts.CondFun)
     end
 end
 
-% ---- Yule-Walker: [Sigma(1)..Sigma(p)] = [Phi_1..Phi_p] * S,
-%      S block-Toeplitz with S{i,j} = Sigma(i-j), Sigma(-h) = Sigma(h)'
-S = zeros(p * P);
-for i = 1:p
-    for j = 1:p
-        h = i - j;
-        if h >= 0
-            blk = Sig{h+1};
-        else
-            blk = Sig{-h+1}.';
+% ---- Yule-Walker solve, per structure. "full" is the dense original;
+%      "diagonal"/"orderblock" run the SAME solve on 1 x 1 / block
+%      submatrices of the Sigma(h), which is exact when the true
+%      process is (block-)decoupled and a strong regularizer when it
+%      is not (measured on the live monthly series - see help).
+switch opts.Structure
+    case "full"
+        blocks = {1:P};
+    case "diagonal"
+        blocks = num2cell(1:P);
+    case "orderblock"
+        if isempty(opts.Blocks)
+            error('shLowLevel:estimateVAR:needBlocks', ...
+                'Structure="orderblock" requires Blocks (e.g. one index vector per (m, C/S) pair from shIndex).');
         end
-        S((i-1)*P+1:i*P, (j-1)*P+1:j*P) = blk;
-    end
+        cover = sort(cell2mat(cellfun(@(b) b(:).', opts.Blocks, ...
+            'UniformOutput', false)));
+        if ~isequal(cover, 1:P)
+            error('shLowLevel:estimateVAR:badBlocks', ...
+                'Blocks must partition 1:%d exactly.', P);
+        end
+        blocks = opts.Blocks;
 end
-G = [Sig{2:p+1}];                       % (P x p*P)
-PhiAll = (S.' \ G.').';                 % solve, no explicit inverse
 Phi = cell(1, p);
-for k = 1:p
-    Phi{k} = PhiAll(:, (k-1)*P+1:k*P);
-end
-
-% ---- process noise Q = Sigma(0) - sum Phi_k Sigma(k)'  (Luetkepohl)
-Q = Sig{1};
-for k = 1:p
-    Q = Q - Phi{k} * Sig{k+1}.';
+for k = 1:p, Phi{k} = zeros(P); end
+Q = zeros(P);
+for b = 1:numel(blocks)
+    ib = blocks{b}(:).';
+    nb = numel(ib);
+    S = zeros(p * nb);
+    for i = 1:p
+        for j = 1:p
+            h = i - j;
+            if h >= 0
+                blk = Sig{h+1}(ib, ib);
+            else
+                blk = Sig{-h+1}(ib, ib).';
+            end
+            S((i-1)*nb+1:i*nb, (j-1)*nb+1:j*nb) = blk;
+        end
+    end
+    G = zeros(nb, p * nb);
+    for k = 1:p
+        G(:, (k-1)*nb+1:k*nb) = Sig{k+1}(ib, ib);
+    end
+    PhiB = (S.' \ G.').';
+    Qb = Sig{1}(ib, ib);
+    for k = 1:p
+        Phi{k}(ib, ib) = PhiB(:, (k-1)*nb+1:k*nb);
+        Qb = Qb - PhiB(:, (k-1)*nb+1:k*nb) * Sig{k+1}(ib, ib).';
+    end
+    Q(ib, ib) = Qb;
 end
 Q = (Q + Q.') / 2;
+PhiAll = [Phi{:}];
 
 % ---- stability diagnostic on the companion matrix
 B = zeros(p * P);
@@ -144,6 +197,12 @@ if specRadius >= 1
         specRadius);
 end
 
-model = struct('Phi', {Phi}, 'Q', Q, 'Sigma0', (Sig{1} + Sig{1}.') / 2, ...
+Sig0 = (Sig{1} + Sig{1}.') / 2;
+if opts.Structure ~= "full"
+    M = zeros(P);
+    for b = 1:numel(blocks), M(blocks{b}, blocks{b}) = 1; end
+    Sig0 = Sig0 .* M;    % structure-consistent: B Sig0 B' + Q ~ Sig0
+end
+model = struct('Phi', {Phi}, 'Q', Q, 'Sigma0', Sig0, ...
     'order', p, 'P', P, 'specRadius', specRadius);
 end

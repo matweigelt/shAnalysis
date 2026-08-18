@@ -3335,3 +3335,67 @@ sFil = shLowLevel.rtsSmoother(fFil, Lag = 3);
 sMem = shLowLevel.rtsSmoother(filt, Lag = 3);
 verifyEqual(testCase, sFil.xs, sMem.xs);
 end
+
+% ------------------------------------- estimateVAR Structure (v3.26)
+function testEstimateVARStructures(testCase)
+%TESTESTIMATEVARSTRUCTURES the structured Yule-Walker variants
+%   (Python S1-S3 through the MATLAB path): "diagonal" gives diagonal
+%   Phi/Q equal to the per-coefficient lag-1 regression; "orderblock"
+%   is exactly zero outside its blocks and errors loudly without or
+%   with a broken partition; at T ~ P both structured estimates beat
+%   the raw full solve out of sample - the live ITSG-monthly finding,
+%   pinned synthetically.
+rng(61);
+P = 10;
+grp = [1 1 1 1 2 2 2 2 2 2];
+blocks = {find(grp == 1), find(grp == 2)};   % COLUMN vectors, like
+blocks = cellfun(@(b) b(:), blocks, 'UniformOutput', false);
+% shIndex consumers build them - the live run caught a horzcat bug here
+PhiT = zeros(P);
+for b = 1:2
+    A = randn(numel(blocks{b}));
+    PhiT(blocks{b}, blocks{b}) = 0.7 * A / max(abs(eig(A)));
+end
+L = diag(0.5 + rand(P, 1));
+X = zeros(P, 260);
+for t = 2:260, X(:, t) = PhiT * X(:, t-1) + L * randn(P, 1); end
+X = X(:, 201:260);                       % T = 60, deliberately short
+% diagonal: shape + value
+mD = shLowLevel.estimateVAR(X, Structure = "diagonal");
+verifyEqual(testCase, mD.Phi{1}, diag(diag(mD.Phi{1})));
+verifyEqual(testCase, mD.Q, diag(diag(mD.Q)));
+% convention-free value check: diagonal on row i must equal the full
+% estimator run on that single row as a 1 x T series (same Sigma(h)
+% machinery by construction; bridge-measured reldiff 1.4e-16)
+m1 = shLowLevel.estimateVAR(X(1, :));
+verifyEqual(testCase, mD.Phi{1}(1, 1), m1.Phi{1}, RelTol = 1e-10);
+% orderblock: pattern + loud errors
+mB = shLowLevel.estimateVAR(X, Structure = "orderblock", Blocks = blocks);
+off = mB.Phi{1}; off(1:4, 1:4) = 0; off(5:10, 5:10) = 0;
+verifyEqual(testCase, off, zeros(P));
+verifyError(testCase, @() shLowLevel.estimateVAR(X, Structure = "orderblock"), ...
+    'shLowLevel:estimateVAR:needBlocks');
+verifyError(testCase, @() shLowLevel.estimateVAR(X, ...
+    Structure = "orderblock", Blocks = {1:4, 4:10}), ...
+    'shLowLevel:estimateVAR:badBlocks');
+% short-sample ranking, each structure on the truth it matches (a
+% diagonal estimate rightly LOSES on a strongly block-coupled truth -
+% the first draft asserted otherwise and CI said no):
+% (a) block truth, T = 30: orderblock beats full (bridge: 13.5 < 15.8)
+Xtr = X(:, 1:30); Xte = X(:, 31:end);
+mF = shLowLevel.estimateVAR(Xtr, Shrink = 1e-3);
+mB = shLowLevel.estimateVAR(Xtr, Structure = "orderblock", Blocks = blocks, Shrink = 1e-2);
+r = @(m, Zt, Ze) norm(Ze(:, 2:end) - m.Phi{1} * Ze(:, 1:end-1), 'fro');
+verifyTrue(testCase, r(mB, Xtr, Xte) < r(mF, Xtr, Xte));
+% (b) diagonal truth, T = 30: diagonal beats full (bridge: 18.7 < 26.2)
+rng(62);
+aT = 0.3 + 0.5 * rand(P, 1);
+L = diag(0.5 + rand(P, 1));
+Y = zeros(P, 260);
+for t = 2:260, Y(:, t) = aT .* Y(:, t-1) + L * randn(P, 1); end
+Y = Y(:, 201:260);
+Ytr = Y(:, 1:30); Yte = Y(:, 31:end);
+mFy = shLowLevel.estimateVAR(Ytr, Shrink = 1e-3);
+mDy = shLowLevel.estimateVAR(Ytr, Structure = "diagonal");
+verifyTrue(testCase, r(mDy, Ytr, Yte) < r(mFy, Ytr, Yte));
+end
