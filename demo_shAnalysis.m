@@ -193,8 +193,8 @@ function ts = tryRealSeries(Lcut)
 % real monthly series if shLowLevel.fetchITSG has populated itsg_series/
 ts = [];
 cands = [string(fullfile(shLowLevel.dataFolder(), 'itsg_series')), ...
-    string(fullfile(fileparts(mfilename('fullpath')), 'tests', ...
-    'test_data', 'itsg_series'))];                 % new + legacy location
+    string(fullfile(shLowLevel.testDataDir(), ...
+    'itsg_series'))];                              % new + legacy location
 for d = cands
     if isfolder(d) && numel(dir(fullfile(d, '*.gfc*'))) >= 24
         try

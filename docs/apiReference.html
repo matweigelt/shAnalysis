@@ -1465,6 +1465,8 @@ code itself.</p>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
 <tr><td><code>d</code></td><td>(1 x :) char  folder path (existence NOT enforced for the fallback - callers keep their own diagnostics)</td></tr>
 </table>
+<b>Example</b><pre>    W = shLowLevel.readDDK(&quot;DDK3&quot;);   % resolves the shipped sample
+    f = fullfile(shLowLevel.testDataDir(), &#x27;test_static.gfc&#x27;);</pre>
 </div>
 <div class="entry" id="shLowLevel.threeCorneredHat">
 <h3><code>shLowLevel.threeCorneredHat(X)</code></h3>

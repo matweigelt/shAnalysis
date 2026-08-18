@@ -18,6 +18,10 @@ function d = testDataDir()
 %     d  (1 x :) char  folder path (existence NOT enforced for the
 %        fallback - callers keep their own diagnostics)
 %
+%   Example
+%     W = shLowLevel.readDDK("DDK3");   % resolves the shipped sample
+%     f = fullfile(shLowLevel.testDataDir(), 'test_static.gfc');
+%
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5),
 %   2026-08-18, 13:55 UTC.
 

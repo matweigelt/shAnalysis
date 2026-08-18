@@ -22,6 +22,19 @@ th { background: #f5f7fa; }
 <span class="tag">Data management</span>
 <h1>Data folder, DDK family, ICGEM access (v2.4.1)</h1>
 <p>One persistent storage location, all released DDK filters, and the ICGEM model catalogue.</p>
+<h2>shLowLevel.testDataDir</h2>
+<p>Resolves the shipped sample/fixture folder (v3.26.2): the
+<code class="inline">SHX_TESTDATA_FOLDER</code> environment variable first, then the
+<code class="inline">TestDataFolder</code> preference
+(<code class="inline">setup_shAnalysis(TestDataFolder=...)</code>, persistent), then the in-repo
+<code class="inline">tests/test_data</code>. One resolver serves three consumers: toolbox code
+(<code class="inline">readDDK("DDK3")</code> finds the shipped Wbd sample), the demos, and the
+test suites (whose <code class="inline">tests/shxTestDataDir</code> is a thin delegate). Point it
+at a data drive to keep fixtures out of every checkout; CI obtains them from the orphan branch
+<code class="inline">testdata</code> instead.</p>
+<pre>setup_shAnalysis(TestDataFolder = "E:\DATAPOOL\GravityField\test_data")
+W = shLowLevel.readDDK("DDK3");     % resolves through testDataDir</pre>
+
 <h2>shLowLevel.dataFolder</h2>
 <pre>shLowLevel.dataFolder("D:/geodata/shAnalysis")   % set once, persists across sessions
 shLowLevel.dataFolder()                    % query (default: &lt;toolbox&gt;/data)
