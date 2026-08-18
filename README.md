@@ -63,6 +63,15 @@ provisions once with skip-if-present semantics, so a populated data
 folder never needs the network again. The barystatic chain now
 carries quantified coastal-leakage controls (`CoastBufferKm`,
 `RemoveLandLeakage`) - measured before built, defaults conservative.
+The temporal-smoothing lane is the Kurtenbach/Kvas Kalman chain that
+powers the ITSG daily solutions, implemented end to end
+(`estimateVAR` with measured full/diagonal/orderblock structures,
+`kalmanFilter` in solution AND normal-equation form with Joseph
+update and innovation QC, `rtsSmoother` with bounded lag,
+multi-center VCE via `neqCombine`) behind one entry point,
+`shLowLevel.kalmanChain`; the forward+smoother pass is test-pinned as
+an EXACT solver of the joint batch adjustment, and guide chapter 27
+develops the theory with live-measured figures.
 
 ## Documentation
 
@@ -85,9 +94,10 @@ shAnalysis/
   +shLowLevel/       numerical internals (stable, package-qualified)
   demo_shAnalysis.m  16 selectable demonstration cases
   tests/             correctness / contract / robustness / science /
-                     performance
-  tests/test_data/   fixtures incl. two real ITSG monthly solutions and
-                     GravIS Level-2B samples (CC-BY-4.0, see NOTICE)
+                     performance (fixtures live OUTSIDE the repo: CI
+                     pulls the orphan branch 'testdata'; local machines
+                     point setup_shAnalysis(TestDataFolder=...) at a
+                     copy - CC-BY-4.0 contents, see NOTICE)
   html/              doc pages for MATLAB's `doc` browser
   tools/             CI gates; tools/dev/ the doc generators (see its README)
 ```
@@ -101,7 +111,8 @@ shLowLevel.makeTutorials(Cases = "core");   % Live Scripts to open and run
 % later, monthly refresh of the growing TN files (safe, parse-verified swap):
 setup_shAnalysis(Download = "core", Update = true)      % or shLowLevel.fetchTN(Update = true)
 % levels: "none" (path only) | "core" (TN-13/14) | "filters" (+DDK)
-%         | "starter" (+ITSG months); DryRun=true shows the plan
+%         | "starter" (+ITSG months) | "all" (+the COMPLETE monthly
+%         archive, resumable); DryRun=true shows the plan
 ts  = shSeries.read("GSM-2_*.gfc");     % monthly solutions, epoch-sorted
 gad = shSeries.read("GAD-2_*.gfc");
 ts  = ts.restore(gad);                  % GSM+GAD, epoch-matched

@@ -55,6 +55,11 @@ function [ts, rep] = kalmanChain(obsIn, opts)
 %            the target sampling and nmax (truncate first if needed);
 %            e.g. GAX/AOD1B, ESA ESM or a hydrology model as SH series
 %     Order (1)         (1 x 1) VAR order p (see estimateVAR)
+%     Structure ("full")  "full" | "diagonal" | "orderblock": coupling
+%            structure of the VAR estimate (v3.28; see estimateVAR for
+%            the measured monthly table). "orderblock" builds the
+%            canonical (order m, C/S) partition from the series index
+%            automatically - the recommended setting for MONTHLY input
 %     Shrink (0)        (1 x 1) diagonal loading (see estimateVAR)
 %     CondFun ([])      covariance conditioning (see estimateVAR)
 %     Epochs ([])       (K x 1) double  target epoch grid [decimal
@@ -124,6 +129,7 @@ arguments
     opts.ModelSeries (1,1) shSeries
     opts.Order (1,1) double {mustBeInteger, mustBePositive} = 1
     opts.Shrink (1,1) double {mustBeNonnegative} = 0
+    opts.Structure (1,1) string {mustBeMember(opts.Structure, ["full","diagonal","orderblock"])} = "full"
     opts.CondFun = []
     opts.Epochs (:,1) double = []
     opts.Tolerance (1,1) double {mustBePositive} = 0.5/365.25
@@ -149,8 +155,23 @@ for k = 1:resid.nEpochs
     g = resid.at(k);
     X(:, k) = shLowLevel.vecFromCS(g.C, g.S, idx);
 end
-model = shLowLevel.estimateVAR(X, Order=opts.Order, ...
-    Shrink=opts.Shrink, CondFun=opts.CondFun);
+if opts.Structure == "orderblock"
+    % canonical partition: one block per (order m, C/S) pair
+    blocks = {};
+    for mo = 0:idx.Lmax
+        for cs = 0:1
+            bb = find(idx.m == mo & idx.cs == cs);
+            if ~isempty(bb), blocks{end+1} = bb; end %#ok<AGROW>
+        end
+    end
+    model = shLowLevel.estimateVAR(X, Order=opts.Order, ...
+        Shrink=opts.Shrink, CondFun=opts.CondFun, ...
+        Structure=opts.Structure, Blocks=blocks);
+else
+    model = shLowLevel.estimateVAR(X, Order=opts.Order, ...
+        Shrink=opts.Shrink, CondFun=opts.CondFun, ...
+        Structure=opts.Structure);
+end
 
 % ---- 3. observation records
 solMode = isa(obsIn, 'shSeries');

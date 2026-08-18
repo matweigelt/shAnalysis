@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.28.0] - 2026-08-18 - guide chapter 27 (Kalman/VAR); kalmanChain Structure
+
+Guide gains the self-contained Kalman/VAR chapter with two computed
+figures: the measured VAR order/structure holdout table, and a live
+run on the acceptance machine (degree-RMS attenuation 0.95->0.52 over
+n=2..40, data contribution 0.93->0.63) - plus the honest note that an
+11-deg basin average changes 2% RMS only on monthly data (daily is
+the target regime). kalmanChain passes Structure= to estimateVAR and
+builds the orderblock partition itself. README/kalman.html updated;
+references renumbered (28).
+
 ## [3.27.1] - 2026-08-18 - fetchITSG accepts Months arrays again
 
 The no-selection gate crashed on 1 x K string Months (array logical in
