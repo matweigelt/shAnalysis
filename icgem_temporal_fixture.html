@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html>
+    <head>
+            <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://icgem.gfz.de blob: data: ws: https://webstats.gfz.de;
+                                                            script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://webstats.gfz.de;
+                                                            img-src * data:;">
+        <meta content="Franz Barthelmes, Elmas Sinem Ince, Sven Rei&szlig;land" name="Author">
+        <meta name="keywords"
+            content="CHAMP, GOCE, GPS levelling, GPS levelling, GRACE, calculation, comparison,
+                     computation, geoid, geopotential, gravity, gravity anomaly, gravity field,
+                     gravity model, grid, iag, map, spherical harmonic coefficients,
+                     spherical harmonics, validation, visualisation">
+        <meta name="description" content="ICGEM: International Centre for Global Earth Models">
+        <title>ICGEM International Center for Global Gravity Field Models</title>
+        <link rel="stylesheet" type="text/css" href="/libs/bootstrap_5.3.3.min.css">
+        <link rel="stylesheet" type="text/css" href="/colors.css">
+        <link rel="stylesheet" type="text/css" href="/icgem_bs.css">
+        <script src="/libs/jquery-3.7.0.min.js"></script>
+        <script src="/libs/underscore-umd-min.js"></script>
+        <script src="/common.js"></script>
+        <script>
+        async function icgemApiKey() {
+            const now = Math.floor(Date.now() / 1000);
+            try {
+                const res = await fetch(`/api_key/${now}`,{method: "POST"});
+                if (!res.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+            } catch (error) {
+                console.error(error.message);
+            }
+        }
+        setTimeout(icgemApiKey,1000);
+        setInterval(icgemApiKey,3600*1000);
+        </script>
+            <script src="/libs/editorjs/header.js"></script>
+    <script src="/libs/editorjs/image.js"></script>
+    <script src="/libs/editorjs/inlineimage.js"></script>
+    <script src="/libs/editorjs/delimiter.js"></script>
+    <script src="/libs/editorjs/list.js"></script>
+    <script src="/libs/editorjs/quote.js"></script>
+    <script src="/libs/editorjs/code.js"></script>
+    <script src="/libs/editorjs/table.js"></script>
+    <script src="/libs/editorjs/marker.js"></script>
+    <script src="/libs/editorjs/underline.js"></script>
+    <script src="/libs/editorjs/inline-code.js"></script>
+    <script src="/libs/editorjs/attaches.js"></script>
+    <script src="/libs/editorjs/alignment.js"></script>
+    <script src="/libs/editorjs/raw.js"></script>
+    <link rel="stylesheet" type="text/css" href="/libs/editorjs/Hyperlink.css">
+    <script src="/libs/editorjs/SelectionUtils.js"></script>
+    <script src="/libs/editorjs/Hyperlink.js"></script>
+    <link rel="stylesheet" type="text/css" href="/libs/editorjs/color-picker.css">
+    <script src="/libs/editorjs/color-picker.js"></script>
+    <script src="/libs/editorjs/genericinline.js"></script>
+    <script src="/libs/editorjs.umd.min.js"></script>
+
+
+    <style>
+        #recent .cardwrap {
+            min-width: 22rem;
+            width: 25%;
+        }
+        #_02_COST-G_ .cardwrap {
+            min-width: 18rem;
+            width: 20%;
+        }
+        #_02_COST-G_ .card .card-text {
+            min-height: 0;
+        }
+        .cardwrap {
+            min-width: 30rem;
+            width: 33%;
+        }
+    </style>
+    </head>
+    <body>
+        
+        <div class="w-100 h-100 d-flex">
+            <div id="sidebar" class="d-flex flex-column">
+                <img id="logo" class="logo" src="/imgs/icgem.png" alt="Logo">
+                <div id="menu">
+
+
+
+
+        <a href="/home">ICGEM Home</a>
+
+
+<h4>Gravity Field Models</h4>
+        <a class="sub " href="/tom_longtime">Static Models</a>
+
+        <a class="sub self " href="/sl/temporal">Temporal Models</a>
+
+        <a class="sub " href="/sl/simulated">Simulated Models</a>
+
+        <a class="sub " href="/tom_reltopo">Topographic Models</a>
+
+
+<h4>Calculation Service</h4>
+        <a class="sub " href="/calcgrid">Regular grids</a>
+
+        <a class="sub " href="/calcpoints">User-defined points</a>
+
+        <a class="sub " href="/g3">G3-Browser</a>
+
+
+<h4>3D Visualisation</h4>
+        <a class="sub " href="/vis3d/longtime">Static Models</a>
+
+        <a class="sub " href="/vis3d/series">Temporal Models</a>
+
+        <a class="sub " href="/vis3d/trend">Trend &amp; Amplitude</a>
+
+        <a class="sub " href="/vis3d/tutorial">Spherical Harmonics</a>
+
+
+<h4>Evaluation</h4>
+        <a class="sub " href="/evalchart">Spectral domain</a>
+
+        <a class="sub " href="/tom_gpslev">GNSS Leveling</a>
+
+
+<h4>Documentation</h4>
+        <a class="sub " href="/dochome">Guide to all documents</a>
+
+        <a class="sub " href="/faq">FAQ</a>
+
+        <a class="sub " href="/theory">Theory</a>
+
+        <a class="sub " href="/refs">References</a>
+
+        <a class="sub " href="/changes">Latest Changes</a>
+
+        <a class="sub " href="/contact">Contact</a>
+
+
+<h4>Other Celestial Bodies<br>
+    (Moon,Venus, Mars)</h4>
+        <a class="sub " href="/tom_celestial">Table of Models</a>
+
+        <a class="sub " href="/vis3d/celestial">3D Visualization</a>
+
+        <a class="sub " href="/calcgrid?modeltype=celestial">Calculation Service</a>
+
+<hr noshade color="black" width="100%" size="3" align="center">
+        <a class="sub " href="/imprint">Imprint</a>
+
+        <a class="sub " href="/dataprotection">Data Protection</a>
+
+                <a class="sub " href="/login?redirecturl=/sl/temporal">Admin-Login</a>
+
+                </div>
+            </div>
+            <div id="content">
+                <div id="header" class="row">
+                    <img src="/imgs/iaglogo-short-web.png" alt="iaglogo">
+                    <img src="/imgs/logo_gfz.svg" alt="gfzlogo">
+                </div>
+<div class="ms-1">
+    <h1 class="display-4 text-center textshadow mb-3">Gravity Field Solutions for dedicated Time Periods</h1>
+
+    <ul class="list-group list-group-horizontal justify-content-center fs-4 mb-2">
+        <li class="list-group-item"><a href="#recent">Recent</a></li>
+        <li class="list-group-item"><a href="#_01_GRACE">SDS centers</a></li>
+        <li class="list-group-item"><a href="#_02_COST-G_">COST-G</a></li>
+        <li class="list-group-item"><a href="#_03_other">Other Institutes</a></li>
+        <li class="list-group-item"><a href="#_04_SLR_">SLR</a></li>
+    </ul>
+
+    <div class="mb-3" id="recent">
+        <h2 class="fw-bold">Recent Models</h2>
+        <div class="d-flex flex-wrap">
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_03_other_HUST_HUST-Grace2024">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+HUST-Grace2024
+            <sup><a href="https://doi.org/10.5880/ICGEM.2024.001" target="_blank">DOI</a></sup>
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/03_other/HUST/HUST-Grace2024">monthly</a>
+      </div>
+      <p class="card-text"></p>
+    </div>
+  </div>
+</div>
+
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_03_other_AIUB_AIUB-GRACE-FO-rl03op">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+AIUB-GRACE-FO-rl03op
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/03_other/AIUB/AIUB-GRACE-FO-rl03op">monthly</a>
+      </div>
+      <p class="card-text"></p>
+    </div>
+  </div>
+</div>
+
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_04_SLR__IGG-SLR-GRACE">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+SLR - IGG_UPWr_SLR_GRACE
+            <sup><a href="https://doi.org/10.3390/rs18020313" target="_blank">DOI</a></sup>
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/04_SLR_/IGG-SLR-GRACE">monthly</a>
+      </div>
+      <p class="card-text"></p>
+    </div>
+  </div>
+</div>
+
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_03_other_ITSG_ITSG-Grace_op">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+ITSG-Grace_op
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace_op">monthly</a>
+      </div>
+      <p class="card-text"></p>
+    </div>
+  </div>
+</div>
+
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_03_other_CNES_CNES_GRGS_RL05">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+CNES_GRGS_RL05
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL05">monthly</a>
+      </div>
+      <p class="card-text">GRACE-GRACE-FO solutions RL05 from CNES/GRGS ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-05/rl05-products-description/" target="_blank">here</a></p>
+    </div>
+  </div>
+</div>
+
+                <div class="cardwrap d-flex pe-2 pb-2" style="">
+  <div class="card w-100" id="model_03_other_CNES_CNES_GRGS_RL05_CHOL">
+    <div class="card-body d-flex flex-column">
+      <div class="d-flex justify-content-between">
+        <h4 class="card-title col fw-bold">
+CNES_GRGS_RL05_CHOL
+        </h4>
+      </div>
+      <div class="col d-flex justify-content-end fw-bold">
+        <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL05_CHOL">monthly</a>
+      </div>
+      <p class="card-text">GRACE-GRACE-FO monthly solutions RL05 from CNES/GRGS using standard unregularized Cholesky inversion ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-05/rl05-products-description/" target="_blank">here</a></p>
+    </div>
+  </div>
+</div>
+
+        </div>
+    </div>
+
+    <div class="mb-3" id="_01_GRACE">
+        <h2 class="fw-bold">GRACE and Grace-FO solutions from the Science Data System centers CSR, GFZ and JPL</h2>
+        <div class="accordion ms-1 me-3">
+  <div class="accordion-item" style="" id="inst_01_GRACE_CSR">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">CSR</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Center for Space Research at University of Texas, Austin</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 05">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 05
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 05">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/L2-CSR0005_ProcStd_v4.0.pdf">UTCSR Level-2 Processing Standards Document, Rev 4.0 May 29, 2012</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 06">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 06
+                <sup><a href="http://doi.org/10.5067/GRGSM-20C06" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 06">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE_CSR_L2_Processing_Standards_Document_for_RL06.pdf">UTCSR Level-2 Processing Standards Document, Rev 5.0 April 18, 2018</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 06 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 06 (GFO)
+                <sup><a href="http://doi.org/10.5067/GFL20-MC060" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 06 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE-FO_CSR_L2_Processing_Standards_Document_for_RL06.pdf">UTCSR Level-2 Processing Standards Document, V 1.1 June 6, 2019</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 06.1 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 06.1 (GFO)
+                <sup><a href="http://doi.org/10.5067/GFL20-MC061" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 06.1 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/CSR/CSR%20Release%2006.1%20(GFO)/GRACE-FO_CSR_L2_Release_Notes_for_RL06.1.txt">GRACE-FO CSR L2 Release Notes for RL06.1</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 06.2 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 06.2 (GFO)
+                <sup><a href="https://doi.org/10.5067/GFL20-MC062" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 06.2 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/CSR/CSR%20Release%2006.2%20(GFO)/GRACE-FO_CSR_L2_Release_Notes_for_RL06.2.txt">GRACE-FO CSR L2 Release Notes for RL06.2</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_CSR_CSR Release 06.3 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CSR Release 06.3 (GFO)
+                <sup><a href="https://doi.org/10.5067/GFL20-MC063" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/CSR/CSR Release 06.3 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/CSR/CSR%20Release%2006.3%20(GFO)/GRACE-FO_CSR_L2_Release_Notes_for_RL06.3.txt">GRACE-FO CSR L2 Release Notes for RL06.3</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_01_GRACE_GFZ">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">GFZ</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">GFZ Helmholtz Centre for Geosciences</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_GFZ_GFZ Release 05">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GFZ Release 05
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 05/monthly">monthly</a>
+                    <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 05/weekly">weekly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/L2-GFZ_ProcStds_0005_v1.1-1.pdf">GFZ GRACE Level-2 Processing, Revised Edition, January 2013</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_GFZ_GFZ Release 06">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GFZ Release 06
+                <sup><a href="http://doi.org/10.5880/GFZ.GRACE_06_GSM" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 06">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE_GFZ_L2_Processing_Standards_Document_for_RL06.pdf">GFZ GRACE Level-2 Processing Standards Document for Level-2 Products, Rev. 1.0, October 26, 2018</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_GFZ_GFZ Release 06 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GFZ Release 06 (GFO)
+                <sup><a href="http://doi.org/10.5880/GFZ.GRACEFO_06_GSM" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 06 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE-FO_GFZ_L2_Processing_Standards_Document_for_RL06.pdf">GFZ GRACE Level-2 Processing Standards Document for Level-2 Products, Rev. 1.0, June 3, 2019</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_GFZ_GFZ Release 06.1 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GFZ Release 06.1 (GFO)
+                <sup><a href="http://doi.org/10.5880/GFZ.GRACEFO_06_GSM" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 06.1 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/GFZ/GFZ%20Release%2006.1%20(GFO)/GRACE-FO_GFZ_L2_Release_Notes_for_RL06.1.pdf">GRACE-FO GFZ L2 Release Notes for RL06.1</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_GFZ_GFZ Release 06.3 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GFZ Release 06.3 (GFO)
+                <sup><a href=" https://doi.org/10.5880/GFZ.GRACEFO_06_GSM" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/GFZ/GFZ Release 06.3 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/GFZ/GFZ%20Release%2006.3%20(GFO)/GRACE-FO_GFZ_L2_Release_Notes_for_RL06.3.pdf">GRACE-FO GFZ L2 Release Notes for RL06.3</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_01_GRACE_JPL">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">JPL</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Jet Propulsion Laboratory</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_JPL_JPL Release 05">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                JPL Release 05
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/JPL/JPL Release 05">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/L2-JPL_ProcStds_v5.1.pdf">JPL Level-2 Processing Standards Document, Release 05.1 November 3, 2014</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_JPL_JPL Release 06">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                JPL Release 06
+                <sup><a href="http://doi.org/10.5067/GRGSM-20J06" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/JPL/JPL Release 06">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE_JPL_L2_Processing_Standards_Document_for_RL06.pdf">JPL Level-2 Processing Standards Document, Release 06.0 June 1, 2018</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_JPL_JPL Release 06 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                JPL Release 06 (GFO)
+                <sup><a href="http://doi.org/10.5067/GFL20-MJ060" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/JPL/JPL Release 06 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/docs/GRACE-FO_JPL_L2_Processing_Standards_Document_for_RL06.pdf">JPL Level-2 Processing Standards Document, v 1.0 May 28, 2019</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_JPL_JPL Release 06.1 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                JPL Release 06.1 (GFO)
+                <sup><a href="http://doi.org/10.5067/GFL20-MJ061" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/JPL/JPL Release 06.1 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/JPL/JPL%20Release%2006.1%20(GFO)/GRACE-FO_JPL_L2_Release_Notes_for_RL06.1.pdf">GRACE-FO JPL L2 Release Notes for RL06.1</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_01_GRACE_JPL_JPL Release 06.3 (GFO)">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                JPL Release 06.3 (GFO)
+                <sup><a href="http://doi.org/10.5067/GFL20-MJ063" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/01_GRACE/JPL/JPL Release 06.3 (GFO)">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"><a target="_blank" href="/getseries/01_GRACE/JPL/JPL%20Release%2006.3%20(GFO)/GRACE-FO_JPL_L2_Release_Notes_for_RL06.3.pdf">GRACE-FO JPL L2 Release Notes for RL06.3</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+        </div>
+                <div class="fw-bold text-center">
+            The processing standards to generate the GRACE Level-2 products of CSR, GFZ and JPL are also available in the Document Section of the GRACE archives at
+            <a href="http://isdc.gfz-potsdam.de" target="_blank">GFZ ISDC</a> or
+            <a href="http://podaac.jpl.nasa.gov/gravity/grace-documentation" target="_blank">JPL PO.DAAC</a>
+        </div>
+
+    </div>
+
+    <div class="mb-3" id="_02_COST-G_">
+      <div class="accordion ms-0 me-3">
+        <div class="accordion-item border-0" style="" id="inst_02_COST-G_">
+          <div class="accordion-header">
+            <button class="accordion-button  d-flex p-2 ps-0 pb-1" type="button" style="background:none;">
+              <h2 class="col fw-bold">COST-G (International Combination Service for Time-variable Gravity Field)</h2>
+            </button>
+          </div>
+          <div class="accordion-collapse collapse show">
+            <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__FSM">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                FSM
+                <sup><a href="https://doi.org/10.1016/j.asr.2022.04.005" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/02_COST-G_/FSM/quarterly">quarterly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Fitted Signal Model</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Grace-FO_RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Grace-FO RL01
+                <sup><a href="https://doi.org/10.5880/ICGEM.COST-G.002" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Grace-FO_RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Grace-FO_RL02">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Grace-FO RL02
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Grace-FO_RL02">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Grace-Grace-FO_RL02.1">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Grace/Grace-FO RL02.1
+                <sup><a href="https://doi.org/10.5880/COST-G.ICGEM_02_L2" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Grace-Grace-FO_RL02.1">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Grace_RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Grace RL01
+                <sup><a href="http://doi.org/10.5880/ICGEM.COST-G.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Grace_RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Grace_RL02">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Grace RL02
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Grace_RL02">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_02_COST-G__Swarm">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Swarm
+                <sup><a href="http://doi.org/10.5880/ICGEM.2019.006" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/02_COST-G_/Swarm">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="mb-3" id="_03_other">
+        <h2 class="fw-bold">Models from other Institutes</h2>
+        <div class="accordion ms-1 me-3">
+  <div class="accordion-item" style="" id="inst_03_other_AIUB">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">AIUB</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Astronomical Institute University Bern</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_AIUB_AIUB-G3P">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB-G3P
+                <sup><a href="https://doi.org/10.5880/icgem.2023.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/AIUB/AIUB-G3P">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_AIUB_AIUB-GRACE-FO-rl03op">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB-GRACE-FO-rl03op
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/AIUB/AIUB-GRACE-FO-rl03op">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_AIUB_AIUB-GRACE-FO_op">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB-GRACE-FO_op
+                <sup><a href="https://doi.org/10.5880/icgem.2020.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/AIUB/AIUB-GRACE-FO_op">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Operational GRACE Follow-On monthly gravity field solutions from AIUB</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_AIUB_AIUB-GRACE-FO_rl02op">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB-GRACE-FO_rl02op
+                <sup><a href="https://doi.org/10.5880/icgem.2023.004" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/AIUB/AIUB-GRACE-FO_rl02op">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Operational GRACE Follow-On monthly gravity field solutions - RELEASE 02</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_AIUB_AIUB-RL02">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB-RL02
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/AIUB/AIUB-RL02">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions Release 2 from AIUB, more information can be found
+<a href= "http://www.aiub.unibe.ch/research/leo__and_gravity_field_determination/grace/index_eng.html" target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_APM_SYSU">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">APM&SYSU</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Innovation Academy for Precision Measurement Science and Technology, Chinese Academy of Sciences (APM, CAS), and Sun Yat-sen University (SYSU)</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_APM_SYSU_APM-SYSU-GFC">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                APM-SYSU-GFC
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/APM&SYSU/APM-SYSU-GFC">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_CHZU">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">CHZU</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">School of Geographic Information and Tourism, Chuzhou University</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_CHZU_CHZU-GRACEFO2025">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CHZU-GRACEFO2025
+                <sup><a href=" https://doi.org/10.5880/icgem.2026.004" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/CHZU/CHZU-GRACEFO2025">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_CNES">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">CNES</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Centre national d'études spatiales</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_CNES_CNES_GRGS_RL03">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CNES_GRGS_RL03
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL03">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions RL03 from CNES/GRGS ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-04/rl04-products-description/" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_CNES_CNES_GRGS_RL04">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CNES_GRGS_RL04
+                <sup><a href="https://doi.org/10.5880/ICGEM.2019.010" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL04">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions RL04 from CNES/GRGS ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-04/rl04-products-description/" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_CNES_CNES_GRGS_RL05">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CNES_GRGS_RL05
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL05/monthly">monthly</a>
+                    <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL05/10-daily">10-daily</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE-GRACE-FO solutions RL05 from CNES/GRGS ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-05/rl05-products-description/" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_CNES_CNES_GRGS_RL05_CHOL">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CNES_GRGS_RL05_CHOL
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/CNES/CNES_GRGS_RL05_CHOL">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE-GRACE-FO monthly solutions RL05 from CNES/GRGS using standard unregularized Cholesky inversion ; more information can be found here <a href="https://grace.obs-mip.fr/variable-models-grace-lageos/grace-solutions-release-05/rl05-products-description/" target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_EGSIEM">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">EGSIEM</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">European Gravity Service for Improved Emergency Project</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_EGSIEM_EGSIEM">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                EGSIEM
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/EGSIEM/EGSIEM">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly combined solutions from the EGSIEM project, more information can be found <a href="http://www.egsiem.eu/" target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_HUST">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">HUST</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Huazhong University of Science and Technology, Wuhan, PR China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_HUST_HUST-Grace2016">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                HUST-Grace2016
+                <sup><a href="http://doi.org/10.5880/icgem.2016.009" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/HUST/HUST-Grace2016">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_HUST_HUST-Grace2020">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                HUST-Grace2020
+                <sup><a href="https://doi.org/10.5880/ICGEM.2021.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/HUST/HUST-Grace2020">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_HUST_HUST-Grace2024">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                HUST-Grace2024
+                <sup><a href="https://doi.org/10.5880/ICGEM.2024.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/HUST/HUST-Grace2024">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_IGG">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">IGG</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Institute of Geodesy and Geophysics, Chinese Academy of Sciences, China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_IGG_IGG-RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG-RL01
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/IGG/IGG-RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions RL01 from IGG</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_IGG_Bonn">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">IGG, Bonn</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Institute of Geodesy and Geoinformation, University Bonn</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_IGG_Bonn_IGG-Swarm">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG-Swarm
+                <sup><a href="https://doi.org/10.5880/icgem.2021.002" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/IGG_Bonn/IGG-Swarm">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Temporal Gravity Models from Swarm</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_ITG">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">ITG</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Institute of Geodesy and Geoinformation, Universität Bonn</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ITG_ITG-Grace2010">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                ITG-Grace2010
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/ITG/ITG-Grace2010">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions, more information can be found
+<a href= "http://www.igg.uni-bonn.de/apmg/index.php?id=itg-grace2010" target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_ITSG">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">ITSG</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Institute of Geodesy at Graz University of Technology (ITSG)</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ITSG_ITSG-Grace2014">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                ITSG-Grace2014
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2014/monthly">monthly</a>
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2014/daily">daily</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly and daily solutions ; more information can be found
+<a href= "http://itsg.tugraz.at/research/ITSG-Grace2014" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ITSG_ITSG-Grace2016">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                ITSG-Grace2016
+                <sup><a href="http://doi.org/10.5880/icgem.2016.007" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2016/monthly">monthly</a>
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2016/daily">daily</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly and daily solutions ; more information can be found
+<a href= "https://www.tugraz.at/institute/ifg/downloads/gravity-field-models/itsg-grace2016" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ITSG_ITSG-Grace2018">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                ITSG-Grace2018
+                <sup><a href="http://doi.org/10.5880/icgem.2018.003" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2018/monthly">monthly</a>
+                    <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace2018/daily">daily</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly and daily solutions ; more information can be found
+<a href= "https://www.tugraz.at/institute/ifg/downloads/gravity-field-models/itsg-grace2018" target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ITSG_ITSG-Grace_op">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                ITSG-Grace_op
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/ITSG/ITSG-Grace_op">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_LUH">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">LUH</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Leibniz Universität Hannover</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_LUH_LUH-GRACE-FO-2020">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                LUH-GRACE-FO-2020
+                <sup><a href="https://doi.org/10.25835/0062546" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/LUH/LUH-GRACE-FO-2020">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_LUH_LUH-Grace2018">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                LUH-Grace2018
+                <sup><a href="https://doi.org/10.25835/0022864" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/LUH/LUH-Grace2018">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions from the Institut für Erdmessung, more information can be found
+<a href= "https://www.ife.uni-hannover.de/587.html"
+target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_QuantumFrontiers">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">QuantumFrontiers</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Leibniz Universität Hannover</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_QuantumFrontiers_HLSST_SLR_COMB2019s">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                HLSST_SLR_COMB2019s
+                <sup><a href="http://doi.org/10.5880/ICGEM.2019.008" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/QuantumFrontiers/HLSST_SLR_COMB2019s">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Time-variable gravity fields using HLSST and SLR from the Quantum Frontiers, more information can be found
+<a href= "https://www.geoq.uni-hannover.de/"
+target="_blank">here</a></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_QuantumFrontiers_HLSST_SLR_COMB2023s">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                HLSST_SLR_COMB2023s
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/QuantumFrontiers/HLSST_SLR_COMB2023s">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_SWJTU">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">SWJTU</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Faculty of Geosciences and Environmental Engineering, Southwest Jiao-Tong University, PR China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_SWJTU_SWJTU-GRACE-FO-RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                SWJTU-GRACE-FO-RL01
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/SWJTU/SWJTU-GRACE-FO-RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE-FO monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_SWJTU_SWJTU-GRACE-RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                SWJTU-GRACE-RL01
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/SWJTU/SWJTU-GRACE-RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_SWPU">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">SWPU</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Southwest Petroleum University, Chengdu, China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_SWPU_SWPU-GRACE2021">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                SWPU-GRACE2021
+                <sup><a href="https://doi.org/10.5880/icgem.2022.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/SWPU/SWPU-GRACE2021">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_Tongji">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">Tongji</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Tongji University, Shanghai, PR China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Release 01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Release 01
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Release 01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Release 02 new version">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Release 02 new version
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Release 02 new version">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Release 02 old version">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Release 02 old version
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Release 02 old version">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Tongji-Grace2018">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Tongji-Grace2018
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Tongji-Grace2018">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Tongji-Grace2022">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Tongji-Grace2022
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Tongji-Grace2022">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_Tongji_Tongji-LEO2021">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                Tongji-LEO2021
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/Tongji/Tongji-LEO2021">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_ULux">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">ULux</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">University of Luxembourg</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_ULux_CHAMP2013s">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                CHAMP2013s
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/ULux/CHAMP2013s">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">CHAMP monthly solutions</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_WHU">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">WHU</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Wuhan University, PR China</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_WHU_WHU RL01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                WHU RL01
+                <sup><a href="http://doi.org/10.5880/icgem.2017.004" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/WHU/WHU RL01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions from the GNSS Research Center of Wuhan University, PR China</div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_WHU_WHU-GRACE-GPD01s">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                WHU-GRACE-GPD01s
+                <sup><a href="https://doi.org/10.5880/icgem.2022.002" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/WHU/WHU-GRACE-GPD01s">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Monthly gravity field models derived from GRACE intersatellite geopotential differences</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_XISM_SSTC">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">XISM&SSTC</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Xi'an Research Institute of Surveying and Mapping (XISM) and Space Star Technology co., LTD. </div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_XISM_SSTC_GRACE01">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                GRACE01
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/XISM&SSTC/GRACE01">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">GRACE monthly solutions</div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+  <div class="accordion-item" style="" id="inst_03_other_geo-Q">
+    <div class="accordion-header d-flex align-items-center">
+      <button class="accordion-button collapsed d-flex p-2 pb-1" type="button">
+        <h3 class="col-auto fw-bold">geo-Q</h3>
+        <div class="col-auto mx-2 h4">-</div>
+        <div class="col h5">Leibniz Universität Hannover</div>
+      </button>
+    </div>
+    <div class="accordion-collapse collapse">
+                  <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_03_other_geo-Q_geo-Q_2018">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                geo-Q_2018
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/03_other/geo-Q/geo-Q_2018">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2">Time-variable gravity fields using HLSST and SLR from the geo-Q, more information can be found
+<a href= "https://www.geoq.uni-hannover.de/"
+target="_blank">here</a></div>
+        </div>
+    </div>
+
+            </div>
+
+    </div>
+  </div>
+        </div>
+        
+    </div>
+
+    <div class="mb-3" id="_04_SLR_">
+      <div class="accordion ms-0 me-3">
+        <div class="accordion-item border-0" style="" id="inst_04_SLR_">
+          <div class="accordion-header">
+            <button class="accordion-button  d-flex p-2 ps-0 pb-1" type="button" style="background:none;">
+              <h2 class="col fw-bold">SLR models</h2>
+            </button>
+          </div>
+          <div class="accordion-collapse collapse show">
+            <div class="d-flex flex-column striped">
+                    <div class="row mx-0 py-2 d-flex" id="model_04_SLR__AIUB_SLR-only">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                AIUB_SLR-only
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/04_SLR_/AIUB_SLR-only">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_04_SLR__IGG-SLR-GRACE">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG_UPWr_SLR_GRACE
+                <sup><a href="https://doi.org/10.3390/rs18020313" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/04_SLR_/IGG-SLR-GRACE">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_04_SLR__IGG_SLR_DORIS">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG_SLR_DORIS
+                <sup><a href="https://doi.org/10.5880/ICGEM.2025.001" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/04_SLR_/IGG_SLR_DORIS">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_04_SLR__IGG_SLR_HYBRID">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG_SLR_HYBRID
+                <sup><a href="http://www.doi.org/10.1007/s00190-020-01460-x" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/04_SLR_/IGG_SLR_HYBRID">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+                    <div class="row mx-0 py-2 d-flex" id="model_04_SLR__IGG_UPWr_SLR">
+        <div class="col-xl-5 col-12 d-flex">
+            <h5 class="col-auto text-nowrap fw-bold mb-0">
+                IGG_UPWr_SLR
+                <sup><a href="https://doi.org/10.1016/j.rse.2024.113994" target="_blank">DOI</a></sup>
+            </h5>
+            <div class="col d-flex justify-content-end fw-bold">
+            <a class="mx-1" href="/sp/04_SLR_/IGG_UPWr_SLR">monthly</a>
+            </div>
+        </div>
+        <div class="col row">
+            <div class="col ms-2"></div>
+        </div>
+    </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <h5>
+        <a href="/docs/Note_on_the_DDK_filters.pdf" target="_blank">
+            <img src="/imgs/acrobat_reader_icon.png" alt="acrobat_reader_icon" align="middle" height="40">
+            <b>Note on the DDK filters</b>
+        </a>
+    </h5>
+    <p class="m-3">
+        <b>Reference:</b><br>
+        <a href= "https://link.springer.com/article/10.1007/s00190-009-0308-3" target="_blank">
+            J. Kusche, R. Schmidt, S. Petrovic, R. Rietbroek<br>
+            Decorrelated GRACE time-variable gravity solutions by GFZ, and their validation using a hydrological model<br>
+            Journal of Geodesy DOI:10.1007/s00190-009-0308-3
+        </a>
+    </p>
+    <h5>
+        <a href="/docs/Kusche_etal_2009_finaldraft.pdf" target="_blank">
+            <img src="/imgs/acrobat_reader_icon.png" alt="acrobat_reader_icon" align="middle" height="40">
+            <b>The final draft can be downloaded here.</b>
+        </a>
+    </h5>
+</div>
+            </div>
+        </div>
+        <div id="footer_outer">
+            <div id="footer_inner">
+                <i>icgem (at) gfz.de</i>
+            </div>
+        </div>
+<div id='popup'>
+    <a class="x" href="javascript:hidePopup();" title="Hide this message and set a cookie">X</a>
+    <h4><b><a target="_blank" href="https://www.listserv.dfn.de/sympa/subscribe/icgemusers">Subscribe</a> to the<br>ICGEM-users mailinglist.</b></h4>
+</div>
+<!--<div id='popup'>
+    <a class="x" href="javascript:hidePopup();" title="Hide this message and set a cookie">X</a>
+    <h4>We appreciate your feedback. Please use our <a target="_blank" href="/survey">user survey</a> to send us your opinion.</h4>
+</div>-->
+<script type="text/javascript">
+    var hidemax = 7*24*60*60;
+    function hidePopup() {
+        document.getElementById('popup').style.display="none";
+        if ( getCookie("cookieconsent_status") == "accept" ) {
+            var htime = Math.min(parseInt(getCookie("popuphide")) * 2, hidemax) || 60*60;
+            console.log(htime);
+            setCookie("popuphide", htime, 30);
+            setCookie("popupnext", new Date() / 1000 + htime, 30);
+        }
+    }
+    if ( getCookie("cookieconsent_status") == "accept" ) {
+        if ( parseInt(getCookie("popupnext")) > (new Date() / 1000) ) {
+            document.getElementById('popup').style.display="none";
+            if ( parseInt(getCookie("popuphide")) >= hidemax ) {
+                setCookie("popupnext", new Date() / 1000 + hidemax, 30);
+            }
+        }
+    } else {
+        delCookie("popuphide");
+        delCookie("popupnext");
+        if (Math.random() > 0.05) { // hide popup most of the time
+            document.getElementById('popup').style.display="none";
+        }
+    }
+</script><div id="cookiebanner" class="modal show fade" data-bs-backdrop="static" style="display:block;">
+    <div class="position-fixed top-0 left-0 w-100 h-100" style="background-color:rgba(0,0,0,.5)"></div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Privacy Settings</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="$('#cookiebanner').hide();"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                We use cookies that are necessary for the basic functionality of our website so that it can be continuously optimized for you and its user-friendliness
+                improved. We also use the Matomo web analysis tool, which tracks data anonymously. This enables us to statistically evaluate the use of our website.
+                Your consent to the use of Matomo can be revoked at any time via the <a href="/dataprotection">privacy policy</a>.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="setCookie('cookieconsent_status', 'deny'); $('#cookiebanner').hide();">Refuse</button>
+                <button type="button" class="btn btn-primary" onclick="setCookie('cookieconsent_status', 'accept'); $('#cookiebanner').hide();">Accept</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    if ( getCookie("cookieconsent_status") != "" ) {
+        $('#cookiebanner').hide()
+    }
+    var _paq = window._paq = window._paq || [];
+    _paq.push(['requireCookieConsent']);
+    if ( getCookie("cookieconsent_status") == "accept" ) {
+        _paq.push(['setCookieConsentGiven']);
+    }
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+        var u="https://webstats.gfz.de/";
+        _paq.push(['setTrackerUrl', u+'matomo.php']);
+        _paq.push(['setSiteId', '45']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+    })();
+</script>    </body>
+</html>
