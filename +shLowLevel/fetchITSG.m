@@ -78,8 +78,13 @@ else
     assert(any(opts.Nmax == [60, 96, 120]), 'shLowLevel:fetchITSG:badNmax', ...
         'Monthly solutions: Nmax must be 60, 96, or 120.');
 end
+% array-safe emptiness check: Months can be a 1 x K string array, and
+% strlength then returns 1 x K - feeding that into && is exactly the
+% crash the 2026-08-18 live setup(Download="all") run hit (the starter
+% level passes ["2008-04", "2025-12"]; the scalar-only path had never
+% been exercised with an array since the Catalog refactor).
 if isempty(opts.Catalog) && (isstring(months) || ischar(months)) ...
-        && strlength(string(months)) == 0 && ~isnumeric(months)
+        && all(strlength(string(months)) == 0)
     error('shLowLevel:fetchITSG:noSelection', ...
         'Give months/years, "all", or Catalog= (see shLowLevel.listITSG).');
 end
@@ -116,7 +121,8 @@ if ~isempty(opts.Catalog)
     return
 end
 % ---- months = "all": enumerate every .gfc in the target folder(s)
-if (isstring(months) || ischar(months)) && string(months) == "all"
+if (isstring(months) || ischar(months)) && isscalar(string(months)) ...
+        && string(months) == "all"
     rels = opts.Release;
     if strlength(rels) == 0
         rels = ["ITSG-Grace2018", "ITSG-Grace_operational"];
