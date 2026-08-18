@@ -3186,3 +3186,152 @@ eQC = norm(fQC.xf(1:P, post) - xT(:, post), 'fro');
 eNo = norm(fNo.xf(1:P, post) - xT(:, post), 'fro');
 verifyTrue(testCase, eQC < 0.8 * eNo);
 end
+
+% ----------------------------------------------- Joseph update (v3.22)
+function testKalmanJosephSurvivesHarshR(testCase)
+%TESTKALMANJOSEPHSURVIVESHARSHR with a wide-spectrum prior (1e0..1e-8)
+%   and R eight orders below it, the solution-mode covariance must
+%   agree with the NEQ information form (the numerically clean path)
+%   to 1e-9 relative - the standard (I-K)Pm update fails this at
+%   ~1e-6 (measured against a 50-digit reference in
+%   tools/dev/validate_kalman_qc.py J2). Also: the Wiener-limit and
+%   batch-LSA equivalence tests above pin that Joseph changes nothing
+%   in exact arithmetic.
+rng(47);
+P = 20;
+[V, ~] = qr(randn(P));
+S0 = V * diag(logspace(0, -8, P)) * V.';
+S0 = (S0 + S0.') / 2;
+model = struct('Phi', {{zeros(P)}}, 'Q', S0, 'Sigma0', S0, ...
+    'order', 1, 'P', P, 'specRadius', 0);
+R = diag(10.^(-14 + 4 * rand(P, 1)));
+l = randn(P, 1);
+obsS = struct('l', l, 'R', R, 'N', [], 'b', []);
+N = diag(1 ./ diag(R));
+obsN = struct('l', [], 'R', [], 'N', N, 'b', N * l);
+fS = shLowLevel.kalmanFilter(model, obsS);
+fN = shLowLevel.kalmanFilter(model, obsN);
+sc = max(abs(fN.Pf(:)));
+verifyTrue(testCase, max(abs(fS.Pf(:) - fN.Pf(:))) / sc < 1e-9);
+ev = eig((fS.Pf(:, :, 1) + fS.Pf(:, :, 1).') / 2);
+verifyTrue(testCase, min(ev) > -1e-12 * max(ev));
+end
+
+% ------------------------------------- multi-center kalmanChain (v3.23)
+function testKalmanChainMultiCenterNEQ(testCase)
+%TESTKALMANCHAINMULTICENTERNEQ two centers with identical synthetic
+%   SINEX NEQs at two shared epochs: the chain must cluster the files
+%   into two epoch groups, run per-epoch VCE via neqCombine, report
+%   equal variance factors for identical centers, and produce a finite
+%   residual series on the group epochs. The single-folder path is
+%   exercised on center A alone (also pinning the snx.epoch wiring
+%   that v3.20 repaired).
+rng(53);
+nmax = 2;
+idx = shLowLevel.shIndex(nmax);
+P = idx.P;
+% ---- model series: stable VAR(1) sim, 40 monthly epochs
+epM = (2008 + (0:39).' / 12);
+A = 0.8 * eye(P) + 0.05 * randn(P); A = 0.85 * A / max(abs(eig(A)));
+X = zeros(P, 240);
+for t = 2:240, X(:, t) = A * X(:, t-1) + 1e-9 * randn(P, 1); end
+X = X(:, 201:240);
+L1 = nmax + 1;
+[Cs, Ss] = deal(zeros(L1, L1, 40));
+for t = 1:40
+    [Cs(:,:,t), Ss(:,:,t)] = shLowLevel.csFromVec(X(:, t), idx);
+end
+tsm = shSeries(Cs, Ss = Ss, Epochs = epM);
+% ---- two centers, two epochs, identical files
+dirA = fullfile(tempname); mkdir(dirA);
+dirB = fullfile(tempname); mkdir(dirB);
+cleanup = onCleanup(@() cellfun(@(d) rmdir(d, 's'), {dirA, dirB}));
+Araw = randn(P + 3, P); N = Araw.' * Araw;
+epochToks = ["08:107:00000", "08:137:00000"];
+for e = 1:2
+    xh = 1e-9 * randn(P, 1);
+    for d = [string(dirA), string(dirB)]
+        localWriteTestNEQ(fullfile(char(d), sprintf('c_%d.snx', e)), ...
+            epochToks(e), xh, N, 1000, xh.' * N * xh + (1000 - P), idx);
+    end
+end
+[ts, rep] = shLowLevel.kalmanChain([string(dirA), string(dirB)], ...
+    ModelSeries = tsm, Order = 1, Shrink = 1e-3);
+verifyEqual(testCase, ts.nEpochs, 2);
+verifyEqual(testCase, numel(rep.centers), 2);
+verifyEqual(testCase, size(rep.sigma2), [2 2]);
+verifyEqual(testCase, rep.sigma2(1, :), rep.sigma2(2, :), RelTol = 1e-6);
+verifyTrue(testCase, all(isfinite(rep.sigma2(:))));
+verifyTrue(testCase, all(isfinite(ts.Cs(:))));
+% ---- single-folder path: epochs come from the v3.20 snx.epoch fix
+[ts1, rep1] = shLowLevel.kalmanChain(string(dirA), ...
+    ModelSeries = tsm, Order = 1, Shrink = 1e-3);
+verifyEqual(testCase, ts1.epochs, ...
+    [2008 + 106/366; 2008 + 136/366], AbsTol = 1e-9);
+verifyEqual(testCase, rep1.nGaps, 0);
+end
+
+function localWriteTestNEQ(fn, epochTok, xh, N, nobs, wsos, idx)
+%LOCALWRITETESTNEQ synthetic ITSG-layout NEQ SINEX (values invented).
+P = idx.P;
+lines = strings(0, 1);
+lines(end+1) = "%=SNX 2.02 TUG 18:300:38958 TUG 08:092:00000 08:122:00000 C 0000" + P + " 2            2";
+lines(end+1) = "+SOLUTION/STATISTICS";
+lines(end+1) = sprintf(" NUMBER OF OBSERVATIONS               %d", nobs);
+lines(end+1) = sprintf(" NUMBER OF UNKNOWNS                    %d", P);
+lines(end+1) = sprintf(" WEIGHTED SQUARE SUM OF O-C           %.10e", wsos);
+lines(end+1) = "-SOLUTION/STATISTICS";
+lines(end+1) = "+SOLUTION/ESTIMATE";
+tp = ["CN", "SN"];
+for r = 1:P
+    lines(end+1) = sprintf("%6d %s %8d -- %4d %s ---- 2 %20.14e 1.0e-12", ...
+        r, tp(idx.cs(r) + 1), idx.n(r), idx.m(r), epochTok, xh(r)); %#ok<AGROW>
+end
+lines(end+1) = "-SOLUTION/ESTIMATE";
+lines(end+1) = "+SOLUTION/NORMAL_EQUATION_MATRIX U";
+for i = 1:P
+    j = i;
+    while j <= P
+        j2 = min(j + 2, P);
+        lines(end+1) = sprintf("%d  %d%s", i, j, ...
+            sprintf("  %.14e", N(i, j:j2))); %#ok<AGROW>
+        j = j2 + 1;
+    end
+end
+lines(end+1) = "-SOLUTION/NORMAL_EQUATION_MATRIX U";
+writelines(lines, fn);
+end
+
+% ------------------------------------------- fixed-lag smoother (v3.24)
+function testRTSFixedLagConvergesToFull(testCase)
+%TESTRTSFIXEDLAGCONVERGESTOFULL Lag >= T-1 must reproduce the full RTS
+%   to rounding, and the error against it must decrease monotonically
+%   over lags 0 -> 3 -> 10 (Python checks L1/L2 through the MATLAB
+%   path). Also exercised through the matfile store: lag results must
+%   be independent of where the covariances live.
+rng(59);
+P = 5; T = 20;
+[model, ~] = localStableModel(P);
+obs = repmat(struct('l', [], 'R', [], 'N', [], 'b', []), 1, T);
+for t = 1:T
+    obs(t).l = randn(P, 1);
+    obs(t).R = diag(0.3 + rand(P, 1));
+end
+filt = shLowLevel.kalmanFilter(model, obs);
+full = shLowLevel.rtsSmoother(filt);
+lagFull = shLowLevel.rtsSmoother(filt, Lag = T - 1);
+verifyEqual(testCase, lagFull.xs, full.xs, AbsTol = 1e-10);
+verifyEqual(testCase, lagFull.sig, full.sig, AbsTol = 1e-10);
+e = zeros(1, 3); lags = [0, 3, 10];
+for i = 1:3
+    sl = shLowLevel.rtsSmoother(filt, Lag = lags(i));
+    e(i) = norm(sl.xs - full.xs, 'fro');
+end
+verifyTrue(testCase, e(2) < e(1) && e(3) < e(2));
+% matfile store gives identical lag results
+fFil = shLowLevel.kalmanFilter(model, obs, StoreCov = "matfile");
+cleanup = onCleanup(@() delete(fFil.covFile));
+sFil = shLowLevel.rtsSmoother(fFil, Lag = 3);
+sMem = shLowLevel.rtsSmoother(filt, Lag = 3);
+verifyEqual(testCase, sFil.xs, sMem.xs);
+end

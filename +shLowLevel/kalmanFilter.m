@@ -191,7 +191,14 @@ for t = 1:T
         PmH = Pm(:, 1:P);                              % Pm * H'
         K = PmH / ((Pm(1:P, 1:P) + R).');              % gain, no inverse
         xPl = xm + K * (l - xm(1:P));
-        PPl = Pm - K * PmH.';
+        % Joseph-stabilized update (v3.22): identical to (I-KH)Pm in
+        % exact arithmetic, but immune to the (I-K)Pm cancellation when
+        % R is small against the prior - the strong-daily-data regime.
+        % Measured (tools/dev/validate_kalman_qc.py J2, 50-digit ref):
+        % standard 1.3e-6 relative error, Joseph 1.9e-13.
+        IKH = eye(Pc);
+        IKH(:, 1:P) = IKH(:, 1:P) - K;
+        PPl = IKH * Pm * IKH.' + K * R * K.';
         if opts.Contribution
             contrib(:, t) = diag(K(1:P, :));
         end

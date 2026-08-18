@@ -1,5 +1,5 @@
 % shAnalysis - Spherical harmonic analysis toolbox
-% Version 3.21.0 (R2026a-compatible) 18-Aug-2026
+% Version 3.24.0 (R2026a-compatible) 18-Aug-2026
 %
 % The line above is what ver('shAnalysis') reports as the product name:
 % keep it a SHORT name, not a sentence and not a version string (pinned
@@ -212,6 +212,37 @@
 %     (fixture-tested parser) and .gfc download by name; temporal
 %     section returns series roots (superseded in v3.1.1 - the series are
 %     downloadable now, see below)
+%
+% New in v3.24.0 (fixed-lag smoother)
+%   - rtsSmoother Lag=L: the estimate at epoch t uses observations up
+%     to t+L only - the near-real-time production variant (Kurtenbach's
+%     practical choice). Definition-true windowed backward recursion,
+%     cost O(T*L) against O(T) for the full pass; Lag=0 returns the
+%     filter, Lag >= T-1 the full smoother to rounding (unit-tested,
+%     also through the matfile store); the error decays with L at the
+%     process-memory rate (Python: validate_kalman_qc.py L1/L2).
+%     Closes the NRT loop: daily solutions with bounded latency feed
+%     hydroExtremeIndex directly (any shSeries does).
+%
+% New in v3.23.0 (multi-center Kalman: neqCombine inside kalmanChain)
+%   - kalmanChain accepts a string ARRAY of SINEX folders (one per
+%     center): files are clustered into epoch groups within Tolerance
+%     and each group is combined on the normal-equation level by
+%     neqCombine BEFORE the filter update - per-epoch VCE weights when
+%     every file carries the STATISTICS block, or fixed NeqWeights.
+%     rep.centers and rep.sigma2 (F x K per-epoch variance factors)
+%     report the combination. Same-background contract across ALL
+%     centers (neqCombine). Single-folder behaviour unchanged.
+%
+% New in v3.22.0 (Joseph-stabilized solution update)
+%   - kalmanFilter solution mode uses the Joseph form
+%     (I-KH) Pm (I-KH)' + K R K': identical in exact arithmetic
+%     (batch-LSA and Wiener-limit tests unchanged), but immune to the
+%     (I-K)Pm cancellation when R is small against the prior - the
+%     strong-daily-data regime. Measured against a 50-digit reference:
+%     standard 1.3e-6 relative covariance error, Joseph 1.9e-13
+%     (tools/dev/validate_kalman_qc.py J1/J2). The NEQ mode was
+%     already on the numerically clean information form.
 %
 % New in v3.21.0 (innovation-based quality control, Kvas Sec. 3.3)
 %   - kalmanFilter QC=("none")|"flag"|"reject": chi-square innovation

@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.24.0] - 2026-08-18 - fixed-lag smoother
+
+rtsSmoother gains Lag=L: bounded-latency smoothing for NRT-style daily
+production (definition-true windowed backward recursion, O(T*L)).
+Lag=0 == filter, Lag >= T-1 == full RTS to rounding; identical through
+memory and matfile stores (all unit-tested); error-vs-lag decay
+Python-measured. Completes this session's Kalman-module program:
+QC (3.21), Joseph update (3.22), multi-center (3.23), fixed lag (3.24).
+
+## [3.23.0] - 2026-08-18 - multi-center Kalman chain
+
+kalmanChain neq mode accepts several SINEX folders (one per center),
+clusters files into epoch groups and combines each group with
+neqCombine (per-epoch VCE, or fixed NeqWeights) before the Kalman
+update; rep.sigma2 reports the per-epoch variance factors. New test
+with two synthetic centers (identical files -> equal factors) plus a
+single-folder run pinning the v3.20 snx.epoch wiring end to end.
+
+## [3.22.0] - 2026-08-18 - Joseph-stabilized solution update
+
+kalmanFilter's solution-mode covariance update moves to the Joseph
+form: exact-arithmetic identical (all equivalence tests unchanged),
+six orders of magnitude more accurate when R is small against the
+prior (measured against a 50-digit mpmath reference; the decision was
+made on that A/B, not on textbook habit). New discriminating MATLAB
+test: wide-spectrum prior vs harsh R must match the NEQ information
+form to 1e-9 - the old update fails at ~1e-6.
+
 ## [3.21.0] - 2026-08-18 - innovation-based quality control (Kvas 3.3)
 
 kalmanFilter/kalmanChain gain QC="flag"|"reject": per-epoch chi-square

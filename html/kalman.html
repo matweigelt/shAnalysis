@@ -62,6 +62,10 @@ block-tridiagonal joint system, never an approximation to it.</div>
 <tr><th>Mode</th><th>Input</th><th>Update</th></tr>
 <tr><td>solution</td><td>an <code class="inline">shSeries</code> with formal sigmas (or explicit
 <code class="inline">NoiseCov</code>)</td><td>l = x + v, gain form</td></tr>
+<tr><td>neq, multi-center (v3.23)</td><td>a string array of SINEX folders, one per center:
+per-epoch <code class="inline">neqCombine</code> (VCE or fixed
+<code class="inline">NeqWeights</code>) before the update; <code class="inline">rep.sigma2</code>
+carries the per-epoch factors</td><td>combined N x = b, information form</td></tr>
 <tr><td>neq</td><td>a folder of SINEX files with
 <code class="inline">NORMAL_EQUATION_MATRIX</code> blocks
 (<a href="fetchITSG.html">fetchITSGSINEX</a>)</td><td>N x = b, information form &mdash; no
@@ -116,6 +120,15 @@ records the statistic without acting; thresholds come from the base-MATLAB
 the estimate coming from the <em>data</em> rather than the process model &mdash; near 0 the
 output is the prior wearing your product name.</li>
 </ul>
+
+<h2>Near-real-time use (v3.24)</h2>
+<p><code class="inline">rtsSmoother(filt, Lag=L)</code> bounds the latency: the estimate at day t
+waits only L further days - Kurtenbach's production variant. <code class="inline">Lag=0</code> is
+the pure filter, <code class="inline">Lag=Inf</code> the full smoother; combined with
+<code class="inline">QC="reject"</code> and the matfile store this is the complete NRT-style
+chain. The resulting daily <code class="inline">shSeries</code> feeds
+<code class="inline">shLowLevel.hydroExtremeIndex</code> directly (Stage-2 daily monitoring),
+closing the loop from SINEX to flood indicator.</p>
 
 <h2>References</h2>
 <p>Kurtenbach, E. (2012): Entwicklung eines Kalman-Filters zur Bestimmung kurzzeitiger
