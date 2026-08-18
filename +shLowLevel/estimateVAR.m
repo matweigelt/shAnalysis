@@ -43,13 +43,15 @@ function model = estimateVAR(X, opts)
 %                         couples coefficients within an order, none
 %                         across - the structured middle ground;
 %                         requires Blocks
-%            MEASURED on the live ITSG monthly series (n40, T = 257,
-%            36-month holdout, one-step RMS; tools/dev job 2026-08-18):
-%            climatology-only 4.24e-12; "full" with weak shrink WORSE
-%            (4.61e-12, overfit at T ~ 0.13 P); "diagonal" 3.35e-12;
-%            "orderblock" ~ 3.36e-12 stationary. For monthly series
-%            prefer "diagonal"; "full" remains the default for the
-%            daily regime the Kalman module targets.
+%            MEASURED on the live ITSG monthly series through THIS
+%            estimator (n40, T = 257, 36-month holdout, one-step RMS,
+%            2026-08-18): climatology-only 4.245e-12; "full" at weak
+%            shrink WORSE (4.613e-12 - overfit at T ~ 0.13 P);
+%            "diagonal" 3.348e-12 (radius 0.93); "orderblock" with
+%            Shrink=1e-2 best at 3.268e-12 (radius 0.96). For monthly
+%            series prefer "orderblock" (blocks per (m, C/S) from
+%            shIndex) or "diagonal"; "full" remains the default for
+%            the daily regime the Kalman module targets.
 %     Blocks ({})  cell of index vectors partitioning 1:P, required
 %            for Structure="orderblock" - e.g. from shIndex:
 %            one block per (m, C/S) pair

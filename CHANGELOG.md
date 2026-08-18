@@ -6,8 +6,11 @@ estimateVAR gains Structure="diagonal"|"orderblock" (block-wise
 Yule-Walker, structure-consistent Q and Sigma0, loud Blocks
 validation). Driven by the first live VAR-order table (ITSG monthly,
 36-month holdout): the dense estimate overfits at monthly sample
-sizes while diagonal/order-block beat climatology-only by ~21%;
-p >= 2 explodes. Order=1 and Structure="full" defaults confirmed/kept
+sizes while order-block (best, 3.268e-12, stationary) and diagonal beat
+climatology-only by 21-23%; p >= 2 explodes. Numbers re-measured
+through the shipped estimator on the acceptance machine (a first
+run through the API also caught a column-vector bug in the Blocks
+partition check that the synthetic row-block test had missed). Order=1 and Structure="full" defaults confirmed/kept
 for the daily target regime; monthly guidance documented in the help.
 Python S1-S3 checks + one MATLAB test covering shape, values, loud
 errors, and the short-sample ranking.

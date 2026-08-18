@@ -219,8 +219,9 @@
 %     basis, MEASURED on the live ITSG monthly series (n40, T=257,
 %     36-month holdout, one-step RMS): full VAR(1) at weak shrink is
 %     WORSE than climatology-only (4.61 vs 4.24e-12 - overfit at
-%     T ~ 0.13 P); diagonal AR(1) 3.35e-12; order-block ~3.36e-12;
-%     VAR(2)/VAR(3) explode (companion radius 16305/4364). Default
+%     T ~ 0.13 P); diagonal AR(1) 3.348e-12; order-block (Shrink
+%     1e-2) BEST at 3.268e-12, radius 0.96; VAR(2)/VAR(3) explode
+%     (companion radius 16305/4364). Default
 %     stays "full" - the daily regime the module targets is unmeasured
 %     and Kurtenbach's choice there is dense+conditioned; the help
 %     carries the monthly table and recommends "diagonal" for monthly
