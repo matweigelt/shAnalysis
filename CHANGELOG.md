@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.26.3] - 2026-08-18 - fixtures leave the repository
+
+tests/test_data removed from main; CI consumes the orphan branch
+'testdata' (step live since #71), machines use SHX_TESTDATA_FOLDER.
+Current-state doc claims updated; historical release notes untouched.
+
 ## [3.26.2] - 2026-08-18 - packaged sample-data resolver
 
 The acceptance run with fixtures only on the data drive exposed the

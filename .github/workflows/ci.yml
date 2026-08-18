@@ -15,7 +15,8 @@
 #                  MATLAB installed; no token needed
 #
 # The suite is CI-safe by design: all fetch* tests are offline
-# (skip/mirror patterns), fixtures ship in tests/test_data, and no
+# (skip/mirror patterns), fixtures come from the orphan branch 'testdata'
+# (checkout step below), and no
 # toolboxes beyond base MATLAB are required.
 #
 # Developed by Matthias Weigelt with the help of Claude (Fable 5),
