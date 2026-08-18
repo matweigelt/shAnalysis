@@ -3346,8 +3346,11 @@ function testEstimateVARStructures(testCase)
 %   the raw full solve out of sample - the live ITSG-monthly finding,
 %   pinned synthetically.
 rng(61);
-blocks = {1:4, 5:10};
 P = 10;
+grp = [1 1 1 1 2 2 2 2 2 2];
+blocks = {find(grp == 1), find(grp == 2)};   % COLUMN vectors, like
+blocks = cellfun(@(b) b(:), blocks, 'UniformOutput', false);
+% shIndex consumers build them - the live run caught a horzcat bug here
 PhiT = zeros(P);
 for b = 1:2
     A = randn(numel(blocks{b}));

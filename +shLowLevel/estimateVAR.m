@@ -139,8 +139,9 @@ switch opts.Structure
             error('shLowLevel:estimateVAR:needBlocks', ...
                 'Structure="orderblock" requires Blocks (e.g. one index vector per (m, C/S) pair from shIndex).');
         end
-        cover = sort([opts.Blocks{:}]);
-        if ~isequal(cover(:).', 1:P)
+        cover = sort(cell2mat(cellfun(@(b) b(:).', opts.Blocks, ...
+            'UniformOutput', false)));
+        if ~isequal(cover, 1:P)
             error('shLowLevel:estimateVAR:badBlocks', ...
                 'Blocks must partition 1:%d exactly.', P);
         end
