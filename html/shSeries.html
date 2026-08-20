@@ -47,15 +47,55 @@ ts = shSeries(Cs, Ss=Ss, Epochs=ep);          % raw (nmax+1)x(nmax+1)xT stacks</
 <table>
 <tr><th>Group</th><th>Methods</th></tr>
 <tr><td>Access</td><td><code class="inline">at(k)</code> &rarr; shCoefficients of epoch k</td></tr>
-<tr><td>Statistics</td><td><code class="inline">mean(Omitnan=true)</code> &rarr; mean field (sigmas = standard error of the mean); <code class="inline">ts - ts.mean</code> &rarr; anomaly series</td></tr>
+<tr><td>Statistics</td><td><code class="inline">mean(Omitnan=true)</code> &rarr; mean field (sigmas = standard error of the mean, divided by the number of valid epochs per coefficient since <b>v3.29.0</b>); <code class="inline">ts - ts.mean</code> &rarr; anomaly series. <b>v3.29.0:</b> <code class="inline">mean(Range=[t1 t2], Estimator="arithmetic"|"model", Periods=[], MinEpochs=1)</code> averages over a user-given period &mdash; see <a href="#periodmean">below</a>.</td></tr>
 <tr><td>Climatology</td><td><code class="inline">[clim, resid] = climatology(Robust=false, T0=mean(epochs), Periods=[], Weights=[])</code> &rarr; <a href="shClimatology.html">shClimatology</a> + residual series (&ge; 6+2K epochs). <b>v2.1:</b> <code class="inline">Periods</code> adds extra periodic terms [yr], e.g. the GRACE tidal alias periods <code class="inline">[161/365.25, 3.66, 7.48]</code> (S2, K2, K1); <code class="inline">Weights</code> takes per-epoch weights (e.g. <code class="inline">1./info.vce</code>). The climatology carries per-coefficient 1-sigma significance.</td></tr>
 <tr><td>GAX</td><td><code class="inline">restore(gaxSeries, Tolerance=0.05, AllowMissing=false)</code> &mdash; epoch-matched add-back of GAA/GAB/GAC/GAD background series; productType becomes e.g. "GSM+GAD"</td></tr>
 <tr><td>Classic chain</td><td><code class="inline">destripe(...)</code>, <code class="inline">gaussian(radiusKm)</code>, <code class="inline">truncate(nmax)</code> &mdash; per-epoch, stack-vectorized</td></tr>
 <tr><td>Optimal chain</td><td><code class="inline">[tsF, op, info] = filter("tvANS", ..., Blocks="auto")</code> &mdash; see <a href="tvANS.html">tvANS filter</a>. <b>v2.1:</b> block-diagonal fast path (identical results, tractable to Lmax&nbsp;~&nbsp;120); the output carries posterior 1-sigma stacks <code class="inline">tsF.sigmaCs/sigmaSs</code> per coefficient and month.</td></tr>
 <tr><td>Basins</td><td><code class="inline">basinAverage(B)</code> naive; <code class="inline">basinAverage(B, Deconvolve=true, Op=op, Ridge=0)</code> exact, unbiased. <b>v2.1:</b> <code class="inline">out.sigma</code> (K&times;T) is the propagated 1-sigma noise uncertainty of the deconvolved averages.</td></tr>
-<tr><td>Gap handling <span class="tag">v2.1</span></td><td><code class="inline">dropNaN()</code> removes epochs with any non-finite coefficient (the GRACE&harr;GRACE-FO gap); <code class="inline">select(mask | indices | [tMin tMax])</code> subsets by mask, index list, or year range. The remaining irregular sampling is handled natively by climatology and the filter.</td></tr>
+<tr><td>Gap handling <span class="tag">v2.1</span></td><td><code class="inline">dropNaN()</code> removes epochs with any non-finite coefficient (the GRACE&harr;GRACE-FO gap); <code class="inline">select(mask | indices | [tMin tMax])</code> subsets by mask, index list, or year range; <b>v3.29.0:</b> <code class="inline">select(Range=[tMin tMax])</code> is the unambiguous form &mdash; the positional two-element shorthand is read as INDICES whenever both values are valid indices, which a daily series makes possible (T &gt; 2010 samples is under six years), and warns (<code class="inline">shSeries:ambiguousRange</code>) when it does so. The remaining irregular sampling is handled natively by climatology and the filter.</td></tr>
 <tr><td>Arithmetic</td><td><code class="inline">ts - g</code> (field from every epoch) or <code class="inline">tsA - tsB</code> (epoch-matched)</td></tr>
 </table>
+
+<h2 id="periodmean">Mean over a user-given period <span class="tag">v3.29.0</span></h2>
+<p>A mean field over a window &mdash; the 2004&ndash;2010 baseline that is
+subtracted before every trend analysis, a single hydrological year, the pre- and
+post-gap epochs of GRACE and GRACE-FO &mdash; is one call:</p>
+
+<pre>gBase = ts.mean(Range = [2004 2010]);              % decimal years
+gBase = ts.mean(Range = [datetime(2004,1,1) datetime(2010,1,1)]);
+dts   = ts - ts.mean(Range = [2004 2010]);         % anomalies about that baseline</pre>
+
+<p>Equal weights are correct only when the window is evenly covered. If months
+are missing, the arithmetic mean carries the trend and annual signal of whichever
+epochs survived: a single missing six-month block out of six years shifts it by
+0.069 of a 1.2 annual amplitude, and the trend part is
+<code class="inline">info.centroidOffset</code> times the trend. The second
+estimator fits bias/trend/annual/semi-annual over the window and returns the
+<i>exact time integral</i> of that model:</p>
+
+<pre>[gBase, info] = ts.mean(Range = [2015 2021], Estimator = "model");
+info.coverage        % fraction of the window actually sampled
+info.maxGapYears     % largest gap between consecutive epochs
+info.attenuation     % [period factor] per harmonic
+info.centroidOffset  % epoch centroid minus window centre [yr]</pre>
+
+<p>With the reference epoch placed at the window centre the integral collapses to
+<code class="inline">bias + &Sigma;<sub>k</sub> s(P<sub>k</sub>)&middot;cos<sub>k</sub></code>
+with <code class="inline">s(P) = sin(&pi;D/P)/(&pi;D/P)</code> and
+<code class="inline">D = t2 - t1</code>: the model at the window centre, each
+harmonic damped by a sinc factor. For a whole number of years <code
+class="inline">s = 0</code> exactly, so the period mean is the trend line at the
+centre &mdash; whatever the phase of the annual signal and wherever the gaps sit.
+Sigmas are then formal (propagated through the fit), not scatter, and the call
+warns (<code class="inline">shSeries:sparseWindow</code>) when coverage drops
+below 50% and the model is extrapolating rather than interpolating.</p>
+
+<div class="note">Voronoi time-weighting was implemented as a third estimator and
+<b>rejected</b>: it never won on the measured scenarios and lost by a factor of
+four across the 2017&ndash;2018 mission gap, because the two epochs bracketing a
+gap each collect half a year of weight. The table lives in
+<code class="inline">tools/dev/validate_meanperiod.py</code>.</div>
 
 <h2>Example: full GRACE-FO chain</h2>
 <pre>ts  = shSeries.read("GSM-2_*.gfc", Truncate=60);
