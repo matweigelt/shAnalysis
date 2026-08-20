@@ -11,7 +11,7 @@ td,th{border:1px solid #ccc;padding:3px 8px;font-size:13px;text-align:left}
 h2{margin-top:34px;border-bottom:2px solid #444}
 .toc a{margin-right:10px;font-size:13px}
 </style></head><body>
-<h1>shAnalysis API reference (v3.28.0)</h1>
+<h1>shAnalysis API reference (v3.29.0)</h1>
 <p>Generated from the source arguments blocks and help text - inputs,
 name-value options with defaults, and outputs for every public function
 and method. Regenerated with every release; the source of truth is the
@@ -2084,13 +2084,18 @@ code itself.</p>
 </div>
 <div class="entry" id="shSeries.mean">
 <h3><code>shSeries.mean(obj, opts)</code></h3>
-<p class="h1line">Mean field of the series.</p>
-<p>G = ts.mean (Omitnan=true default) returns an shCoefficients; its sigmas, when present, are the standard error of the mean.</p>
+<p class="h1line">Mean field, over the whole series or a user-given window.</p>
+<p>G = ts.mean() averages every epoch and returns an shCoefficients whose sigmas are the standard error of the temporal scatter, divided by the number of VALID epochs per coefficient (before v3.29.0 it divided by nEpochs, which understated the sigmas of any series holding NaN months).</p>
 <b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>n x m</td><td>-</td><td>required</td></tr></table>
-<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Omitnan</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Range</code></td><td>n x m</td><td>-</td><td>[]</td></tr><tr><td><code>Estimator</code></td><td>1 x 1</td><td>string</td><td>&quot;arithmetic&quot;</td></tr><tr><td><code>Periods</code></td><td>1 x :</td><td>double</td><td>double.empty(1,0)</td></tr><tr><td><code>Omitnan</code></td><td>1 x 1</td><td>logical</td><td>true</td></tr><tr><td><code>MinEpochs</code></td><td>1 x 1</td><td>double</td><td>1</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>g</code></td><td>(1 x 1) shCoefficients   temporal mean field (omits NaN months)</td></tr>
+<tr><td><code>g</code></td><td>(1 x 1) shCoefficients   mean field over the window, with sigmas (scatter-based for &quot;arithmetic&quot;, propagated through the fit for &quot;model&quot;)</td></tr>
+<tr><td><code>info</code></td><td>(1 x 1) struct   estimator, range, nUsed, nTotal, nDropped, span, coverage, maxGapYears, centroidOffset, epoch, attenuation (K+2 x 2 [period factor], &quot;model&quot; only)</td></tr>
 </table>
+<b>Example</b><pre>    gBase = ts.mean(Range = [2004 2010]);
+    [gGap, info] = ts.mean(Range = [2015 2021], Estimator = &quot;model&quot;);
+
+  See also select, climatology, at</pre>
 </div>
 <div class="entry" id="shSeries.minus">
 <h3><code>shSeries.minus(a, b)</code></h3>
@@ -2144,13 +2149,18 @@ code itself.</p>
 </table>
 </div>
 <div class="entry" id="shSeries.select">
-<h3><code>shSeries.select(obj, which)</code></h3>
+<h3><code>shSeries.select(obj, which, opts)</code></h3>
 <p class="h1line">Subset the series by index, mask, or time range.</p>
-<p>OUT = ts.select(WHICH) with WHICH one of logical (1,T)   keep masked epochs indices         keep listed epochs (in the given order) [tMin tMax]     keep epochs with tMin &lt;= t &lt;= tMax (two-element non-integer-valued row =&gt; range; use explicit logical/index forms otherwise)</p>
-<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>n x m</td><td>-</td><td>required</td></tr><tr><td><code>which</code></td><td>n x 1</td><td>-</td><td>required</td></tr></table>
+<p>OUT = ts.select(WHICH) with WHICH one of logical (1,T)   keep masked epochs indices         keep listed epochs (in the given order) [tMin tMax]     keep epochs with tMin &lt;= t &lt;= tMax</p>
+<b>Inputs</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>obj</code></td><td>n x m</td><td>-</td><td>required</td></tr><tr><td><code>which</code></td><td>n x 1</td><td>-</td><td>[]</td></tr></table>
+<b>Options (name = value)</b><table><tr><th>name</th><th>size</th><th>type</th><th>default</th></tr><tr><td><code>Range</code></td><td>n x m</td><td>-</td><td>[]</td></tr></table>
 <b>Outputs</b><table><tr><th>name</th><th>description</th></tr>
-<tr><td><code>out</code></td><td>(1 x 1) shSeries   months selected by logical/index mask</td></tr>
+<tr><td><code>out</code></td><td>(1 x 1) shSeries   the selected epochs, in the order given; the operation is appended to the history (immutable value-class pattern)</td></tr>
 </table>
+<b>Example</b><pre>    tsFO = ts.select(ts.epochs &gt; 2018.5);
+    tsB  = ts.select(Range = [2004 2010]);
+
+  See also mean, dropNaN</pre>
 </div>
 <div class="entry" id="shSeries.shSeries">
 <h3><code>shSeries.shSeries(in, opts)</code></h3>
@@ -2303,4 +2313,4 @@ code itself.</p>
 <tr><td><code>obj</code></td><td>(1 x 1) shClimatology   copy with the note appended to its history</td></tr>
 </table>
 </div>
-<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 18-Aug-2026 (v3.28.0). Generated by tools - do not edit.</p></body></html>
+<hr><p style="font-size:11px;color:#888">Developed by Matthias Weigelt with the help of Claude (Fable 5), 20-Aug-2026 (v3.29.0). Generated by tools - do not edit.</p></body></html>

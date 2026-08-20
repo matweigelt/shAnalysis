@@ -35,6 +35,9 @@ classdef shSeries
 %   See also shCoefficients, shClimatology.
 %
 %   Claude (Fable 5), 2026-08-07.
+%   v3.29.0, 2026-08-20: mean(Range=, Estimator=) and select(Range=)
+%   added; the standard error of the mean now divides by the valid
+%   epoch count per coefficient - Claude (Opus 5).
 %   Developed by Matthias Weigelt with the help of Claude (Fable 5).
 
 properties (SetAccess = private)
@@ -201,32 +204,193 @@ methods
     end
 
     % --------------------------------------------------- series statistics
-    function g = mean(obj, opts)
-        %MEAN Mean field of the series.
-        %   G = ts.mean (Omitnan=true default) returns an shCoefficients;
-        %   its sigmas, when present, are the standard error of the mean.
-        %   Inputs
-        %     Omitnan (true)  ignore NaN coefficients in the average
+    function [g, info] = mean(obj, opts)
+        %MEAN Mean field, over the whole series or a user-given window.
+        %   G = ts.mean() averages every epoch and returns an
+        %   shCoefficients whose sigmas are the standard error of the
+        %   temporal scatter, divided by the number of VALID epochs per
+        %   coefficient (before v3.29.0 it divided by nEpochs, which
+        %   understated the sigmas of any series holding NaN months).
+        %
+        %   G = ts.mean(Range = [t1 t2]) averages only the epochs with
+        %   t1 <= t <= t2, given as decimal years or as a 1 x 2 datetime.
+        %   Identical to ts.select(Range = [t1 t2]).mean(), in one call.
+        %
+        %   [G, INFO] = ts.mean(Range = [t1 t2], Estimator = "model")
+        %   instead fits bias / trend / annual / semi-annual (+Periods) to
+        %   the epochs inside the window, with the reference epoch AT the
+        %   window centre, and returns the exact time integral of that
+        %   model over [t1 t2]. Because the reference epoch is the centre,
+        %   the integral collapses to
+        %
+        %       mean = bias + sum_k s(P_k) * cos_k,
+        %       s(P) = sin(pi*D/P) / (pi*D/P),   D = t2 - t1,
+        %
+        %   the model at the window centre with every harmonic damped by a
+        %   sinc factor (returned in INFO.attenuation). For a whole number
+        %   of years s = 0 exactly, so the period mean is the trend line at
+        %   the centre - whatever the phase of the annual signal, and
+        %   wherever the gaps sit.
+        %
+        %   Which estimator: on a completely sampled window the two agree
+        %   to round-off, and "arithmetic" is the cheaper and more robust
+        %   choice. On an unevenly covered window the arithmetic mean
+        %   carries the trend and annual signal of whichever epochs
+        %   survived - 0.069 of a 1.2 annual amplitude for a single
+        %   6-month block missing out of six years, and INFO.centroidOffset
+        %   times the trend for the trend part. Voronoi time-weighting was
+        %   tested as a third option and rejected: it never won and lost by
+        %   4x across the 2017-2018 mission gap, because the two epochs
+        %   bracketing a gap each collect half a year of weight
+        %   (tools/dev/validate_meanperiod.py holds the measured table).
+        %
+        %   The epoch attached to G is the epoch centroid of the averaged
+        %   months for "arithmetic" - which is the epoch that estimator
+        %   actually refers to once a trend is present - and the window
+        %   centre for "model".
+        %
+        %   Options
+        %     Range ([])         (1 x 2) double decimal years [t1 t2], or a
+        %         1 x 2 datetime; [] uses the full series
+        %     Estimator ("arithmetic")  (1 x 1) string, "arithmetic" (equal
+        %         weights) or "model" (fit and integrate, see above)
+        %     Periods (double.empty(1,0))  (1 x K) double extra harmonic
+        %         periods [yr] for Estimator = "model", beyond the built-in
+        %         annual and semi-annual - e.g. 161/365.25 for the S2 alias
+        %     Omitnan (true)     (1 x 1) logical, ignore NaN coefficients
+        %         ("arithmetic") or drop NaN epochs ("model"); false makes
+        %         a NaN month poison the result / raise shSeries:nanInSeries
+        %     MinEpochs (1)      (1 x 1) double, minimum number of epochs
+        %         inside the window; below it the call errors
         %
         %   Outputs
-        %     g          (1 x 1) shCoefficients   temporal mean field (omits NaN months)
+        %     g          (1 x 1) shCoefficients   mean field over the window,
+        %         with sigmas (scatter-based for "arithmetic", propagated
+        %         through the fit for "model")
+        %     info       (1 x 1) struct   estimator, range, nUsed, nTotal,
+        %         nDropped, span, coverage, maxGapYears, centroidOffset,
+        %         epoch, attenuation (K+2 x 2 [period factor], "model" only)
         %
-        %   Outputs
-        %     out  (1,1) shCoefficients  epoch-mean field (sigmas RSS/T when present)
+        %   Example
+        %     gBase = ts.mean(Range = [2004 2010]);
+        %     [gGap, info] = ts.mean(Range = [2015 2021], Estimator = "model");
+        %
+        %   See also select, climatology, at
         arguments
             obj
+            opts.Range = []
+            opts.Estimator (1,1) string ...
+                {mustBeMember(opts.Estimator, ["arithmetic", "model"])} = "arithmetic"
+            opts.Periods (1,:) double = double.empty(1,0)
             opts.Omitnan (1,1) logical = true
+            opts.MinEpochs (1,1) double {mustBePositive} = 1
         end
-        if opts.Omitnan, flag = 'omitnan'; else, flag = 'includenan'; end
-        Cm = mean(obj.Cs, 3, flag);
-        Sm = mean(obj.Ss, 3, flag);
-        T = obj.nEpochs;
-        sc = std(obj.Cs, 0, 3, flag) / sqrt(T);
-        ss = std(obj.Ss, 0, 3, flag) / sqrt(T);
+        hasRange = ~isempty(opts.Range);
+        if hasRange
+            rg = rangeToYears(opts.Range);
+            keep = find(obj.epochs(:)' >= rg(1) & obj.epochs(:)' <= rg(2));
+            if isempty(keep)
+                error('shSeries:emptyRange', ...
+                    ['No epoch falls in [%.4f %.4f]; the series spans ' ...
+                     '%.4f to %.4f.'], rg(1), rg(2), ...
+                    min(obj.epochs), max(obj.epochs));
+            end
+            sub = obj.select(keep);
+        else
+            sub = obj;
+            rg = [min(obj.epochs), max(obj.epochs)];
+        end
+
+        nDropped = 0;
+        if opts.Estimator == "model"
+            if isempty(sub.epochs) || any(~isfinite(sub.epochs))
+                error('shSeries:noEpoch', ...
+                    'Estimator="model" requires a finite epoch for every entry.');
+            end
+            if opts.Omitnan
+                before = sub.nEpochs;
+                sub = sub.dropNaN();
+                nDropped = before - sub.nEpochs;
+            else
+                sub.assertClean('mean(Estimator="model")');
+            end
+        end
+        if sub.nEpochs < opts.MinEpochs
+            error('shSeries:tooFewEpochs', ...
+                'The window holds %d epoch(s), MinEpochs = %d.', ...
+                sub.nEpochs, opts.MinEpochs);
+        end
+
+        atten = double.empty(0, 2);
+        if opts.Estimator == "arithmetic"
+            if opts.Omitnan, flag = 'omitnan'; else, flag = 'includenan'; end
+            Cm = mean(sub.Cs, 3, flag);
+            Sm = mean(sub.Ss, 3, flag);
+            if opts.Omitnan
+                nC = sum(~isnan(sub.Cs), 3);
+                nS = sum(~isnan(sub.Ss), 3);
+            else
+                nC = repmat(sub.nEpochs, size(Cm));
+                nS = repmat(sub.nEpochs, size(Sm));
+            end
+            % the standard error of the mean divides by the number of
+            % values that actually entered it, per coefficient
+            sc = std(sub.Cs, 0, 3, flag) ./ sqrt(max(nC, 1));
+            ss = std(sub.Ss, 0, 3, flag) ./ sqrt(max(nS, 1));
+            sc(nC < 2) = NaN;      % std of one sample is 0, not a sigma
+            ss(nS < 2) = NaN;
+            ep = mean(sub.epochs, 'omitnan');
+        else
+            nPar = 6 + 2 * numel(opts.Periods);
+            if sub.nEpochs < nPar
+                error('shSeries:tooFewEpochs', ...
+                    ['Estimator="model" needs >= %d epochs inside the ' ...
+                     'window for %d parameters (got %d).'], ...
+                    nPar, nPar, sub.nEpochs);
+            end
+            tm = 0.5 * (rg(1) + rg(2));
+            D = rg(2) - rg(1);
+            X = sub.flatten();                          % (2*Nc) x T
+            [~, ~, coef, A, ~, resVar] = shLowLevel.fitDeterministicModel( ...
+                X, sub.epochs, T0 = tm, Periods = opts.Periods);
+            pers = [1, 0.5, opts.Periods];
+            sFac = sincPi(D ./ pers);
+            u = zeros(1, nPar);                         % integral weights
+            u(1) = 1;                                   % bias
+            u(3:2:end) = sFac;                          % cosine terms
+            Xm = u * coef;                              % 1 x (2*Nc)
+            q = u / (A.' * A) * u.';                    % cofactor of the mean
+            Xs = sqrt(max(resVar, 0) * max(q, 0));
+            Nc = (sub.nmax + 1)^2; n1 = sub.nmax + 1;
+            Cm = reshape(Xm(1:Nc), n1, n1);
+            Sm = reshape(Xm(Nc+1:end), n1, n1);
+            sc = reshape(Xs(1:Nc), n1, n1);
+            ss = reshape(Xs(Nc+1:end), n1, n1);
+            ep = tm;
+            atten = [pers(:), sFac(:)];
+        end
+
+        info = meanWindowInfo(sub, rg, obj.nEpochs, nDropped, ...
+            opts.Estimator, ep, atten);
+        if opts.Estimator == "model" && info.coverage < 0.5
+            warning('shSeries:sparseWindow', ...
+                ['Estimator="model": the window is %.0f%% covered ' ...
+                 '(largest gap %.2f yr) - the model is extrapolating.'], ...
+                100 * info.coverage, info.maxGapYears);
+        end
+
+        if hasRange || opts.Estimator ~= "arithmetic"
+            nameStr = sprintf("mean(%s, %.3f-%.3f)", obj.productType, ...
+                rg(1), rg(2));
+            note = sprintf("%s mean over [%.4f %.4f] from %d epochs", ...
+                opts.Estimator, rg(1), rg(2), sub.nEpochs);
+        else
+            nameStr = "mean(" + obj.productType + ")";
+            note = sprintf("mean of %d epochs", sub.nEpochs);
+        end
         g = shCoefficients(Cm, Sm, SigmaC = sc, SigmaS = ss, GM = obj.GM, ...
-            R = obj.R, Epoch = mean(obj.epochs, 'omitnan'), ...
-            ProductType = obj.productType, Name = "mean(" + obj.productType + ")", ...
-            History = [obj.history; sprintf("mean of %d epochs", T)]);
+            R = obj.R, Epoch = ep, ProductType = obj.productType, ...
+            Name = nameStr, History = [obj.history; note]);
     end
 
     function [clim, resid] = climatology(obj, opts)
@@ -872,38 +1036,71 @@ methods
             nnz(bad), obj.nEpochs);
     end
 
-    function out = select(obj, which)
+    function out = select(obj, which, opts)
         %SELECT Subset the series by index, mask, or time range.
         %   OUT = ts.select(WHICH) with WHICH one of
         %     logical (1,T)   keep masked epochs
         %     indices         keep listed epochs (in the given order)
         %     [tMin tMax]     keep epochs with tMin <= t <= tMax
-        %                     (two-element non-integer-valued row => range;
-        %                      use explicit logical/index forms otherwise)
         %
-        %   Inputs   which  logical | double
-        %   Outputs  out    shSeries subset
-        %   Outputs
-        %     out        (1 x 1) shSeries   months selected by logical/index mask
+        %   The two-element form is ambiguous by construction: [2004 2010]
+        %   is a time range for a monthly series and a valid pair of
+        %   INDICES for a daily one (T > 2010 samples is under six years).
+        %   It is resolved as indices whenever both values are integers in
+        %   1..T, and a warning (shSeries:ambiguousRange) fires when they
+        %   would also have been a plausible window. Say what you mean:
+        %
+        %   OUT = ts.select(Range = [tMin tMax]) is always a time window,
+        %   in decimal years or as a 1 x 2 datetime, never an index pair.
+        %
+        %   Inputs
+        %     which  logical | double  mask, index list, or [tMin tMax];
+        %            omit it when passing Range
+        %
+        %   Options
+        %     Range ([])  (1 x 2) double decimal years, or a 1 x 2
+        %         datetime; mutually exclusive with WHICH
         %
         %   Outputs
-        %     out  (1,1) shSeries  modified copy; the operation is appended to the
-        %              history (immutable value-class pattern)
+        %     out        (1 x 1) shSeries   the selected epochs, in the
+        %         order given; the operation is appended to the history
+        %         (immutable value-class pattern)
+        %
+        %   Example
+        %     tsFO = ts.select(ts.epochs > 2018.5);
+        %     tsB  = ts.select(Range = [2004 2010]);
+        %
+        %   See also mean, dropNaN
         arguments
             obj
-            which {mustBeVector}
+            which {mustBeVector(which, "allow-all-empties")} = []
+            opts.Range = []
         end
         T = obj.nEpochs;
-        if islogical(which)
+        if ~isempty(opts.Range)
+            assert(isempty(which), 'shSeries:badInput', ...
+                'Pass either WHICH or Range=, not both.');
+            rg = rangeToYears(opts.Range);
+            keep = find(obj.epochs(:)' >= rg(1) & obj.epochs(:)' <= rg(2));
+        elseif islogical(which)
             assert(numel(which) == T, 'shSeries:badInput', ...
                 'Logical mask must have %d elements.', T);
             keep = find(which(:)');
         elseif numel(which) == 2 && ~all(which == round(which) & which >= 1 & which <= T)
             keep = find(obj.epochs(:)' >= which(1) & obj.epochs(:)' <= which(2));
         else
+            assert(~isempty(which), 'shSeries:badInput', ...
+                'Give WHICH (mask, indices or [tMin tMax]) or Range=.');
             assert(all(which == round(which)) && all(which >= 1) && all(which <= T), ...
                 'shSeries:badInput', 'Indices must be integers in 1..%d.', T);
             keep = which(:)';
+            if numel(which) == 2 && all(isfinite(obj.epochs)) && ...
+                    all(which >= min(obj.epochs)) && all(which <= max(obj.epochs))
+                warning('shSeries:ambiguousRange', ...
+                    ['select([%g %g]) was read as INDICES, but both values ' ...
+                     'also fall inside the epoch span - use Range= for a ' ...
+                     'time window.'], which(1), which(2));
+            end
         end
         out = obj;
         out.Cs = obj.Cs(:,:,keep);
@@ -1210,6 +1407,49 @@ methods (Access = private)
         Cs = reshape(X(1:Nc, :), obj.nmax+1, obj.nmax+1, obj.nEpochs);
         Ss = reshape(X(Nc+1:end, :), obj.nmax+1, obj.nmax+1, obj.nEpochs);
     end
+end
+end
+
+function y = sincPi(x)
+% sin(pi*x)./(pi*x), 1 at x = 0. Base MATLAB: sinc is Signal Processing.
+y = ones(size(x));
+nz = x ~= 0;
+y(nz) = sin(pi * x(nz)) ./ (pi * x(nz));
+end
+
+function rg = rangeToYears(rg)
+% Accept [t1 t2] in decimal years or a 1 x 2 datetime; return 1 x 2 double.
+if isdatetime(rg)
+    yr = rg.Year;
+    j0 = datetime(yr, 1, 1);
+    j1 = datetime(yr + 1, 1, 1);
+    rg = double(yr) + days(rg - j0) ./ days(j1 - j0);
+end
+rg = double(rg(:))';
+assert(numel(rg) == 2 && all(isfinite(rg)) && rg(2) > rg(1), ...
+    'shSeries:badRange', ...
+    'Range must be [t1 t2] with t2 > t1 (decimal years or datetime).');
+end
+
+function info = meanWindowInfo(sub, rg, nTotal, nDropped, estimator, ep, atten)
+% Coverage diagnostics for shSeries.mean.
+contrib = false(1, sub.nEpochs);
+for k = 1:sub.nEpochs
+    contrib(k) = any(isfinite(sub.Cs(:,:,k)), 'all') ...
+              || any(isfinite(sub.Ss(:,:,k)), 'all');
+end
+used = sort(sub.epochs(contrib(:) & isfinite(sub.epochs(:))));
+info = struct('estimator', estimator, 'range', rg, ...
+    'nUsed', numel(used), 'nTotal', nTotal, 'nDropped', nDropped, ...
+    'span', [NaN NaN], 'coverage', NaN, 'maxGapYears', NaN, ...
+    'centroidOffset', NaN, 'epoch', ep, 'attenuation', atten);
+if isempty(used), return, end
+info.span = [used(1), used(end)];
+info.centroidOffset = mean(used) - 0.5 * (rg(1) + rg(2));
+if numel(used) > 1
+    dt = median(diff(used));
+    info.coverage = min(1, numel(used) * dt / max(rg(2) - rg(1), eps));
+    info.maxGapYears = max(diff(used));
 end
 end
 

@@ -1285,3 +1285,38 @@ out = shLowLevel.twsChain(sf, gf, kn = kn, DDKFolder = df, ...
 verifyEqual(testCase, out.trend(1), 0.01, AbsTol = 0.05);
 verifyEqual(testCase, out.amplitude(1), 20.6, AbsTol = 0.5);
 end
+
+% ------------------------------------ mean/select period contract (v3.29.0)
+function testMeanPeriodContract(testCase)
+t = 2004 + ((0:35)' + 0.5)/12;
+ts = shSeries(ones(3,3,36), Ss = zeros(3,3,36), Epochs = t);
+verifyError(testCase, @() ts.mean(Range = [2010 2011]), ...
+    'shSeries:emptyRange');
+verifyError(testCase, @() ts.mean(Range = [2006 2004]), ...
+    'shSeries:badRange');
+verifyError(testCase, @() ts.mean(Range = [2004 2007], MinEpochs = 99), ...
+    'shSeries:tooFewEpochs');
+% "model" needs 6 + 2K epochs inside the window
+verifyError(testCase, @() ts.mean(Range = [2004 2004.4], ...
+    Estimator = "model"), 'shSeries:tooFewEpochs');
+verifyError(testCase, @() ts.select([1 2], Range = [2004 2005]), ...
+    'shSeries:badInput');
+verifyError(testCase, @() ts.mean(Estimator = "voronoi"), ?MException);
+end
+
+function testSelectAmbiguousRangeWarns(testCase)
+% on a daily series [2004 2010] is a valid INDEX pair as well as a window
+T = 2600;
+t = 2003 + (0:T-1)'/365.25;
+ts = shSeries(zeros(3,3,T), Ss = zeros(3,3,T), Epochs = t);
+verifyGreaterThan(testCase, max(t), 2010);
+verifyWarning(testCase, @() ts.select([2004 2010]), ...
+    'shSeries:ambiguousRange');
+w = warning('off', 'shSeries:ambiguousRange');
+restore = onCleanup(@() warning(w));
+idx = ts.select([2004 2010]);
+verifyEqual(testCase, idx.nEpochs, 2);            % indices, as documented
+win = ts.select(Range = [2004 2010]);
+verifyEqual(testCase, win.nEpochs, nnz(t >= 2004 & t <= 2010));
+verifyGreaterThan(testCase, win.nEpochs, 2000);
+end

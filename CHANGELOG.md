@@ -1,5 +1,35 @@
 # Changelog
 
+## [3.29.0] - 2026-08-20 - mean over a user-given period; two sigma/selection fixes
+
+`shSeries.mean` gains `Range=` (decimal years or datetime) and a second
+estimator. `Estimator="model"` fits bias/trend/annual/semi-annual
+(+`Periods`) inside the window with the reference epoch at the window
+centre and returns the exact time integral of that fit, which collapses
+to `bias + sum_k s(P_k)*cos_k` with `s(P) = sin(pi*D/P)/(pi*D/P)` - for
+a whole number of years `s = 0` and the period mean is the trend line at
+the centre. The second output reports coverage, largest gap, centroid
+offset and the applied attenuation. Voronoi time-weighting was tested
+and rejected (never won; 4x worse across the 2017-2018 gap) -
+tools/dev/validate_meanperiod.py holds the measured table.
+
+Two fixes found while reading the code for this:
+
+- `mean` divided the temporal scatter by `nEpochs` instead of by the
+  number of VALID epochs per coefficient, understating the sigmas of
+  every series holding NaN months (4.3% for 3 of 36). Coefficients with
+  fewer than two valid epochs now return NaN rather than the `std` of a
+  single sample, which is 0.
+- `select([t1 t2])` is resolved as INDICES whenever both values are
+  valid indices - true for `[2004 2010]` on any daily series longer than
+  2010 samples, i.e. under six years, and silent. `select(Range=[t1 t2])`
+  is now the unambiguous form, and the positional shorthand warns
+  (`shSeries:ambiguousRange`) when it resolves an index pair that would
+  also have been a plausible window.
+
+The old help promised "sigmas RSS/T when present", which was never
+implemented; it now describes what the code does.
+
 ## [3.28.0] - 2026-08-18 - guide chapter 27 (Kalman/VAR); kalmanChain Structure
 
 Guide gains the self-contained Kalman/VAR chapter with two computed

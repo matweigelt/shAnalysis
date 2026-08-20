@@ -698,6 +698,129 @@ t4 = ts.select([1 3 5]);
 verifyEqual(testCase, t4.epochs, t([1 3 5]));
 end
 
+% ------------------------------------------- mean over a period (v3.29.0)
+% Reference values frozen from tools/dev/validate_meanperiod.py; the
+% signal below is exactly inside the fit space, so "model" must return the
+% analytic window mean and "arithmetic" must miss it by the frozen amount.
+
+function y = periodSignal(t)
+y = 1.0 + 0.30*(t - 2004) + 1.20*cos(2*pi*(t - 0.08)) ...
+    + 0.35*cos(4*pi*(t - 0.55));
+end
+
+function y = periodSinc(x)
+% sin(pi*x)/(pi*x), 1 at 0 - the attenuation of one harmonic over a window
+if x == 0, y = 1; else, y = sin(pi*x)/(pi*x); end
+end
+
+function m = periodTruth(t1, t2)
+% exact analytic mean of periodSignal over [t1 t2]
+tm = 0.5*(t1 + t2); D = t2 - t1;
+m = 1.0 + 0.30*(tm - 2004) ...
+    + 1.20*cos(2*pi*(tm - 0.08)) * periodSinc(D/1) ...
+    + 0.35*cos(4*pi*(tm - 0.55)) * periodSinc(D/0.5);
+end
+
+function t = periodMonths(a, b)
+t = a + ((0:round((b - a)*12) - 1)' + 0.5)/12;
+end
+
+function ts = periodSeries(t)
+% fixed coefficient pattern times the reference signal
+M  = [1 0 0; 2 3 0; 4 5 6];
+Ms = [0 0 0; 0 1 0; 0 2 3];
+y = periodSignal(t);
+Cs = zeros(3, 3, numel(t)); Ss = zeros(3, 3, numel(t));
+for k = 1:numel(t)
+    Cs(:,:,k) = M * y(k);
+    Ss(:,:,k) = Ms * y(k);
+end
+ts = shSeries(Cs, Ss = Ss, Epochs = t(:));
+end
+
+function testMeanPeriodGappyWindow(testCase)
+% 2004-2010 with one 6-month block missing (validate_meanperiod.py)
+t = periodMonths(2004, 2010);
+t = t(~(t > 2006.4 & t < 2006.9));
+verifyEqual(testCase, numel(t), 66);
+ts = periodSeries(t);
+truth = periodTruth(2004, 2010);
+verifyEqual(testCase, truth, 1.9, 'AbsTol', 1e-12);   % whole years: sinc = 0
+
+[gA, iA] = ts.mean(Range = [2004 2010]);
+verifyEqual(testCase, gA.C(1,1) - truth, 0.069179522165, 'AbsTol', 1e-9);
+verifyEqual(testCase, iA.nUsed, 66);
+verifyEqual(testCase, iA.nTotal, 66);
+verifyEqual(testCase, iA.coverage, 0.916666666667, 'AbsTol', 1e-9);
+verifyEqual(testCase, iA.maxGapYears, 0.583333333333, 'AbsTol', 1e-9);
+verifyEqual(testCase, iA.centroidOffset, 0.030303030303, 'AbsTol', 1e-9);
+verifyEqual(testCase, iA.estimator, "arithmetic");
+verifyEqual(testCase, gA.epoch, mean(t), 'AbsTol', 1e-12);   % centroid
+
+[gM, iM] = ts.mean(Range = [2004 2010], Estimator = "model");
+verifyEqual(testCase, gM.C(1,1), truth, 'AbsTol', 1e-10);
+verifyEqual(testCase, gM.C(3,2), 5*truth, 'AbsTol', 1e-9);
+verifyEqual(testCase, gM.S(3,3), 3*truth, 'AbsTol', 1e-9);
+verifyEqual(testCase, gM.epoch, 2007, 'AbsTol', 1e-12);      % window centre
+verifyEqual(testCase, iM.attenuation(:,1), [1; 0.5], 'AbsTol', 1e-12);
+verifyEqual(testCase, iM.attenuation(:,2), [0; 0], 'AbsTol', 1e-12);
+% signal exactly in the fit space -> no residual -> no formal sigma
+verifyLessThan(testCase, max(abs(gM.sigmaC(:))), 1e-8);
+end
+
+function testMeanPeriodAttenuation(testCase)
+% a window of 5.5 years annihilates the semi-annual, not the annual
+t = periodMonths(2004, 2009.5);
+ts = periodSeries(t);
+truth = periodTruth(2004, 2009.5);
+verifyEqual(testCase, truth, 1.858457517928, 'AbsTol', 1e-9);
+gA = ts.mean(Range = [2004 2009.5]);
+verifyEqual(testCase, gA.C(1,1) - truth, 0.000385268670, 'AbsTol', 1e-9);
+[gM, iM] = ts.mean(Range = [2004 2009.5], Estimator = "model");
+verifyEqual(testCase, gM.C(1,1), truth, 'AbsTol', 1e-10);
+verifyEqual(testCase, iM.attenuation(:,2), [-0.057874524761; 0], ...
+    'AbsTol', 1e-9);
+end
+
+function testMeanRangeMatchesSelectThenMean(testCase)
+t = periodMonths(2004, 2010);
+ts = periodSeries(t);
+a = ts.mean(Range = [2005 2008]);
+b = ts.select(Range = [2005 2008]).mean();
+verifyEqual(testCase, a.C, b.C, 'AbsTol', 1e-14);
+verifyEqual(testCase, a.S, b.S, 'AbsTol', 1e-14);
+verifyEqual(testCase, a.sigmaC, b.sigmaC, 'AbsTol', 1e-14);
+verifyEqual(testCase, a.epoch, b.epoch, 'AbsTol', 1e-12);
+% the positional shorthand still means the same thing here
+d = ts.select([2005 2008]).mean();
+verifyEqual(testCase, d.C, a.C, 'AbsTol', 1e-14);
+% datetime windows agree with decimal years
+c = ts.mean(Range = [datetime(2005,1,1) datetime(2008,1,1)]);
+verifyEqual(testCase, c.C, a.C, 'AbsTol', 1e-12);
+% and the whole-series call is unchanged by the new options
+verifyEqual(testCase, ts.mean().C, mean(ts.Cs, 3), 'AbsTol', 1e-14);
+end
+
+function testMeanSigmaUsesValidEpochCount(testCase)
+% the standard error must divide by the epochs that entered it
+t = periodMonths(2004, 2007);
+ts = periodSeries(t);
+Cs = ts.Cs; Ss = ts.Ss;
+Cs(:,:,[4 8 12]) = NaN; Ss(:,:,[4 8 12]) = NaN;
+tsN = shSeries(Cs, Ss = Ss, Epochs = t);
+g = tsN.mean();
+verifyEqual(testCase, g.C(1,1), 1.473863636364, 'AbsTol', 1e-9);
+verifyEqual(testCase, g.sigmaC(1,1), 0.156294825874, 'AbsTol', 1e-9);
+v = squeeze(Cs(1,1,:)); v = v(~isnan(v));
+verifyEqual(testCase, numel(v), 33);
+verifyEqual(testCase, g.sigmaC(1,1), std(v)/sqrt(33), 'AbsTol', 1e-12);
+% fewer than two valid epochs is no sigma at all, not the std of one sample
+Cs2 = Cs; Cs2(1,1,:) = NaN; Cs2(1,1,1) = 5;
+g2 = shSeries(Cs2, Ss = Ss, Epochs = t).mean();
+verifyEqual(testCase, g2.C(1,1), 5, 'AbsTol', 1e-12);
+verifyTrue(testCase, isnan(g2.sigmaC(1,1)));
+end
+
 function testFitModelWeightsEquivalence(testCase)
 % uniform weights must reproduce the unweighted fit exactly
 rng(23);
